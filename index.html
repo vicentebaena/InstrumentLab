@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InstrumentLab · RC</title>
+  <link rel="stylesheet" href="app/styles.css">
+  <script defer src="assets/instruments/images.js"></script>
+  <script defer src="app/circuits.js"></script>
+  <script defer src="app/translations.js"></script>
+  <script defer src="app/oscilloscope.js"></script>
+  <script defer src="app/main.js"></script>
+</head>
+<body>
+<main class="workspace">
+  <header class="topbar">
+    <div><p class="eyebrow" data-i18n="bench"></p><h1>Instrument<span>Lab</span></h1><p class="intro" data-i18n="intro"></p></div>
+    <label class="language"><span data-i18n="language"></span><select id="language"><option value="en">English</option><option value="es">Español</option></select></label>
+  </header>
+  <section class="circuit-bar panel" aria-labelledby="circuitHeading">
+    <div><p class="eyebrow" id="circuitHeading" data-i18n="experiment"></p><label for="circuit" data-i18n="choose"></label></div>
+    <select id="circuit"></select><p data-i18n="fixed"></p>
+  </section>
+  <div class="bench-grid">
+    <section class="panel schematic-panel" aria-labelledby="circuitTitle">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="circuit"></p><h2 id="circuitTitle"></h2></div><button id="resetCircuit" type="button" class="reset-circuit" data-i18n="reset"></button></div>
+      <p class="description" data-i18n="description"></p>
+      <div class="diagram-wrap" id="diagram"></div>
+      <div class="connections"><span><i class="channel ch1">1</i><span data-i18n="inputChannel"></span></span><span><i class="channel ch2">2</i><span data-i18n="outputChannel"></span></span><span data-i18n="ground"></span></div>
+    </section>
+    <aside class="sidebar">
+      <section class="scope-display" id="scopeDisplay"></section>
+      <section class="panel generator" aria-labelledby="generatorTitle">
+        <p class="eyebrow" data-i18n="generator"></p><h2 id="generatorTitle" data-i18n="settings"></h2>
+        <dl><div><dt data-i18n="waveform"></dt><dd data-i18n="square"></dd></div><div><dt data-i18n="frequency"></dt><dd>1 kHz</dd></div><div><dt data-i18n="amplitude"></dt><dd id="generatorAmplitude">2 Vpp</dd></div><div><dt data-i18n="offset"></dt><dd id="generatorOffset">0 V</dd></div></dl>
+      </section>
+    </aside>
+  </div>
+  <section class="panel facts" aria-label="RC"><div><span data-i18n="timeConstant"></span><strong id="tau"></strong><small>τ = RC</small></div><div><span data-i18n="cutoff"></span><strong id="cutoff"></strong><small>f꜀ = 1 / (2πRC)</small></div><p data-i18n="observe"></p></section>
+  <footer><span>InstrumentLab · Vicente Baena</span><p data-i18n="footer"></p><a class="license-link" href="LICENSE.md" data-i18n="license"></a></footer>
+</main>
+<dialog id="componentDialog" aria-labelledby="componentTitle">
+  <form id="componentForm">
+    <p class="eyebrow" data-i18n="editComponent"></p>
+    <h2 id="componentTitle"></h2>
+    <label class="component-field" for="componentValue"><span data-i18n="componentValue"></span><span class="input-unit"><input id="componentValue" type="number" step="any" required><span id="componentUnit"></span></span></label>
+    <div class="dialog-actions"><button id="cancelComponent" type="button" data-i18n="cancel"></button><button type="submit" class="primary" data-i18n="apply"></button></div>
+  </form>
+</dialog>
+</body>
+</html>

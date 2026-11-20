@@ -1,0 +1,21 @@
+# Local agent instructions: never publish.
+AGENTS.md
+AGENTS.local.md
+
+# Local system and editor files
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+
+# Local reference material must stay outside the repository.
+referencias/
+
+# Private instrument thumbnails for local development only.
+assets/local-instruments/
