@@ -14,6 +14,9 @@
         channels: { 1: { visible: true, coupling: 'DC', probe: 1 }, 2: { visible: true, coupling: 'DC', probe: 1 } }
       };
     },
+    toggleChannelMenu(state) {
+      return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null };
+    },
     pressChannel(state, channel) {
       if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;

@@ -12,6 +12,7 @@
   const rigolScopePanel = window.InstrumentLab.DS1102EPanel.create({
     getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1102e', 12, state.oscilloscope),
     getSettings: () => state.oscilloscope,
+    onMenu: () => { state.oscilloscope = window.InstrumentLab.oscilloscope.toggleChannelMenu(state.oscilloscope); render(); },
     onChannel: channel => { state.oscilloscope = window.InstrumentLab.oscilloscope.pressChannel(state.oscilloscope, channel); render(); }
   });
   function render() {

@@ -55,3 +55,17 @@ assert.ok(!/NaN|undefined|Infinity|Cycles unresolved/.test(render(state, 'scope'
 assert.equal(original.channels[1].coupling, 'DC');
 assert.equal(original.channels[2].probe, 1);
 console.log('CH1/CH2 menu-selection-visibility transitions, independent traces, empty display and Time label passed.');
+
+// MENU ON/OFF toggles only the selected channel's menu, even if its trace is hidden.
+for (const initial of [original, hide1, state]) {
+  const shown = scope.toggleChannelMenu(initial);
+  assert.equal(shown.menuChannel, initial.selectedChannel);
+  assert.equal(shown.selectedChannel, initial.selectedChannel);
+  assert.deepEqual(shown.channels, initial.channels);
+  assert.equal(render(shown), render(initial));
+  const hidden = scope.toggleChannelMenu(shown);
+  assert.equal(hidden.menuChannel, null);
+  assert.equal(hidden.selectedChannel, initial.selectedChannel);
+  assert.deepEqual(hidden.channels, initial.channels);
+}
+console.log('MENU ON/OFF toggles the selected menu without changing traces, settings or selection.');
