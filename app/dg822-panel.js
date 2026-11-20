@@ -41,8 +41,10 @@ window.InstrumentLab.DG822Panel = {
     const api = window.InstrumentLab.DG822Panel;
     const format = window.InstrumentLab.DG822Panel.formatNumber;
     const $ = id => document.getElementById(id);
-    const dialog = $('dg822Dialog');
-    const handle = $('dg822WindowBar');
+    const frame = window.InstrumentLab.createInstrumentWindow({
+      dialogId: 'dg822Dialog', handleId: 'dg822WindowBar', closeId: 'dg822Close',
+      triggerSelector: '[data-instrument="dg822"]'
+    });
     $('dg822Faceplate').src = window.InstrumentLabImages.generator;
     for (const channel of [1, 2]) {
       $(`dg822Output${channel}`).addEventListener('click', () => {
@@ -50,7 +52,6 @@ window.InstrumentLab.DG822Panel = {
         onChange({ [key]: !getGenerator()[key] });
       });
     }
-    let drag = null;
     let editing = null;
     let menuOpen = false;
     function showMenu(open) {
@@ -134,45 +135,12 @@ window.InstrumentLab.DG822Panel = {
       $('dg822SelectSine').setAttribute('aria-pressed', String(generator.waveform === 'sine'));
       $('dg822SelectSquare').setAttribute('aria-pressed', String(generator.waveform === 'square'));
     }
-    function close() { dialog.close(); }
-    $('dg822Close').addEventListener('click', close);
-    dialog.addEventListener('keydown', event => {
-      if (event.key === 'Escape') { event.preventDefault(); close(); }
-    });
-    dialog.addEventListener('close', () => {
-      document.querySelector('[data-instrument="dg822"]')?.focus();
-    });
-    // Drag only the title bar, keeping the close button and page scroll usable.
-    handle.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || event.target.closest('button')) return;
-      const bounds = dialog.getBoundingClientRect();
-      drag = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-      dialog.style.left = `${bounds.left}px`;
-      dialog.style.top = `${bounds.top}px`;
-      dialog.style.transform = 'none';
-      handle.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    });
-    handle.addEventListener('pointermove', event => {
-      if (!drag) return;
-      dialog.style.left = `${Math.max(0, Math.min(window.innerWidth - dialog.offsetWidth, event.clientX - drag.x))}px`;
-      dialog.style.top = `${Math.max(0, Math.min(window.innerHeight - handle.offsetHeight, event.clientY - drag.y))}px`;
-    });
-    const endDrag = () => { drag = null; };
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('lostpointercapture', endDrag);
-    window.addEventListener('resize', () => {
-      dialog.style.removeProperty('left');
-      dialog.style.removeProperty('top');
-      dialog.style.removeProperty('transform');
-    });
     return {
       render,
       open() {
         showMenu(false);
         render();
-        if (!dialog.open) dialog.show();
-        $('dg822Close').focus({ preventScroll: true });
+        frame.open();
       }
     };
   }

@@ -86,3 +86,14 @@ for (const waveform of ['sine', 'square']) {
   assert.ok(svg.includes('204.000'));
 }
 console.log('Output1 gating, independent Output2, DC removal and disabled high-frequency display passed.');
+// Two simultaneous scope views must have distinct SVG IDs but identical trace data.
+for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, waveform: 'sine' }, { ...app.generatorDefaults, output1Enabled: false }]) {
+  const main = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String);
+  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1202ze');
+  const ids = markup => [...markup.matchAll(/id="([^"]+)"/g)].map(match => match[1]);
+  assert.ok(ids(main).every(id => !ids(instrument).includes(id)));
+  const traces = markup => [...markup.matchAll(/<path d="([^"]+)" stroke="#(?:f4d35e|6ecbff)"/g)].map(match => match[1]);
+  assert.equal(traces(main).length, 2);
+  assert.deepEqual(traces(main), traces(instrument));
+}
+console.log('Both scope views use unique SVG IDs and identical sine/square/OFF traces.');

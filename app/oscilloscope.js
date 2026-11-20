@@ -4,7 +4,7 @@
   const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
-    render(circuit, parameters, generator, t, format) {
+    render(circuit, parameters, generator, t, format, idPrefix = 'scope') {
       const left = 36, top = 44, width = 568, height = 320;
       const duration = 10 * defaults.timePerDivision;
       const period = 1 / generator.frequency;
@@ -38,14 +38,14 @@
       const grid = [];
       for (let i = 0; i <= 10; i++) grid.push(`<path d="M${left + width * i / 10} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
-      return `<svg viewBox="0 0 640 420" role="img" aria-labelledby="scopeDisplayTitle scopeDisplayDescription">
-        <title id="scopeDisplayTitle">${t('scope')}</title><desc id="scopeDisplayDescription">${t('scopeDescription')}</desc>
-        <defs><clipPath id="scopeTraceClip"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs>
+      return `<svg viewBox="0 0 640 420" role="img" aria-labelledby="${idPrefix}DisplayTitle ${idPrefix}DisplayDescription">
+        <title id="${idPrefix}DisplayTitle">${t('scope')}</title><desc id="${idPrefix}DisplayDescription">${t('scopeDescription')}</desc>
+        <defs><clipPath id="${idPrefix}TraceClip"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs>
         <rect width="640" height="420" rx="8" fill="#030709"/>
         <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22"><text x="36" y="29">H ${format(defaults.timePerDivision * 1e6)} µs/div</text><text x="604" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${left + width / 2} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
-        <g fill="none" clip-path="url(#scopeTraceClip)" stroke-width="2.4" stroke-linejoin="round">
+        <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}
         </g>
         <path d="M24 198l10 6-10 6z" fill="#f4d35e"/>

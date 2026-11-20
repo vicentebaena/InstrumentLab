@@ -38,6 +38,8 @@ Al pulsar la imagen del generador se abre la ventana específica del Rigol DG822
 - `app/oscilloscope.js`: signal display with fixed scales.
 - `app/main.js`: interface and component editing.
 - `app/dg822-panel.js` and `app/dg822-panel.css`: Rigol DG822-specific window and display.
+- `app/ds1202ze-panel.js` and `app/ds1202ze-panel.css`: Rigol DS1202Z-E faceplate and synchronised scope screen.
+- `app/instrument-window.js`: shared window opening, closing, dragging and foreground order.
 - `app/translations.js`: English and Spanish text.
 - `assets/instruments/images.js`: background-removed instrument thumbnails embedded for offline use. These are static illustrations, not live equipment displays.
 - `tests/rc-model.test.cjs`: RC response and display checks; run `node tests/rc-model.test.cjs`.
@@ -75,3 +77,11 @@ Al pulsar Menu en la carátula se abre el selector táctil. Sine y Square están
 Output1 and Output2 on the DG822 faceplate toggle independently and both illuminate yellow when enabled. Defaults: Output1 ON, Output2 OFF. Only CH1 is connected to the RC. Disabling Output1 removes both AC signal and DC offset; the steady-state circuit display becomes 0 V. Capacitor discharge transients are not modelled. Output2 has no effect on the RC. Programmed parameters persist while an output is disabled and when the window closes. Restore defaults also resets the output states. The main summary identifies the used channel (CH1) and its output state.
 
 Output1 y Output2 se activan de forma independiente. Solo CH1 está conectado al RC. Al desactivar Output1 se retiran la señal y el offset; el modelo en régimen permanente muestra 0 V, sin simular el transitorio de descarga. Los parámetros programados se conservan. El resumen indica Canal utilizado: CH1 y el estado de su salida.
+
+## Rigol DS1202Z-E window / Ventana del osciloscopio
+
+Click the oscilloscope image in the schematic to open its Rigol DS1202Z-E faceplate. The screen uses the same model, settings and rendering as the main-page scope. Both views update together for component changes, generator settings, waveform, output enable and reset. Their SVG IDs are distinct so clipping and accessibility labels work when both displays are present.
+
+Generator and oscilloscope windows can stay open together. Drag a title bar to move either window; click a window to bring it to the front. Close or Escape closes only that instrument window and preserves the experiment. Scope front-panel controls have not been implemented yet.
+
+Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1202Z-E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.

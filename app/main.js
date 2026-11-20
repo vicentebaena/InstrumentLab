@@ -9,6 +9,9 @@
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
   const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
+  const rigolScopePanel = window.InstrumentLab.DS1202ZEPanel.create({
+    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze')
+  });
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;
@@ -26,6 +29,7 @@
     $('circuitTitle').textContent = t(circuit.titleKey);
     $('diagram').innerHTML = circuit.diagram({ resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
     $('scopeDisplay').innerHTML = window.InstrumentLab.oscilloscope.render(circuit, state.parameters, state.generator, t, number);
+    rigolScopePanel.render();
     const { tau, cutoff } = circuit.characteristics(state.parameters);
     $('tau').textContent = tau < 0.001 ? `${number(tau * 1e6)} µs` : `${number(tau * 1000)} ms`;
     $('cutoff').textContent = cutoff >= 1000 ? `${number(cutoff / 1000)} kHz` : `${number(cutoff)} Hz`;
@@ -46,12 +50,16 @@
   }
   $('diagram').addEventListener('click', event => {
     if (event.target.closest('[data-instrument="dg822"]')) { dg822Panel.open(); return; }
+    if (event.target.closest('[data-instrument="ds1202ze"]')) { rigolScopePanel.open(); return; }
     const target = event.target.closest('[data-parameter]');
     if (target) openEditor(target.dataset.parameter);
   });
   $('diagram').addEventListener('keydown', event => {
     if (event.target.closest('[data-instrument="dg822"]') && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault(); dg822Panel.open(); return;
+    }
+    if (event.target.closest('[data-instrument="ds1202ze"]') && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault(); rigolScopePanel.open(); return;
     }
     const target = event.target.closest('[data-parameter]');
     if (target && (event.key === 'Enter' || event.key === ' ')) {
