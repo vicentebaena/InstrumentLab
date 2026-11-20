@@ -85,3 +85,7 @@ Click the oscilloscope image in the schematic to open its Rigol DS1202Z-E facepl
 Generator and oscilloscope windows can stay open together. Drag a title bar to move either window; click a window to bring it to the front. Close or Escape closes only that instrument window and preserves the experiment. Scope front-panel controls have not been implemented yet.
 
 Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1202Z-E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.
+
+The DS1202Z-E screen has 12 horizontal divisions; the main-page preview has 10. Both retain the same 250 µs/div scale and shared signal model. At the default 1 kHz, the instrument shows 3 ms / 3 periods and the main page 2.5 ms / 2.5 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
+
+La carátula del Rigol tiene 12 divisiones horizontales; la vista principal conserva 10. Con 250 µs/div, muestran 3 ms y 2,5 ms respectivamente. Comparten la señal y la escala por división, con distinta anchura temporal total.

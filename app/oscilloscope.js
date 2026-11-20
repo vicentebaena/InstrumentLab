@@ -4,9 +4,10 @@
   const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
-    render(circuit, parameters, generator, t, format, idPrefix = 'scope') {
-      const left = 36, top = 44, width = 568, height = 320;
-      const duration = 10 * defaults.timePerDivision;
+    render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10) {
+      const left = 36, top = 44, width = 568 * horizontalDivisions / 10, height = 320;
+      const viewWidth = width + 2 * left;
+      const duration = horizontalDivisions * defaults.timePerDivision;
       const period = 1 / generator.frequency;
       const dense = generator.output1Enabled !== false && duration * generator.frequency > width / 4;
       const start = -period / 4;
@@ -36,21 +37,21 @@
         ? band(generator.amplitudeVpp / 2, '#f4d35e') + band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff')
         : `<path d="${trace('input')}" stroke="#f4d35e"/><path d="${trace('output')}" stroke="#6ecbff"/>`;
       const grid = [];
-      for (let i = 0; i <= 10; i++) grid.push(`<path d="M${left + width * i / 10} ${top}v${height}"/>`);
+      for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
-      return `<svg viewBox="0 0 640 420" role="img" aria-labelledby="${idPrefix}DisplayTitle ${idPrefix}DisplayDescription">
+      return `<svg viewBox="0 0 ${viewWidth} 420" role="img" aria-labelledby="${idPrefix}DisplayTitle ${idPrefix}DisplayDescription">
         <title id="${idPrefix}DisplayTitle">${t('scope')}</title><desc id="${idPrefix}DisplayDescription">${t('scopeDescription')}</desc>
         <defs><clipPath id="${idPrefix}TraceClip"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs>
-        <rect width="640" height="420" rx="8" fill="#030709"/>
-        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22"><text x="36" y="29">H ${format(defaults.timePerDivision * 1e6)} µs/div</text><text x="604" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
+        <rect width="${viewWidth}" height="420" rx="8" fill="#030709"/>
+        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22"><text x="36" y="29">H ${format(defaults.timePerDivision * 1e6)} µs/div</text><text x="${left + width}" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${left + width / 2} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}
         </g>
         <path d="M24 198l10 6-10 6z" fill="#f4d35e"/>
-        ${dense ? `<text x="320" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
-        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text><text x="604" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text></g>
+        ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
+        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text></g>
       </svg>`;
     }
   };

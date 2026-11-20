@@ -86,14 +86,23 @@ for (const waveform of ['sine', 'square']) {
   assert.ok(svg.includes('204.000'));
 }
 console.log('Output1 gating, independent Output2, DC removal and disabled high-frequency display passed.');
-// Two simultaneous scope views must have distinct SVG IDs but identical trace data.
+// Instrument and main views share scales/left time but use 12 and 10 divisions.
 for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, waveform: 'sine' }, { ...app.generatorDefaults, output1Enabled: false }]) {
   const main = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String);
-  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1202ze');
+  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1202ze', 12);
   const ids = markup => [...markup.matchAll(/id="([^"]+)"/g)].map(match => match[1]);
   assert.ok(ids(main).every(id => !ids(instrument).includes(id)));
+  const gridLines = markup => [...markup.match(/stroke="#203038" stroke-width="1">(.*?)<\/g>/s)[1].matchAll(/<path /g)].length;
+  assert.equal(gridLines(main), 11 + 9);
+  assert.equal(gridLines(instrument), 13 + 9);
+  assert.ok(main.includes('2.5 ms') && instrument.includes('3 ms'));
+  assert.ok(main.includes('H 250 µs/div') && instrument.includes('H 250 µs/div'));
+  assert.ok(main.includes('CH1 0.5 V/div') && instrument.includes('CH1 0.5 V/div'));
   const traces = markup => [...markup.matchAll(/<path d="([^"]+)" stroke="#(?:f4d35e|6ecbff)"/g)].map(match => match[1]);
   assert.equal(traces(main).length, 2);
-  assert.deepEqual(traces(main), traces(instrument));
+  // Identical initial voltages at the same left edge of both time windows.
+  for (let i = 0; i < 2; i++) assert.equal(traces(main)[i].split(' ')[0], traces(instrument)[i].split(' ')[0]);
+  const viewWidth = Number(instrument.match(/viewBox="0 0 ([0-9.]+)/)[1]);
+  close(viewWidth, 753.6);
 }
-console.log('Both scope views use unique SVG IDs and identical sine/square/OFF traces.');
+console.log('Scope views verified: 12/10 divisions, common scales and left time, distinct IDs and correct duration.');

@@ -10,7 +10,7 @@
   let editing = null;
   const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
   const rigolScopePanel = window.InstrumentLab.DS1202ZEPanel.create({
-    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze')
+    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze', 12)
   });
   function render() {
     document.documentElement.lang = language;
