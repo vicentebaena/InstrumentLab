@@ -1,7 +1,13 @@
 'use strict';
 // Rigol DG822-specific presentation. Experiment state stays in the main application.
 window.InstrumentLab.DG822Panel = {
-  create({ getGenerator, t, format }) {
+  // The DG822 groups fractional digits in threes, independently of app language.
+  formatNumber(value, decimals) {
+    const [integer, fraction] = Number(value).toFixed(decimals).split('.');
+    return fraction ? `${integer}.${fraction.match(/.{1,3}/g).join(',')}` : integer;
+  },
+  create({ getGenerator }) {
+    const format = window.InstrumentLab.DG822Panel.formatNumber;
     const $ = id => document.getElementById(id);
     const dialog = $('dg822Dialog');
     const handle = $('dg822WindowBar');
@@ -9,11 +15,10 @@ window.InstrumentLab.DG822Panel = {
     let drag = null;
     function render() {
       const generator = getGenerator();
-      $('dg822Frequency').textContent = generator.frequency >= 1000
-        ? `${format(generator.frequency / 1000)} kHz` : `${format(generator.frequency)} Hz`;
-      $('dg822Amplitude').textContent = `${format(generator.amplitudeVpp)} Vpp`;
-      $('dg822Offset').textContent = `${format(generator.offset)} Vdc`;
-      $('dg822Waveform').textContent = t(generator.waveform);
+      $('dg822Frequency').textContent = `${format(generator.frequency / 1000, 9)} kHz`;
+      $('dg822Amplitude').textContent = `${format(generator.amplitudeVpp, 4)} Vpp`;
+      $('dg822Offset').textContent = `${format(generator.offset, 4)} Vdc`;
+      $('dg822Phase').textContent = `${format(0, 3)}º`;
     }
     function close() { dialog.close(); }
     $('dg822Close').addEventListener('click', close);

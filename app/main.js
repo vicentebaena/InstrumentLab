@@ -8,7 +8,7 @@
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
-  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, t, format: number });
+  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator });
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;

@@ -28,9 +28,9 @@ The RC response is the exact periodic steady state of an ideal RC circuit driven
 
 La respuesta corresponde al régimen periódico permanente de un RC ideal ante una onda cuadrada simétrica. No representa el arranque. No se modelan la impedancia del generador, la carga de las sondas, el muestreo, el ancho de banda del equipo ni las imperfecciones del disparo.
 
-Click the generator image to open the Rigol DG822 window. The movable window uses the high-resolution DG822 cutout as a faceplate, with a live display of the current frequency, amplitude, DC offset and waveform. Closing it preserves settings. Parameter controls and further circuits are planned.
+Click the generator image to open the Rigol DG822 window. The movable window uses the high-resolution DG822 cutout as a faceplate, with a live display of the current frequency, amplitude and DC offset; Phase stays at zero. The instrument screen is always in English and uses DG822 fractional-digit grouping (e.g. `1.000,000,000 kHz`, `2.000,0 Vpp`, `0.000,0 Vdc`, `0.000º`), independent of the application language. Closing it preserves settings. Parameter controls and further circuits are planned.
 
-Al pulsar la imagen del generador se abre la ventana específica del Rigol DG822. Se puede mover y cerrar; su pantalla muestra la programación actual (frecuencia, amplitud, offset y forma de onda) sobre la carátula de alta resolución. Los mandos de programación y nuevos circuitos están previstos para después.
+Al pulsar la imagen del generador se abre la ventana específica del Rigol DG822. Se puede mover y cerrar; su pantalla permanece en inglés y muestra la frecuencia, la amplitud en Vpp, el offset en Vdc y Phase fijo a cero, con el formato numérico del DG822 sobre la carátula de alta resolución. Los mandos de programación y nuevos circuitos están previstos para después.
 
 ## Development / Desarrollo
 
