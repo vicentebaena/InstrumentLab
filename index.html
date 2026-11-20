@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261120-12">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-12">
-  <link rel="stylesheet" href="app/ds1202ze-panel.css?v=20261120-12">
-  <script defer src="assets/instruments/images.js"></script>
-  <script defer src="app/circuits.js?v=20261120-12"></script>
-  <script defer src="app/translations.js?v=20261120-12"></script>
-  <script defer src="app/oscilloscope.js?v=20261120-12"></script>
-  <script defer src="app/instrument-window.js?v=20261120-12"></script>
-  <script defer src="app/dg822-panel.js?v=20261120-12"></script>
-  <script defer src="app/ds1202ze-panel.js?v=20261120-12"></script>
-  <script defer src="app/main.js?v=20261120-12"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261120-13">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-13">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261120-13">
+  <script defer src="assets/instruments/images.js?v=20261120-13"></script>
+  <script defer src="app/circuits.js?v=20261120-13"></script>
+  <script defer src="app/translations.js?v=20261120-13"></script>
+  <script defer src="app/oscilloscope.js?v=20261120-13"></script>
+  <script defer src="app/instrument-window.js?v=20261120-13"></script>
+  <script defer src="app/dg822-panel.js?v=20261120-13"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261120-13"></script>
+  <script defer src="app/main.js?v=20261120-13"></script>
 </head>
 <body>
 <main class="workspace">
@@ -91,24 +91,24 @@
     <div class="dialog-actions"><button id="dg822EditCancel" type="button">Cancel</button><button type="submit" class="primary">Apply</button></div>
   </form>
 </dialog>
-<dialog id="ds1202zeDialog" class="ds1202ze-dialog" aria-labelledby="ds1202zeTitle">
-  <header id="ds1202zeWindowBar" class="ds1202ze-window-bar">
-    <h2 id="ds1202zeTitle">Rigol DS1202Z-E <span data-i18n="scope"></span></h2>
-    <button id="ds1202zeClose" type="button" data-i18n="closeInstrument"></button>
+<dialog id="ds1102eDialog" class="ds1102e-dialog" aria-labelledby="ds1102eTitle">
+  <header id="ds1102eWindowBar" class="ds1102e-window-bar">
+    <h2 id="ds1102eTitle">Rigol DS1102E <span data-i18n="scope"></span></h2>
+    <button id="ds1102eClose" type="button" data-i18n="closeInstrument"></button>
   </header>
-  <div class="ds1202ze-body">
-    <div class="ds1202ze-front">
-      <img id="ds1202zeFaceplate" width="1752" height="897" alt="" aria-hidden="true" draggable="false">
-      <button id="ds1202zeCH1" class="ds1202ze-channel-key ds1202ze-channel-one" type="button" aria-pressed="true">CH1</button>
-      <button id="ds1202zeCH2" class="ds1202ze-channel-key ds1202ze-channel-two" type="button" aria-pressed="true">CH2</button>
-      <section class="ds1202ze-screen">
-        <div id="ds1202zeDisplay" class="ds1202ze-plot"></div>
-        <aside id="ds1202zeChannelMenu" class="ds1202ze-channel-menu" hidden aria-labelledby="ds1202zeMenuTitle">
-          <h3 id="ds1202zeMenuTitle"></h3>
+  <div class="ds1102e-body">
+    <div class="ds1102e-front">
+      <img id="ds1102eFaceplate" width="1774" height="887" alt="" aria-hidden="true" draggable="false">
+      <button id="ds1102eCH1" class="ds1102e-channel-key ds1102e-channel-one" type="button" aria-pressed="true">CH1</button>
+      <button id="ds1102eCH2" class="ds1102e-channel-key ds1102e-channel-two" type="button" aria-pressed="true">CH2</button>
+      <section class="ds1102e-screen">
+        <div id="ds1102eDisplay" class="ds1102e-plot"></div>
+        <aside id="ds1102eChannelMenu" class="ds1102e-channel-menu" hidden aria-labelledby="ds1102eMenuTitle">
+          <h3 id="ds1102eMenuTitle"></h3>
           <dl>
-            <div class="ds1202ze-menu-row"><dt data-i18n="scopeCoupling"></dt><dd>DC</dd></div>
-            <div class="ds1202ze-menu-row"><dt data-i18n="scopeBand"></dt><dd data-i18n="scopeBandOff"></dd></div>
-            <div class="ds1202ze-menu-row"><dt data-i18n="scopeProbe"></dt><dd>1X</dd></div>
+            <div class="ds1102e-menu-row"><dt data-i18n="scopeCoupling"></dt><dd>DC</dd></div>
+            <div class="ds1102e-menu-row"><dt data-i18n="scopeBand"></dt><dd data-i18n="scopeBandOff"></dd></div>
+            <div class="ds1102e-menu-row"><dt data-i18n="scopeProbe"></dt><dd>1X</dd></div>
           </dl>
         </aside>
       </section>

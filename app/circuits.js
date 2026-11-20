@@ -69,7 +69,7 @@ window.InstrumentLab = {
             <image href="${window.InstrumentLabImages.generator}" x="35" y="238" width="220" height="110" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="31" y="234" width="228" height="118" rx="6" fill="transparent" stroke="transparent"/>
           </g>
-          <g class="instrument-target" data-instrument="ds1202ze" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openRigolScope')}">
+          <g class="instrument-target" data-instrument="ds1102e" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openRigolScope')}">
             <image href="${window.InstrumentLabImages.scope}" x="410" y="15" width="230" height="120" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="406" y="11" width="238" height="128" rx="6" fill="transparent" stroke="transparent"/>
           </g>

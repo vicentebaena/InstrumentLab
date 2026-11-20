@@ -48,7 +48,7 @@ assert.deepEqual(traces(render(hide1)), ['#6ecbff']);
 let hide2 = scope.pressChannel(scope.pressChannel(original, 2), 2);
 assert.deepEqual(traces(render(hide2)), ['#f4d35e']);
 assert.deepEqual(traces(render(state)), []);
-const instrument = render(hide1, 'ds1202ze', 12);
+const instrument = render(hide1, 'ds1102e', 12);
 assert.deepEqual(traces(instrument), ['#6ecbff']);
 assert.ok(instrument.includes('Time 250us') && !instrument.includes('H 250'));
 assert.ok(!/NaN|undefined|Infinity|Cycles unresolved/.test(render(state, 'scope', 10, 25e6)));

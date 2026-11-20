@@ -2,7 +2,7 @@
 window.InstrumentLab.translations = {
   en: {
     scopeCoupling: 'Coupling', scopeBand: '20M bandwidth', scopeBandOff: 'Disabled', scopeProbe: 'Probe',
-    openRigolScope: 'Open Rigol DS1202Z-E',
+    openRigolScope: 'Open Rigol DS1102E',
     usedChannel: 'Channel used', outputState: 'CH1 output', outputOn: 'Enabled', outputOff: 'Disabled',
     sine: 'Sine wave', observeSine: 'The RC filter attenuates and delays the sine-wave output. R, C and frequency determine its gain and phase shift.',
     scopeDense: 'Cycles unresolved at this timebase',
@@ -14,7 +14,7 @@ window.InstrumentLab.translations = {
   },
   es: {
     scopeCoupling: 'Acoplamiento', scopeBand: 'Banda 20M', scopeBandOff: 'Desactivado', scopeProbe: 'Sonda',
-    openRigolScope: 'Abrir Rigol DS1202Z-E',
+    openRigolScope: 'Abrir Rigol DS1102E',
     usedChannel: 'Canal utilizado', outputState: 'Salida CH1', outputOn: 'Activada', outputOff: 'Desactivada',
     sine: 'Onda senoidal', observeSine: 'El filtro RC atenúa y retrasa la senoide de salida. R, C y la frecuencia determinan la ganancia y el desfase.',
     scopeDense: 'Ciclos no resueltos en esta escala',

@@ -9,8 +9,8 @@
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
   const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
-  const rigolScopePanel = window.InstrumentLab.DS1202ZEPanel.create({
-    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze', 12, state.oscilloscope),
+  const rigolScopePanel = window.InstrumentLab.DS1102EPanel.create({
+    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1102e', 12, state.oscilloscope),
     getSettings: () => state.oscilloscope,
     onChannel: channel => { state.oscilloscope = window.InstrumentLab.oscilloscope.pressChannel(state.oscilloscope, channel); render(); }
   });
@@ -52,7 +52,7 @@
   }
   $('diagram').addEventListener('click', event => {
     if (event.target.closest('[data-instrument="dg822"]')) { dg822Panel.open(); return; }
-    if (event.target.closest('[data-instrument="ds1202ze"]')) { rigolScopePanel.open(); return; }
+    if (event.target.closest('[data-instrument="ds1102e"]')) { rigolScopePanel.open(); return; }
     const target = event.target.closest('[data-parameter]');
     if (target) openEditor(target.dataset.parameter);
   });
@@ -60,7 +60,7 @@
     if (event.target.closest('[data-instrument="dg822"]') && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault(); dg822Panel.open(); return;
     }
-    if (event.target.closest('[data-instrument="ds1202ze"]') && (event.key === 'Enter' || event.key === ' ')) {
+    if (event.target.closest('[data-instrument="ds1102e"]') && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault(); rigolScopePanel.open(); return;
     }
     const target = event.target.closest('[data-parameter]');

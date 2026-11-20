@@ -21,9 +21,9 @@
     render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null) {
       const settings = scopeState || this.createState();
       const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
-      const left = 36, top = 44, width = 568 * horizontalDivisions / 10, height = 320;
+      const instrumentFooter = idPrefix === 'ds1102e';
+      const left = 36, top = 44, width = (instrumentFooter ? 40 : 56.8) * horizontalDivisions, height = 320;
       const viewWidth = width + 2 * left;
-      const instrumentFooter = idPrefix === 'ds1202ze';
       const timeLabel = instrumentFooter ? `Time ${format(defaults.timePerDivision * 1e6)}us` : `H ${format(defaults.timePerDivision * 1e6)} µs/div`;
       const duration = horizontalDivisions * defaults.timePerDivision;
       const period = 1 / generator.frequency;
@@ -71,7 +71,7 @@
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
         <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="${show1 ? '#f4d35e' : '#526066'}" text-decoration="${show1 && settings.selectedChannel === 1 ? 'underline' : 'none'}">CH1 ${format(defaults.voltsPerDivision)} V/div</text>
           ${instrumentFooter
-            ? `<text x="248" y="400" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
+            ? `<text x="${left + width * 0.31}" y="400" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
             : `<text x="${left + width}" y="400" text-anchor="end" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text>`}
         </g>
       </svg>`;

@@ -89,7 +89,7 @@ console.log('Output1 gating, independent Output2, DC removal and disabled high-f
 // Instrument and main views share scales/left time but use 12 and 10 divisions.
 for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, waveform: 'sine' }, { ...app.generatorDefaults, output1Enabled: false }]) {
   const main = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String);
-  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1202ze', 12);
+  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1102e', 12);
   const ids = markup => [...markup.matchAll(/id="([^"]+)"/g)].map(match => match[1]);
   assert.ok(ids(main).every(id => !ids(instrument).includes(id)));
   const gridLines = markup => [...markup.match(/stroke="#203038" stroke-width="1">(.*?)<\/g>/s)[1].matchAll(/<path /g)].length;
@@ -103,6 +103,6 @@ for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, wave
   // Identical initial voltages at the same left edge of both time windows.
   for (let i = 0; i < 2; i++) assert.equal(traces(main)[i].split(' ')[0], traces(instrument)[i].split(' ')[0]);
   const viewWidth = Number(instrument.match(/viewBox="0 0 ([0-9.]+)/)[1]);
-  close(viewWidth, 753.6);
+  close(viewWidth, 552);
 }
 console.log('Scope views verified: 12/10 divisions, common scales and left time, distinct IDs and correct duration.');

@@ -38,7 +38,7 @@ Al pulsar la imagen del generador se abre la ventana específica del Rigol DG822
 - `app/oscilloscope.js`: signal display with fixed scales.
 - `app/main.js`: interface and component editing.
 - `app/dg822-panel.js` and `app/dg822-panel.css`: Rigol DG822-specific window and display.
-- `app/ds1202ze-panel.js` and `app/ds1202ze-panel.css`: Rigol DS1202Z-E faceplate and synchronised scope screen.
+- `app/ds1102e-panel.js` and `app/ds1102e-panel.css`: Rigol DS1102E faceplate and synchronised scope screen.
 - `app/instrument-window.js`: shared window opening, closing, dragging and foreground order.
 - `app/translations.js`: English and Spanish text.
 - `assets/instruments/images.js`: background-removed instrument thumbnails embedded for offline use. These are static illustrations, not live equipment displays.
@@ -78,15 +78,15 @@ Output1 and Output2 on the DG822 faceplate toggle independently and both illumin
 
 Output1 y Output2 se activan de forma independiente. Solo CH1 está conectado al RC. Al desactivar Output1 se retiran la señal y el offset; el modelo en régimen permanente muestra 0 V, sin simular el transitorio de descarga. Los parámetros programados se conservan. El resumen indica Canal utilizado: CH1 y el estado de su salida.
 
-## Rigol DS1202Z-E window / Ventana del osciloscopio
+## Rigol DS1102E window / Ventana del osciloscopio
 
-Click the oscilloscope image in the schematic to open its Rigol DS1202Z-E faceplate. The screen uses the same model, settings and rendering as the main-page scope. Both views update together for component changes, generator settings, waveform, output enable and reset. Their SVG IDs are distinct so clipping and accessibility labels work when both displays are present.
+Click the oscilloscope image in the schematic to open its Rigol DS1102E faceplate. The screen uses the same model and settings as the main-page scope, with geometry adapted to the DS1102E LCD. Both views update together for component changes, generator settings, waveform, output enable and reset. Their SVG IDs are distinct so clipping and accessibility labels work when both displays are present.
 
 Generator and oscilloscope windows can stay open together. Drag a title bar to move either window; click a window to bring it to the front. Close or Escape closes only that instrument window and preserves the experiment. The CH1/CH2 visibility and menu-selection keys are implemented; the other scope controls remain deferred.
 
-Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1202Z-E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.
+Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1102E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.
 
-The DS1202Z-E screen has 12 horizontal divisions; the main-page preview has 10. Both retain the same 250 µs/div scale and shared signal model. At the default 1 kHz, the instrument shows 3 ms / 3 periods and the main page 2.5 ms / 2.5 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
+The DS1102E screen has 12 horizontal divisions; the main-page preview has 10. Both retain the same 250 µs/div scale and shared signal model. At the default 1 kHz, the instrument shows 3 ms / 3 periods and the main page 2.5 ms / 2.5 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
 
 La carátula del Rigol tiene 12 divisiones horizontales; la vista principal conserva 10. Con 250 µs/div, muestran 3 ms y 2,5 ms respectivamente. Comparten la señal y la escala por división, con distinta anchura temporal total.
 
@@ -99,3 +99,7 @@ The menu is display-only for now, per the user's instruction: Coupling DC, 20M b
 CH1/CH2 controlan la visibilidad de sus señales y la selección del canal. Su iluminación indica que la traza está visible. La primera pulsación muestra el menú y selecciona el canal; una segunda pulsación sobre el canal cuyo menú está abierto oculta la señal y el menú. El menú es solo visual: Acoplamiento DC, Banda 20M Desactivado, Sonda 1X. No modifica esos ajustes todavía.
 
 Channel-state checks: `node tests/oscilloscope-channels.test.cjs`.
+
+The active oscilloscope model is Rigol DS1102E, using the corrected user-provided photograph. The earlier DS1202Z-E identification was incorrect and its faceplate has been replaced. The DS1102E uses square grid cells, twelve horizontal divisions, eight vertical divisions and the existing Time/channel scale row. Its physical CH1/CH2 keys and channel-menu rows are positioned for this faceplate. Menu options remain display-only.
+
+El modelo activo es Rigol DS1102E. Se ha sustituido la carátula anterior y se han adaptado la pantalla, los botones CH1/CH2 y las filas del menú. Se conserva el comportamiento de canales y las doce divisiones horizontales; el menú sigue siendo solo visual.
