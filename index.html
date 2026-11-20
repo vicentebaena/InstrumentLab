@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261120-3">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-3">
+  <link rel="stylesheet" href="app/styles.css?v=20261120-4">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-4">
   <script defer src="assets/instruments/images.js"></script>
-  <script defer src="app/circuits.js?v=20261120-3"></script>
-  <script defer src="app/translations.js?v=20261120-3"></script>
-  <script defer src="app/oscilloscope.js?v=20261120-3"></script>
-  <script defer src="app/dg822-panel.js?v=20261120-3"></script>
-  <script defer src="app/main.js?v=20261120-3"></script>
+  <script defer src="app/circuits.js?v=20261120-4"></script>
+  <script defer src="app/translations.js?v=20261120-4"></script>
+  <script defer src="app/oscilloscope.js?v=20261120-4"></script>
+  <script defer src="app/dg822-panel.js?v=20261120-4"></script>
+  <script defer src="app/main.js?v=20261120-4"></script>
 </head>
 <body>
 <main class="workspace">
@@ -34,7 +34,7 @@
       <section class="scope-display" id="scopeDisplay"></section>
       <section class="panel generator" aria-labelledby="generatorTitle">
         <p class="eyebrow" data-i18n="generator"></p><h2 id="generatorTitle" data-i18n="settings"></h2>
-        <dl><div><dt data-i18n="waveform"></dt><dd data-i18n="square"></dd></div><div><dt data-i18n="frequency"></dt><dd>1 kHz</dd></div><div><dt data-i18n="amplitude"></dt><dd id="generatorAmplitude">2 Vpp</dd></div><div><dt data-i18n="offset"></dt><dd id="generatorOffset">0 V</dd></div></dl>
+        <dl><div><dt data-i18n="waveform"></dt><dd data-i18n="square"></dd></div><div><dt data-i18n="frequency"></dt><dd id="generatorFrequency">1 kHz</dd></div><div><dt data-i18n="amplitude"></dt><dd id="generatorAmplitude">2 Vpp</dd></div><div><dt data-i18n="offset"></dt><dd id="generatorOffset">0 V</dd></div></dl>
       </section>
     </aside>
   </div>
@@ -61,9 +61,9 @@
         <div class="dg822-lcd-header"><strong>RIGOL</strong><span>Continuous</span></div>
         <div class="dg822-lcd-content">
           <dl class="dg822-readings">
-            <div><dt>Freq</dt><dd id="dg822Frequency"></dd></div>
-            <div><dt>Ampl</dt><dd id="dg822Amplitude"></dd></div>
-            <div><dt>Offset</dt><dd id="dg822Offset"></dd></div>
+            <div><dt>Freq</dt><dd><button id="dg822Frequency" type="button" class="dg822-reading-button" aria-label="Edit Freq" aria-haspopup="dialog"></button></dd></div>
+            <div><dt>Ampl</dt><dd><button id="dg822Amplitude" type="button" class="dg822-reading-button" aria-label="Edit Ampl" aria-haspopup="dialog"></button></dd></div>
+            <div><dt>Offset</dt><dd><button id="dg822Offset" type="button" class="dg822-reading-button" aria-label="Edit Offset" aria-haspopup="dialog"></button></dd></div>
             <div><dt>Phase</dt><dd id="dg822Phase"></dd></div>
           </dl>
           <div class="dg822-preview" aria-hidden="true"><svg viewBox="0 0 120 100"><path d="M0 50H120" stroke="#173c70" fill="none"/><path d="M2 76H20V24H58V76H96V24H118" fill="none" stroke="#4388ff" stroke-width="3"/></svg></div>
@@ -72,6 +72,17 @@
       </section>
     </div>
   </div>
+</dialog>
+<dialog id="dg822EditDialog" class="dg822-editor" lang="en" aria-labelledby="dg822EditTitle">
+  <form id="dg822EditForm">
+    <h2 id="dg822EditTitle"></h2>
+    <div class="dg822-edit-fields">
+      <label class="component-field" for="dg822EditValue"><span>Value</span><span class="input-unit"><input id="dg822EditValue" type="number" step="any" required></span></label>
+      <label class="component-field" for="dg822EditUnit"><span>Unit</span><select id="dg822EditUnit"></select></label>
+    </div>
+    <p id="dg822RmsNote" class="subtle" hidden>Vrms refers to the AC component of the square wave; the DC offset is separate.</p>
+    <div class="dialog-actions"><button id="dg822EditCancel" type="button">Cancel</button><button type="submit" class="primary">Apply</button></div>
+  </form>
 </dialog>
 </body>
 </html>

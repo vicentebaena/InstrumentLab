@@ -8,12 +8,14 @@
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
-  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator });
+  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;
-    $('generatorAmplitude').textContent = `${number(state.generator.amplitudeVpp)} Vpp`;
-    $('generatorOffset').textContent = `${number(state.generator.offset)} V`;
+    for (const [parameter, id] of [['frequency', 'generatorFrequency'], ['amplitude', 'generatorAmplitude'], ['offset', 'generatorOffset']]) {
+      const reading = window.InstrumentLab.DG822Panel.reading(state.generator, parameter);
+      $(id).textContent = `${number(reading.value)} ${reading.unit}`;
+    }
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     dg822Panel.render();
     const circuit = circuits[state.circuitId];

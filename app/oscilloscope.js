@@ -8,22 +8,33 @@
       const left = 36, top = 44, width = 568, height = 320;
       const duration = 10 * defaults.timePerDivision;
       const period = 1 / generator.frequency;
+      const dense = duration * generator.frequency > width / 4;
       const start = -period / 4;
       const times = new Set(Array.from({ length: 1201 }, (_, i) => start + duration * i / 1200));
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
       const tau = circuit.characteristics(parameters).tau;
-      for (let k = Math.floor(start / half); k <= Math.ceil((start + duration) / half); k++) {
+      for (let k = Math.floor(start / half); !dense && k <= Math.ceil((start + duration) / half); k++) {
         const edge = k * half;
         for (const dt of [-period * 1e-10, 0, period * 1e-10, ...[0.02, 0.1, 0.25, 0.5, 1, 2, 4, 8].map(v => v * tau)]) {
           const time = edge + dt;
           if (time >= start && time <= start + duration) times.add(time);
         }
       }
-      const samples = [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
+      const samples = dense ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
       const x = time => left + (time - start) / duration * width;
       const y = voltage => top + height / 2 - voltage / defaults.voltsPerDivision * height / 8;
       const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key]).toFixed(3)}`).join(' ');
+      // At unresolved frequencies show the actual range, not a false aliased trace.
+      function band(peak, color) {
+        const upper = Math.max(top, Math.min(top + height, y(generator.offset + peak)));
+        const lower = Math.max(top, Math.min(top + height, y(generator.offset - peak)));
+        if (lower === upper && (generator.offset + peak < -2 || generator.offset - peak > 2)) return '';
+        return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
+      }
+      const traces = dense
+        ? band(generator.amplitudeVpp / 2, '#f4d35e') + band(generator.amplitudeVpp / 2 * Math.tanh(period / (4 * tau)), '#6ecbff')
+        : `<path d="${trace('input')}" stroke="#f4d35e"/><path d="${trace('output')}" stroke="#6ecbff"/>`;
       const grid = [];
       for (let i = 0; i <= 10; i++) grid.push(`<path d="M${left + width * i / 10} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -35,9 +46,10 @@
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${left + width / 2} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
         <g fill="none" clip-path="url(#scopeTraceClip)" stroke-width="2.4" stroke-linejoin="round">
-          <path d="${trace('input')}" stroke="#f4d35e"/><path d="${trace('output')}" stroke="#6ecbff"/>
+          ${traces}
         </g>
         <path d="M24 198l10 6-10 6z" fill="#f4d35e"/>
+        ${dense ? `<text x="320" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
         <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text><text x="604" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text></g>
       </svg>`;
     }
