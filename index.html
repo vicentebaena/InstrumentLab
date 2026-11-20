@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261120-10">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-10">
-  <link rel="stylesheet" href="app/ds1202ze-panel.css?v=20261120-10">
+  <link rel="stylesheet" href="app/styles.css?v=20261120-11">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-11">
+  <link rel="stylesheet" href="app/ds1202ze-panel.css?v=20261120-11">
   <script defer src="assets/instruments/images.js"></script>
-  <script defer src="app/circuits.js?v=20261120-10"></script>
-  <script defer src="app/translations.js?v=20261120-10"></script>
-  <script defer src="app/oscilloscope.js?v=20261120-10"></script>
-  <script defer src="app/instrument-window.js?v=20261120-10"></script>
-  <script defer src="app/dg822-panel.js?v=20261120-10"></script>
-  <script defer src="app/ds1202ze-panel.js?v=20261120-10"></script>
-  <script defer src="app/main.js?v=20261120-10"></script>
+  <script defer src="app/circuits.js?v=20261120-11"></script>
+  <script defer src="app/translations.js?v=20261120-11"></script>
+  <script defer src="app/oscilloscope.js?v=20261120-11"></script>
+  <script defer src="app/instrument-window.js?v=20261120-11"></script>
+  <script defer src="app/dg822-panel.js?v=20261120-11"></script>
+  <script defer src="app/ds1202ze-panel.js?v=20261120-11"></script>
+  <script defer src="app/main.js?v=20261120-11"></script>
 </head>
 <body>
 <main class="workspace">
@@ -99,7 +99,19 @@
   <div class="ds1202ze-body">
     <div class="ds1202ze-front">
       <img id="ds1202zeFaceplate" width="1752" height="897" alt="" aria-hidden="true" draggable="false">
-      <section id="ds1202zeDisplay" class="ds1202ze-screen"></section>
+      <button id="ds1202zeCH1" class="ds1202ze-channel-key ds1202ze-channel-one" type="button" aria-pressed="true">CH1</button>
+      <button id="ds1202zeCH2" class="ds1202ze-channel-key ds1202ze-channel-two" type="button" aria-pressed="true">CH2</button>
+      <section class="ds1202ze-screen">
+        <div id="ds1202zeDisplay" class="ds1202ze-plot"></div>
+        <aside id="ds1202zeChannelMenu" class="ds1202ze-channel-menu" hidden aria-labelledby="ds1202zeMenuTitle">
+          <h3 id="ds1202zeMenuTitle"></h3>
+          <dl>
+            <div class="ds1202ze-menu-row"><dt data-i18n="scopeCoupling"></dt><dd>DC</dd></div>
+            <div class="ds1202ze-menu-row"><dt data-i18n="scopeBand"></dt><dd data-i18n="scopeBandOff"></dd></div>
+            <div class="ds1202ze-menu-row"><dt data-i18n="scopeProbe"></dt><dd>1X</dd></div>
+          </dl>
+        </aside>
+      </section>
     </div>
   </div>
 </dialog>

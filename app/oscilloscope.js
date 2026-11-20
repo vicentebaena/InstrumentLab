@@ -4,20 +4,36 @@
   const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
-    render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10) {
+    createState() {
+      return {
+        selectedChannel: 1, menuChannel: null,
+        channels: { 1: { visible: true, coupling: 'DC', probe: 1 }, 2: { visible: true, coupling: 'DC', probe: 1 } }
+      };
+    },
+    pressChannel(state, channel) {
+      if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
+      const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
+      return {
+        ...state, selectedChannel: channel, menuChannel: hide ? null : channel,
+        channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
+      };
+    },
+    render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null) {
+      const settings = scopeState || this.createState();
+      const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
       const left = 36, top = 44, width = 568 * horizontalDivisions / 10, height = 320;
       const viewWidth = width + 2 * left;
       const instrumentFooter = idPrefix === 'ds1202ze';
-      const timeLabel = `H ${format(defaults.timePerDivision * 1e6)} µs/div`;
+      const timeLabel = instrumentFooter ? `Time ${format(defaults.timePerDivision * 1e6)}us` : `H ${format(defaults.timePerDivision * 1e6)} µs/div`;
       const duration = horizontalDivisions * defaults.timePerDivision;
       const period = 1 / generator.frequency;
-      const dense = generator.output1Enabled !== false && duration * generator.frequency > width / 4;
+      const dense = (show1 || show2) && generator.output1Enabled !== false && duration * generator.frequency > width / 4;
       const start = -period / 4;
       const times = new Set(Array.from({ length: 1201 }, (_, i) => start + duration * i / 1200));
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
       const tau = circuit.characteristics(parameters).tau;
-      for (let k = Math.floor(start / half); !dense && generator.output1Enabled !== false && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
+      for (let k = Math.floor(start / half); !dense && (show1 || show2) && generator.output1Enabled !== false && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
         const edge = k * half;
         for (const dt of [-period * 1e-10, 0, period * 1e-10, ...[0.02, 0.1, 0.25, 0.5, 1, 2, 4, 8].map(v => v * tau)]) {
           const time = edge + dt;
@@ -36,8 +52,8 @@
         return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
       }
       const traces = dense
-        ? band(generator.amplitudeVpp / 2, '#f4d35e') + band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff')
-        : `<path d="${trace('input')}" stroke="#f4d35e"/><path d="${trace('output')}" stroke="#6ecbff"/>`;
+        ? (show1 ? band(generator.amplitudeVpp / 2, '#f4d35e') : '') + (show2 ? band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff') : '')
+        : (show1 ? `<path d="${trace('input')}" stroke="#f4d35e"/>` : '') + (show2 ? `<path d="${trace('output')}" stroke="#6ecbff"/>` : '');
       const grid = [];
       for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -51,12 +67,12 @@
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}
         </g>
-        <path d="M24 198l10 6-10 6z" fill="#f4d35e"/>
+        ${show1 || show2 ? `<path d="M24 198l10 6-10 6z" fill="${show1 ? '#f4d35e' : '#6ecbff'}"/>` : ''}
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
-        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text>
+        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="${show1 ? '#f4d35e' : '#526066'}" text-decoration="${show1 && settings.selectedChannel === 1 ? 'underline' : 'none'}">CH1 ${format(defaults.voltsPerDivision)} V/div</text>
           ${instrumentFooter
-            ? `<text x="248" y="400" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
-            : `<text x="${left + width}" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text>`}
+            ? `<text x="248" y="400" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
+            : `<text x="${left + width}" y="400" text-anchor="end" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text>`}
         </g>
       </svg>`;
     }

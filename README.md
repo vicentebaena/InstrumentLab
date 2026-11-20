@@ -82,10 +82,20 @@ Output1 y Output2 se activan de forma independiente. Solo CH1 está conectado al
 
 Click the oscilloscope image in the schematic to open its Rigol DS1202Z-E faceplate. The screen uses the same model, settings and rendering as the main-page scope. Both views update together for component changes, generator settings, waveform, output enable and reset. Their SVG IDs are distinct so clipping and accessibility labels work when both displays are present.
 
-Generator and oscilloscope windows can stay open together. Drag a title bar to move either window; click a window to bring it to the front. Close or Escape closes only that instrument window and preserves the experiment. Scope front-panel controls have not been implemented yet.
+Generator and oscilloscope windows can stay open together. Drag a title bar to move either window; click a window to bring it to the front. Close or Escape closes only that instrument window and preserves the experiment. The CH1/CH2 visibility and menu-selection keys are implemented; the other scope controls remain deferred.
 
 Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1202Z-E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.
 
 The DS1202Z-E screen has 12 horizontal divisions; the main-page preview has 10. Both retain the same 250 µs/div scale and shared signal model. At the default 1 kHz, the instrument shows 3 ms / 3 periods and the main page 2.5 ms / 2.5 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
 
 La carátula del Rigol tiene 12 divisiones horizontales; la vista principal conserva 10. Con 250 µs/div, muestran 3 ms y 2,5 ms respectivamente. Comparten la señal y la escala por división, con distinta anchura temporal total.
+
+## Scope channels / Canales del osciloscopio
+
+Both scope channels start visible, with illuminated CH1 (yellow) / CH2 (blue) keys. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The selected channel is retained for future vertical-scale controls; no scale knob is implemented yet.
+
+The menu is display-only for now, per the user's instruction: Coupling DC, 20M bandwidth Disabled, Probe 1X, with rows aligned to the first three right-side softkeys. AC/DC and probe attenuation are not interactive. The instrument's lower time readout is `Time 250us` by default. Restore defaults returns both channels to visible and closes the channel menu.
+
+CH1/CH2 controlan la visibilidad de sus señales y la selección del canal. Su iluminación indica que la traza está visible. La primera pulsación muestra el menú y selecciona el canal; una segunda pulsación sobre el canal cuyo menú está abierto oculta la señal y el menú. El menú es solo visual: Acoplamiento DC, Banda 20M Desactivado, Sonda 1X. No modifica esos ajustes todavía.
+
+Channel-state checks: `node tests/oscilloscope-channels.test.cjs`.

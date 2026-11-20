@@ -4,13 +4,15 @@
   const $ = id => document.getElementById(id);
   let language = 'en';
   try { language = localStorage.getItem('instrumentlab-language') === 'es' ? 'es' : 'en'; } catch {}
-  const state = { circuitId: 'rc', parameters: { ...circuits.rc.defaults }, generator: { ...generatorDefaults } };
+  const state = { circuitId: 'rc', parameters: { ...circuits.rc.defaults }, generator: { ...generatorDefaults }, oscilloscope: window.InstrumentLab.oscilloscope.createState() };
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
   const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
   const rigolScopePanel = window.InstrumentLab.DS1202ZEPanel.create({
-    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze', 12)
+    getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1202ze', 12, state.oscilloscope),
+    getSettings: () => state.oscilloscope,
+    onChannel: channel => { state.oscilloscope = window.InstrumentLab.oscilloscope.pressChannel(state.oscilloscope, channel); render(); }
   });
   function render() {
     document.documentElement.lang = language;
@@ -28,7 +30,7 @@
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));
     $('circuitTitle').textContent = t(circuit.titleKey);
     $('diagram').innerHTML = circuit.diagram({ resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
-    $('scopeDisplay').innerHTML = window.InstrumentLab.oscilloscope.render(circuit, state.parameters, state.generator, t, number);
+    $('scopeDisplay').innerHTML = window.InstrumentLab.oscilloscope.render(circuit, state.parameters, state.generator, t, number, 'scope', 10, state.oscilloscope);
     rigolScopePanel.render();
     const { tau, cutoff } = circuit.characteristics(state.parameters);
     $('tau').textContent = tau < 0.001 ? `${number(tau * 1e6)} µs` : `${number(tau * 1000)} ms`;
@@ -83,6 +85,7 @@
   $('resetCircuit').addEventListener('click', () => {
     state.parameters = { ...circuits[state.circuitId].defaults };
     state.generator = { ...generatorDefaults };
+    state.oscilloscope = window.InstrumentLab.oscilloscope.createState();
     render();
   });
   $('circuit').addEventListener('change', event => {
