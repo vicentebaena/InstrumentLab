@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
   <link rel="stylesheet" href="app/styles.css">
+  <link rel="stylesheet" href="app/dg822-panel.css">
   <script defer src="assets/instruments/images.js"></script>
   <script defer src="app/circuits.js"></script>
   <script defer src="app/translations.js"></script>
   <script defer src="app/oscilloscope.js"></script>
+  <script defer src="app/dg822-panel.js"></script>
   <script defer src="app/main.js"></script>
 </head>
 <body>
@@ -46,6 +48,30 @@
     <label class="component-field" for="componentValue"><span data-i18n="componentValue"></span><span class="input-unit"><input id="componentValue" type="number" step="any" required><span id="componentUnit"></span></span></label>
     <div class="dialog-actions"><button id="cancelComponent" type="button" data-i18n="cancel"></button><button type="submit" class="primary" data-i18n="apply"></button></div>
   </form>
+</dialog>
+<dialog id="dg822Dialog" class="dg822-dialog" aria-labelledby="dg822Title">
+  <header id="dg822WindowBar" class="dg822-window-bar">
+    <h2 id="dg822Title">Rigol DG822 <span data-i18n="generator"></span></h2>
+    <button id="dg822Close" type="button" data-i18n="closeInstrument"></button>
+  </header>
+  <div class="dg822-body">
+    <div class="dg822-front">
+      <img id="dg822Faceplate" width="1983" height="793" alt="" aria-hidden="true" draggable="false">
+      <section class="dg822-screen" aria-label="Rigol DG822 CH1">
+        <div class="dg822-lcd-header"><strong>RIGOL</strong><span data-i18n="continuous"></span></div>
+        <div class="dg822-lcd-content">
+          <dl class="dg822-readings">
+            <div><dt data-i18n="frequency"></dt><dd id="dg822Frequency"></dd></div>
+            <div><dt data-i18n="amplitude"></dt><dd id="dg822Amplitude"></dd></div>
+            <div><dt data-i18n="offset"></dt><dd id="dg822Offset"></dd></div>
+            <div><dt data-i18n="waveform"></dt><dd id="dg822Waveform"></dd></div>
+          </dl>
+          <div class="dg822-preview" aria-hidden="true"><svg viewBox="0 0 120 100"><path d="M0 50H120" stroke="#173c70" fill="none"/><path d="M2 76H20V24H58V76H96V24H118" fill="none" stroke="#4388ff" stroke-width="3"/></svg></div>
+        </div>
+        <div class="dg822-lcd-channel">CH1</div>
+      </section>
+    </div>
+  </div>
 </dialog>
 </body>
 </html>

@@ -56,7 +56,10 @@ window.InstrumentLab = {
             </g>
           </g>
           <g><circle cx="325" cy="205" r="6" fill="#f4d35e"/><circle cx="655" cy="205" r="6" fill="#6ecbff"/></g>
-          <image href="${window.InstrumentLabImages.generator}" x="35" y="238" width="220" height="110" preserveAspectRatio="xMidYMid meet"><title>Rigol DG822</title></image>
+          <g class="instrument-target" data-instrument="dg822" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openDg822')}">
+            <image href="${window.InstrumentLabImages.generator}" x="35" y="238" width="220" height="110" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
+            <rect class="instrument-focus" x="31" y="234" width="228" height="118" rx="6" fill="transparent" stroke="transparent"/>
+          </g>
           <image href="${window.InstrumentLabImages.scope}" x="410" y="15" width="230" height="120" preserveAspectRatio="xMidYMid meet"><title>Rigol DS1202Z-E</title></image>
           <g fill="#eef8f6" text-anchor="middle" font-family="system-ui,sans-serif" font-size="20">
             <text x="450" y="251" class="editable-value" data-parameter="resistance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editResistance')}: ${resistanceLabel}">R = ${resistanceLabel}</text><text x="810" y="304" class="editable-value" data-parameter="capacitance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editCapacitance')}: ${capacitanceLabel}">C = ${capacitanceLabel}</text>

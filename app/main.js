@@ -8,12 +8,14 @@
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
+  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, t, format: number });
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;
     $('generatorAmplitude').textContent = `${number(state.generator.amplitudeVpp)} Vpp`;
     $('generatorOffset').textContent = `${number(state.generator.offset)} V`;
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    dg822Panel.render();
     const circuit = circuits[state.circuitId];
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));
     $('circuitTitle').textContent = t(circuit.titleKey);
@@ -38,10 +40,14 @@
     input.select();
   }
   $('diagram').addEventListener('click', event => {
+    if (event.target.closest('[data-instrument="dg822"]')) { dg822Panel.open(); return; }
     const target = event.target.closest('[data-parameter]');
     if (target) openEditor(target.dataset.parameter);
   });
   $('diagram').addEventListener('keydown', event => {
+    if (event.target.closest('[data-instrument="dg822"]') && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault(); dg822Panel.open(); return;
+    }
     const target = event.target.closest('[data-parameter]');
     if (target && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
