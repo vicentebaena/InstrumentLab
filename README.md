@@ -92,7 +92,7 @@ La carátula del Rigol tiene 12 divisiones horizontales; la vista principal cons
 
 ## Scope channels / Canales del osciloscopio
 
-Both scope channels start visible, with illuminated CH1 (yellow) / CH2 (blue) keys. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The selected channel is retained for future vertical-scale controls; no scale knob is implemented yet.
+Both scope channels start visible, with both CH1/CH2 keys illuminated yellow. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The selected channel is retained for future vertical-scale controls; no scale knob is implemented yet.
 
 The menu is display-only for now, per the user's instruction: Coupling DC, 20M bandwidth Disabled, Probe 1X, with rows aligned to the first three right-side softkeys. AC/DC and probe attenuation are not interactive. The instrument's lower time readout is `Time 250us` by default. Restore defaults returns both channels to visible and closes the channel menu.
 
