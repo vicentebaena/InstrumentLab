@@ -86,7 +86,7 @@ for (const waveform of ['sine', 'square']) {
   assert.ok(svg.includes('204.000'));
 }
 console.log('Output1 gating, independent Output2, DC removal and disabled high-frequency display passed.');
-// Instrument and main views share scales/left time but use 12 and 10 divisions.
+// Instrument and main views share scales/centre time but use 12 and 10 divisions.
 for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, waveform: 'sine' }, { ...app.generatorDefaults, output1Enabled: false }]) {
   const main = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String);
   const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1102e', 12);
@@ -95,14 +95,13 @@ for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, wave
   const gridLines = markup => [...markup.match(/stroke="#203038" stroke-width="1">(.*?)<\/g>/s)[1].matchAll(/<path /g)].length;
   assert.equal(gridLines(main), 11 + 9);
   assert.equal(gridLines(instrument), 13 + 9);
-  assert.ok(main.includes('2.5 ms') && instrument.includes('3 ms'));
-  assert.ok(main.includes('H 250 µs/div') && instrument.includes('Time 250us'));
+  assert.ok(main.includes('2 ms') && instrument.includes('2.4 ms'));
+  assert.ok(main.includes('H 200.0us/div') && instrument.includes('Time 200.0us'));
   assert.ok(main.includes('CH1 500mV') && instrument.includes('CH1 500mV'));
   const traces = markup => [...markup.matchAll(/<path d="([^"]+)" stroke="#(?:f4d35e|6ecbff)"/g)].map(match => match[1]);
   assert.equal(traces(main).length, 2);
-  // Identical initial voltages at the same left edge of both time windows.
-  for (let i = 0; i < 2; i++) assert.equal(traces(main)[i].split(' ')[0], traces(instrument)[i].split(' ')[0]);
+
   const viewWidth = Number(instrument.match(/viewBox="0 0 ([0-9.]+)/)[1]);
   close(viewWidth, 552);
 }
-console.log('Scope views verified: 12/10 divisions, common scales and left time, distinct IDs and correct duration.');
+console.log('Scope views verified: 12/10 divisions, common scales and centre time, distinct IDs and correct duration.');

@@ -1,16 +1,27 @@
 'use strict';
 (() => {
   // Instrument scales never change automatically with the circuit or generator.
-  const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
+  const defaults = { timePerDivision: 200e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
     verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+    horizontalScales: [10e-6, 20e-6, 50e-6, 100e-6, 200e-6, 500e-6, 1e-3, 2e-3, 5e-3, 10e-3],
+    formatTimeScale(value) {
+      const labels = ['10.00us', '20.00us', '50.00us', '100.0us', '200.0us', '500.0us', '1.000ms', '2.000ms', '5.000ms', '10.00ms'];
+      return labels[this.horizontalScales.indexOf(value)];
+    },
+    stepHorizontalScale(state, direction) {
+      const index = this.horizontalScales.indexOf(state.timePerDivision ?? defaults.timePerDivision);
+      const next = Math.max(0, Math.min(this.horizontalScales.length - 1, index + Math.sign(direction)));
+      if (index === next) return state;
+      return { ...state, timePerDivision: this.horizontalScales[next] };
+    },
     formatVerticalScale(value) {
       return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
     },
     createState() {
       return {
-        selectedChannel: 1, menuChannel: null,
+        selectedChannel: 1, menuChannel: null, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision } }
       };
     },
@@ -43,11 +54,14 @@
       const instrumentFooter = idPrefix === 'ds1102e';
       const left = 36, top = 44, width = (instrumentFooter ? 40 : 56.8) * horizontalDivisions, height = 320;
       const viewWidth = width + 2 * left;
-      const timeLabel = instrumentFooter ? `Time ${format(defaults.timePerDivision * 1e6)}us` : `H ${format(defaults.timePerDivision * 1e6)} µs/div`;
-      const duration = horizontalDivisions * defaults.timePerDivision;
+      const timePerDivision = settings.timePerDivision ?? defaults.timePerDivision;
+      const timeScaleLabel = this.formatTimeScale(timePerDivision);
+      const timeLabel = instrumentFooter ? `Time ${timeScaleLabel}` : `H ${timeScaleLabel}/div`;
+      const duration = horizontalDivisions * timePerDivision;
       const period = 1 / generator.frequency;
       const dense = (show1 || show2) && generator.output1Enabled !== false && duration * generator.frequency > width / 4;
-      const start = -period / 4;
+      // Keep the time reference at screen centre while changing the timebase.
+      const start = -duration / 2;
       const times = new Set(Array.from({ length: 1201 }, (_, i) => start + duration * i / 1200));
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
@@ -91,7 +105,7 @@
         <title id="${idPrefix}DisplayTitle">${t('scope')}</title><desc id="${idPrefix}DisplayDescription">${t('scopeDescription')}</desc>
         <defs><clipPath id="${idPrefix}TraceClip"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs>
         <rect width="${viewWidth}" height="420" rx="8" fill="#030709"/>
-        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22">${instrumentFooter ? '' : `<text x="36" y="29">${timeLabel}</text>`}<text x="${left + width}" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
+        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22">${instrumentFooter ? '' : `<text x="36" y="29">${timeLabel}</text>`}<text x="${left + width}" y="29" text-anchor="end">${format(Number((duration * 1000).toPrecision(12)))} ms</text></g>
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${left + width / 2} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">

@@ -39,7 +39,7 @@ for (const resistance of [1, 1e7]) for (const capacitance of [1e-12, 1e-3]) {
 }
 assert.ok(rc.sample(.0002, { ...p, resistance: 10000 }, g).output < sample(.0002).output);
 const scale = app.oscilloscope.defaults.timePerDivision;
-close(scale * 10 / T, 2.5);
+close(scale * 10 / T, 2);
 for (const language of ['en', 'es']) {
   for (const resistance of [1000, 10000]) {
     const svg = app.oscilloscope.render(rc, { ...p, resistance }, g, key => app.translations[language][key], String);

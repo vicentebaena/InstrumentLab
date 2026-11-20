@@ -17,7 +17,7 @@ Abrir `index.html` en un navegador o acceder a la aplicación publicada. El uso 
 - Fixed RC low-pass circuit: generator at the input, CH1 at the input and CH2 across the capacitor. Both probe ground clips connect to the common circuit return.
 - Defaults: R = 1 kΩ, C = 100 nF. Click either value in the schematic to edit it in a modal dialog. Apply updates the diagram, characteristics and waveforms; Cancel/Escape preserves the previous value.
 - Generator: square wave, 1 kHz, 2 Vpp, 0 V DC offset and 50% duty cycle.
-- Scope screen: yellow CH1/input and blue CH2/capacitor, with fixed 250 µs/div and 0.5 V/div (2.5 periods at 1 kHz). Component changes do not rescale the display.
+- Scope screen: yellow CH1/input and blue CH2/capacitor, with adjustable shared timebase and independent vertical scales (defaults 200 µs/div, 0.5 V/div). Component changes do not rescale the display.
 - Restore defaults resets circuit and generator settings while retaining the language.
 
 Circuito RC paso bajo con conexiones fijas. Los valores se editan pulsando R o C en el esquema. La pantalla muestra la entrada en amarillo y la tensión del condensador en azul. Las escalas permanecen fijas al cambiar los componentes.
@@ -86,15 +86,15 @@ Generator and oscilloscope windows can stay open together. Drag a title bar to m
 
 Al pulsar la imagen del osciloscopio se abre su carátula Rigol DS1102E con las mismas señales, escalas y configuración que la pantalla principal. Las dos vistas se actualizan juntas. Las ventanas del generador y del osciloscopio pueden permanecer abiertas y moverse por separado. Los controles de la carátula del osciloscopio se añadirán después.
 
-The DS1102E screen has 12 horizontal divisions; the main-page preview has 10. Both retain the same 250 µs/div scale and shared signal model. At the default 1 kHz, the instrument shows 3 ms / 3 periods and the main page 2.5 ms / 2.5 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
+The DS1102E screen has 12 horizontal divisions; the main-page preview has 10. Both share the same adjustable timebase and signal model, centred on the same time reference. At the default 1 kHz and 200 µs/div, the instrument shows 2.4 ms / 2.4 periods and the main page 2 ms / 2 periods. The instrument SVG is wider to fill the actual faceplate screen without changing the per-division scale.
 
-La carátula del Rigol tiene 12 divisiones horizontales; la vista principal conserva 10. Con 250 µs/div, muestran 3 ms y 2,5 ms respectivamente. Comparten la señal y la escala por división, con distinta anchura temporal total.
+La carátula del Rigol tiene 12 divisiones horizontales; la vista principal conserva 10. Con 200 µs/div, muestran 2,4 ms y 2 ms respectivamente. Comparten la señal y la escala por división, con distinta anchura temporal total.
 
 ## Scope channels / Canales del osciloscopio
 
 Both scope channels start visible, with both CH1/CH2 keys illuminated yellow. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The vertical SCALE knob controls the selected visible channel independently.
 
-The menu is display-only for now, per the user's instruction: Coupling DC, 20M bandwidth Disabled, Probe 1X, with rows aligned to the first three right-side softkeys. AC/DC and probe attenuation are not interactive. The instrument's lower time readout is `Time 250us` by default. Restore defaults returns both channels to visible and closes the channel menu.
+The menu is display-only for now, per the user's instruction: Coupling DC, 20M bandwidth Disabled, Probe 1X, with rows aligned to the first three right-side softkeys. AC/DC and probe attenuation are not interactive. The instrument's lower time readout is `Time 200.0us` by default. Restore defaults returns both channels to visible and closes the channel menu.
 
 CH1/CH2 controlan la visibilidad de sus señales y la selección del canal. Su iluminación indica que la traza está visible. La primera pulsación muestra el menú y selecciona el canal; una segunda pulsación sobre el canal cuyo menú está abierto oculta la señal y el menú. El menú es solo visual: Acoplamiento DC, Banda 20M Desactivado, Sonda 1X. No modifica esos ajustes todavía.
 
@@ -109,3 +109,5 @@ Scope vertical scale labels follow the instrument format: 10mV, 20mV, 50mV, 100m
 The round beige MENU ON/OFF key above the right-side softkeys shows or hides the selected channel menu, without changing selection, settings or trace visibility. / El botón redondo beige MENU ON/OFF muestra u oculta el menú del canal seleccionado sin modificar las señales ni la selección.
 
 Vertical SCALE: drag clockwise to decrease V/div, counterclockwise to increase; right/left arrows and the mouse wheel are also supported. Hidden channels ignore adjustments. Both displays share the independent channel scales; reset restores 500mV per division. / Arrastra el mando SCALE en sentido horario para reducir V/div y antihorario para aumentarlo. También admite flechas derecha/izquierda y rueda del ratón. Solo modifica el canal seleccionado cuando está visible.
+
+Horizontal SCALE controls the shared timebase regardless of selection or channel visibility, using the same drag, wheel and keyboard interactions. Clockwise decreases time/div; counterclockwise increases it. Steps: 10.00us, 20.00us, 50.00us, 100.0us, 200.0us, 500.0us, 1.000ms, 2.000ms, 5.000ms, 10.00ms. Reset uses 200.0us. Both views zoom around the same central time reference. / La escala horizontal es común a ambos canales y funciona aunque estén ocultos o no haya un canal seleccionado.

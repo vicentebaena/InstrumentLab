@@ -50,7 +50,7 @@ assert.deepEqual(traces(render(hide2)), ['#f4d35e']);
 assert.deepEqual(traces(render(state)), []);
 const instrument = render(hide1, 'ds1102e', 12);
 assert.deepEqual(traces(instrument), ['#6ecbff']);
-assert.ok(instrument.includes('Time 250us') && !instrument.includes('H 250'));
+assert.ok(instrument.includes('Time 200.0us') && !instrument.includes('H 200'));
 assert.ok(!/NaN|undefined|Infinity|Cycles unresolved/.test(render(state, 'scope', 10, 25e6)));
 assert.equal(original.channels[1].coupling, 'DC');
 assert.equal(original.channels[2].probe, 1);
@@ -103,3 +103,45 @@ for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
 }
 assert.equal(scope.createState().channels[1].voltsPerDivision, 0.5);
 console.log('Vertical scale direction, bounds, independent channels, hidden-channel guard and shared rendering passed.');
+
+// Horizontal timebase is global: selection, menus and visibility are irrelevant.
+const timeLabels = ['10.00us', '20.00us', '50.00us', '100.0us', '200.0us', '500.0us', '1.000ms', '2.000ms', '5.000ms', '10.00ms'];
+assert.deepEqual(Array.from(scope.horizontalScales, value => scope.formatTimeScale(value)), timeLabels);
+assert.equal(original.timePerDivision, 200e-6);
+for (const initial of [original, selected2, hide1, state, { ...state, selectedChannel: null }]) {
+  const zoomed = scope.stepHorizontalScale(initial, -1);
+  assert.equal(zoomed.timePerDivision, 100e-6);
+  assert.equal(zoomed.selectedChannel, initial.selectedChannel);
+  assert.equal(zoomed.menuChannel, initial.menuChannel);
+  assert.deepEqual(zoomed.channels, initial.channels);
+  assert.equal(initial.timePerDivision, 200e-6);
+  assert.equal(scope.stepHorizontalScale(zoomed, 1).timePerDivision, 200e-6);
+}
+for (const [direction, limit] of [[-1, 10e-6], [1, 10e-3]]) {
+  let bounded = original;
+  for (let n = 0; n < 30; n++) bounded = scope.stepHorizontalScale(bounded, direction);
+  assert.equal(bounded.timePerDivision, limit);
+  assert.equal(scope.stepHorizontalScale(bounded, direction), bounded);
+}
+for (const [i, timePerDivision] of Array.from(scope.horizontalScales).entries()) {
+  const settings = { ...original, timePerDivision };
+  for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
+    const svg = render(settings, prefix, divisions);
+    assert.ok(svg.includes(prefix === 'scope' ? `H ${timeLabels[i]}/div` : `Time ${timeLabels[i]}`));
+    assert.ok(!/NaN|undefined|Infinity/.test(svg));
+    assert.ok(svg.includes('CH1 500mV') && svg.includes('CH2 500mV'));
+  }
+}
+assert.notEqual(paths(render(original))[0], paths(render(scope.stepHorizontalScale(original, -1)))[0]);
+assert.notEqual(paths(render(original))[1], paths(render(scope.stepHorizontalScale(original, -1)))[1]);
+// At t=0 both zoom levels retain the same voltage at their common centre.
+for (const timePerDivision of [10e-6, 200e-6, 1e-3]) {
+  for (const [prefix, divisions, centre] of [['scope', 10, 320], ['ds1102e', 12, 276]]) {
+    const svg = render({ ...original, timePerDivision }, prefix, divisions);
+    for (const [index, key] of ['input', 'output'].entries()) {
+      const expectedY = (204 - app.circuits.rc.sample(0, app.circuits.rc.defaults, app.generatorDefaults)[key] / .5 * 40).toFixed(3);
+      assert.ok(paths(svg)[index].includes(`L${centre.toFixed(3)},${expectedY}`));
+    }
+  }
+}
+console.log('Shared horizontal scale, exact labels, direction, stops, hidden/unselected channels, centred zoom and both traces passed.');

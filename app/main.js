@@ -13,6 +13,7 @@
     getDisplay: () => window.InstrumentLab.oscilloscope.render(circuits[state.circuitId], state.parameters, state.generator, t, number, 'ds1102e', 12, state.oscilloscope),
     getSettings: () => state.oscilloscope,
     t,
+    onTimeScale: direction => { state.oscilloscope = window.InstrumentLab.oscilloscope.stepHorizontalScale(state.oscilloscope, direction); render(); },
     onScale: direction => { state.oscilloscope = window.InstrumentLab.oscilloscope.stepVerticalScale(state.oscilloscope, direction); render(); },
     onMenu: () => { state.oscilloscope = window.InstrumentLab.oscilloscope.toggleChannelMenu(state.oscilloscope); render(); },
     onChannel: channel => { state.oscilloscope = window.InstrumentLab.oscilloscope.pressChannel(state.oscilloscope, channel); render(); }
