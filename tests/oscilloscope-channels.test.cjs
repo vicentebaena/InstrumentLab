@@ -69,3 +69,37 @@ for (const initial of [original, hide1, state]) {
   assert.deepEqual(hidden.channels, initial.channels);
 }
 console.log('MENU ON/OFF toggles the selected menu without changing traces, settings or selection.');
+
+// Independent vertical scales, direction, stops and hidden-channel guard.
+assert.equal(original.channels[1].voltsPerDivision, 0.5);
+const finer = scope.stepVerticalScale(original, -1);
+assert.equal(finer.channels[1].voltsPerDivision, 0.2);
+assert.equal(finer.channels[2].voltsPerDivision, 0.5);
+assert.equal(original.channels[1].voltsPerDivision, 0.5);
+assert.equal(finer.menuChannel, original.menuChannel);
+assert.equal(scope.stepVerticalScale(finer, 1).channels[1].voltsPerDivision, 0.5);
+const selected2 = scope.pressChannel(finer, 2);
+const coarser2 = scope.stepVerticalScale(selected2, 1);
+assert.equal(coarser2.channels[2].voltsPerDivision, 1);
+assert.equal(coarser2.channels[1].voltsPerDivision, 0.2);
+assert.equal(scope.stepVerticalScale(hide1, -1), hide1);
+assert.equal(scope.stepVerticalScale(hide2, 1), hide2);
+for (const [direction, limit] of [[-1, 0.01], [1, 10]]) {
+  let bounded = original;
+  for (let n = 0; n < 30; n++) bounded = scope.stepVerticalScale(bounded, direction);
+  assert.equal(bounded.channels[1].voltsPerDivision, limit);
+  assert.equal(bounded.channels[2].voltsPerDivision, 0.5);
+  assert.equal(scope.stepVerticalScale(bounded, direction), bounded);
+}
+const paths = svg => [...svg.matchAll(/<path d="([^"]+)" stroke="(#[^"]+)"/g)].map(match => match[1]);
+const initialPaths = paths(render(original)), finePaths = paths(render(finer));
+assert.notEqual(initialPaths[0], finePaths[0]);
+assert.equal(initialPaths[1], finePaths[1]);
+for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
+  const svg = render(coarser2, prefix, divisions);
+  assert.ok(svg.includes('CH1 200mV') && svg.includes('CH2 1.00V'));
+  assert.ok(!/NaN|undefined|Infinity/.test(svg));
+  assert.ok(!/NaN|undefined|Infinity/.test(render(coarser2, prefix, divisions, 25e6)));
+}
+assert.equal(scope.createState().channels[1].voltsPerDivision, 0.5);
+console.log('Vertical scale direction, bounds, independent channels, hidden-channel guard and shared rendering passed.');

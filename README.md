@@ -92,7 +92,7 @@ La carátula del Rigol tiene 12 divisiones horizontales; la vista principal cons
 
 ## Scope channels / Canales del osciloscopio
 
-Both scope channels start visible, with both CH1/CH2 keys illuminated yellow. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The selected channel is retained for future vertical-scale controls; no scale knob is implemented yet.
+Both scope channels start visible, with both CH1/CH2 keys illuminated yellow. Press a channel key to select it and show its menu while keeping its trace visible, or restoring its trace if hidden. Press that same key again while its menu is open and selected to hide its trace and dismiss the menu. Switching to the other key selects that channel without hiding the previous one. Visibility changes apply to both the main display and instrument display. The vertical SCALE knob controls the selected visible channel independently.
 
 The menu is display-only for now, per the user's instruction: Coupling DC, 20M bandwidth Disabled, Probe 1X, with rows aligned to the first three right-side softkeys. AC/DC and probe attenuation are not interactive. The instrument's lower time readout is `Time 250us` by default. Restore defaults returns both channels to visible and closes the channel menu.
 
@@ -104,6 +104,8 @@ The active oscilloscope model is Rigol DS1102E, using the corrected user-provide
 
 El modelo activo es Rigol DS1102E. Se ha sustituido la carátula anterior y se han adaptado la pantalla, los botones CH1/CH2 y las filas del menú. Se conserva el comportamiento de canales y las doce divisiones horizontales; el menú sigue siendo solo visual.
 
-Scope vertical scale labels follow the instrument format: 10mV, 20mV, 50mV, 100mV, 200mV, 500mV, 1.00V, 2.00V, 5.00V, 10.00V. The current 0.5 V/div setting is labelled 500mV in both views, independently of the app language. This defines the scale steps and display format; vertical-knob editing remains deferred.
+Scope vertical scale labels follow the instrument format: 10mV, 20mV, 50mV, 100mV, 200mV, 500mV, 1.00V, 2.00V, 5.00V, 10.00V. The current 0.5 V/div setting is labelled 500mV in both views, independently of the app language. The vertical knob steps through these values without changing the other channel.
 
 The round beige MENU ON/OFF key above the right-side softkeys shows or hides the selected channel menu, without changing selection, settings or trace visibility. / El botón redondo beige MENU ON/OFF muestra u oculta el menú del canal seleccionado sin modificar las señales ni la selección.
+
+Vertical SCALE: drag clockwise to decrease V/div, counterclockwise to increase; right/left arrows and the mouse wheel are also supported. Hidden channels ignore adjustments. Both displays share the independent channel scales; reset restores 500mV per division. / Arrastra el mando SCALE en sentido horario para reducir V/div y antihorario para aumentarlo. También admite flechas derecha/izquierda y rueda del ratón. Solo modifica el canal seleccionado cuando está visible.

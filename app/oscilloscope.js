@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  // Fixed scales: changes to R and C never trigger an automatic rescale.
+  // Instrument scales never change automatically with the circuit or generator.
   const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
@@ -11,8 +11,19 @@
     createState() {
       return {
         selectedChannel: 1, menuChannel: null,
-        channels: { 1: { visible: true, coupling: 'DC', probe: 1 }, 2: { visible: true, coupling: 'DC', probe: 1 } }
+        channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision } }
       };
+    },
+    stepVerticalScale(state, direction) {
+      const channel = state.selectedChannel;
+      if (!state.channels[channel].visible) return state;
+      const value = state.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
+      const index = this.verticalScales.indexOf(value);
+      const next = Math.max(0, Math.min(this.verticalScales.length - 1, index + Math.sign(direction)));
+      if (next === index) return state;
+      return { ...state, channels: { ...state.channels,
+        [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
+      } };
     },
     toggleChannelMenu(state) {
       return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null };
@@ -27,7 +38,7 @@
     },
     render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null) {
       const settings = scopeState || this.createState();
-      const verticalScaleLabel = this.formatVerticalScale(defaults.voltsPerDivision);
+      const scale = channel => settings.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
       const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
       const instrumentFooter = idPrefix === 'ds1102e';
       const left = 36, top = 44, width = (instrumentFooter ? 40 : 56.8) * horizontalDivisions, height = 320;
@@ -50,23 +61,23 @@
       }
       const samples = dense ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
       const x = time => left + (time - start) / duration * width;
-      const y = voltage => top + height / 2 - voltage / defaults.voltsPerDivision * height / 8;
-      const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key]).toFixed(3)}`).join(' ');
+      const y = (voltage, channel) => top + height / 2 - voltage / scale(channel) * height / 8;
+      const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key], key === 'input' ? 1 : 2).toFixed(3)}`).join(' ');
       // At unresolved frequencies show the actual range, not a false aliased trace.
-      function band(peak, color) {
-        const upper = Math.max(top, Math.min(top + height, y(generator.offset + peak)));
-        const lower = Math.max(top, Math.min(top + height, y(generator.offset - peak)));
-        if (lower === upper && (generator.offset + peak < -2 || generator.offset - peak > 2)) return '';
+      function band(peak, color, channel) {
+        const upper = Math.max(top, Math.min(top + height, y(generator.offset + peak, channel)));
+        const lower = Math.max(top, Math.min(top + height, y(generator.offset - peak, channel)));
+        if (lower === upper && (generator.offset + peak < -4 * scale(channel) || generator.offset - peak > 4 * scale(channel))) return '';
         return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
       }
       const traces = dense
-        ? (show1 ? band(generator.amplitudeVpp / 2, '#f4d35e') : '') + (show2 ? band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff') : '')
+        ? (show1 ? band(generator.amplitudeVpp / 2, '#f4d35e', 1) : '') + (show2 ? band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff', 2) : '')
         : (show1 ? `<path d="${trace('input')}" stroke="#f4d35e"/>` : '') + (show2 ? `<path d="${trace('output')}" stroke="#6ecbff"/>` : '');
-      function channelScale(channel, position) {
+      const channelScale = (channel, position) => {
         const visible = settings.channels[channel].visible;
         const color = visible ? (channel === 1 ? '#f4d35e' : '#6ecbff') : '#526066';
         const selected = visible && settings.selectedChannel === channel;
-        const value = verticalScaleLabel;
+        const value = this.formatVerticalScale(scale(channel));
         return `<g aria-label="CH${channel} ${value}">
           ${selected ? `<rect x="${position}" y="380" width="50" height="27" rx="2" fill="${color}"/>` : ''}
           <text x="${position + 25}" y="400" text-anchor="middle" fill="${selected ? '#030709' : color}">CH${channel}</text>
