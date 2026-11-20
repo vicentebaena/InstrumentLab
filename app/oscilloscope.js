@@ -7,6 +7,8 @@
     render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10) {
       const left = 36, top = 44, width = 568 * horizontalDivisions / 10, height = 320;
       const viewWidth = width + 2 * left;
+      const instrumentFooter = idPrefix === 'ds1202ze';
+      const timeLabel = `H ${format(defaults.timePerDivision * 1e6)} µs/div`;
       const duration = horizontalDivisions * defaults.timePerDivision;
       const period = 1 / generator.frequency;
       const dense = generator.output1Enabled !== false && duration * generator.frequency > width / 4;
@@ -43,7 +45,7 @@
         <title id="${idPrefix}DisplayTitle">${t('scope')}</title><desc id="${idPrefix}DisplayDescription">${t('scopeDescription')}</desc>
         <defs><clipPath id="${idPrefix}TraceClip"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs>
         <rect width="${viewWidth}" height="420" rx="8" fill="#030709"/>
-        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22"><text x="36" y="29">H ${format(defaults.timePerDivision * 1e6)} µs/div</text><text x="${left + width}" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
+        <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22">${instrumentFooter ? '' : `<text x="36" y="29">${timeLabel}</text>`}<text x="${left + width}" y="29" text-anchor="end">${format(duration * 1000)} ms</text></g>
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${left + width / 2} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
@@ -51,7 +53,11 @@
         </g>
         <path d="M24 198l10 6-10 6z" fill="#f4d35e"/>
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
-        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text></g>
+        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="#f4d35e">CH1 ${format(defaults.voltsPerDivision)} V/div</text>
+          ${instrumentFooter
+            ? `<text x="248" y="400" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
+            : `<text x="${left + width}" y="400" text-anchor="end" fill="#6ecbff">CH2 ${format(defaults.voltsPerDivision)} V/div</text>`}
+        </g>
       </svg>`;
     }
   };
