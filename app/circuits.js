@@ -15,7 +15,8 @@ window.InstrumentLab = {
         return { tau, cutoff: 1 / (2 * Math.PI * tau) };
       },
       // Exact periodic steady-state responses for sine and symmetrical square waves.
-      sample(time, { resistance, capacitance }, { frequency, amplitudeVpp, offset, waveform = 'square' }) {
+      sample(time, { resistance, capacitance }, { frequency, amplitudeVpp, offset, waveform = 'square', output1Enabled = true }) {
+        if (!output1Enabled) return { input: 0, output: 0 };
         const period = 1 / frequency;
         const half = period / 2;
         const phase = ((time % period) + period) % period;
@@ -83,5 +84,5 @@ window.InstrumentLab = {
       }
     }
   },
-  generatorDefaults: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2 }
+  generatorDefaults: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2, output1Enabled: true, output2Enabled: false }
 };

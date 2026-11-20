@@ -44,6 +44,12 @@ window.InstrumentLab.DG822Panel = {
     const dialog = $('dg822Dialog');
     const handle = $('dg822WindowBar');
     $('dg822Faceplate').src = window.InstrumentLabImages.generator;
+    for (const channel of [1, 2]) {
+      $(`dg822Output${channel}`).addEventListener('click', () => {
+        const key = `output${channel}Enabled`;
+        onChange({ [key]: !getGenerator()[key] });
+      });
+    }
     let drag = null;
     let editing = null;
     let menuOpen = false;
@@ -117,7 +123,14 @@ window.InstrumentLab.DG822Panel = {
       $('dg822PreviewTrace').setAttribute('d', generator.waveform === 'sine'
         ? 'M2 50C12 15 20 15 30 50S48 85 58 50S76 15 86 50S104 85 118 50'
         : 'M2 76H20V24H58V76H96V24H118');
-      $('dg822Channel').textContent = `CH1 · ${generator.waveform === 'sine' ? 'Sine' : 'Square'}`;
+      for (const channel of [1, 2]) {
+        const enabled = Boolean(generator[`output${channel}Enabled`]);
+        const button = $(`dg822Output${channel}`);
+        button.setAttribute('aria-pressed', String(enabled));
+        button.setAttribute('aria-label', `Output${channel} (CH${channel}): ${enabled ? 'ON' : 'OFF'}`);
+      }
+      $('dg822Channel').textContent = `CH1 · ${generator.waveform === 'sine' ? 'Sine' : 'Square'} · ${generator.output1Enabled ? 'ON' : 'OFF'}`;
+      $('dg822Channel').setAttribute('data-output', generator.output1Enabled ? 'on' : 'off');
       $('dg822SelectSine').setAttribute('aria-pressed', String(generator.waveform === 'sine'));
       $('dg822SelectSquare').setAttribute('aria-pressed', String(generator.waveform === 'square'));
     }

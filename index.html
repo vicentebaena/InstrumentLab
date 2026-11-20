@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261120-5">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-5">
+  <link rel="stylesheet" href="app/styles.css?v=20261120-6">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261120-6">
   <script defer src="assets/instruments/images.js"></script>
-  <script defer src="app/circuits.js?v=20261120-5"></script>
-  <script defer src="app/translations.js?v=20261120-5"></script>
-  <script defer src="app/oscilloscope.js?v=20261120-5"></script>
-  <script defer src="app/dg822-panel.js?v=20261120-5"></script>
-  <script defer src="app/main.js?v=20261120-5"></script>
+  <script defer src="app/circuits.js?v=20261120-6"></script>
+  <script defer src="app/translations.js?v=20261120-6"></script>
+  <script defer src="app/oscilloscope.js?v=20261120-6"></script>
+  <script defer src="app/dg822-panel.js?v=20261120-6"></script>
+  <script defer src="app/main.js?v=20261120-6"></script>
 </head>
 <body>
 <main class="workspace">
@@ -34,7 +34,7 @@
       <section class="scope-display" id="scopeDisplay"></section>
       <section class="panel generator" aria-labelledby="generatorTitle">
         <p class="eyebrow" data-i18n="generator"></p><h2 id="generatorTitle" data-i18n="settings"></h2>
-        <dl><div><dt data-i18n="waveform"></dt><dd id="generatorWaveform"></dd></div><div><dt data-i18n="frequency"></dt><dd id="generatorFrequency">1 kHz</dd></div><div><dt data-i18n="amplitude"></dt><dd id="generatorAmplitude">2 Vpp</dd></div><div><dt data-i18n="offset"></dt><dd id="generatorOffset">0 V</dd></div></dl>
+        <dl><div><dt data-i18n="usedChannel"></dt><dd>CH1</dd></div><div><dt data-i18n="outputState"></dt><dd id="generatorOutputState"></dd></div><div><dt data-i18n="waveform"></dt><dd id="generatorWaveform"></dd></div><div><dt data-i18n="frequency"></dt><dd id="generatorFrequency">1 kHz</dd></div><div><dt data-i18n="amplitude"></dt><dd id="generatorAmplitude">2 Vpp</dd></div><div><dt data-i18n="offset"></dt><dd id="generatorOffset">0 V</dd></div></dl>
       </section>
     </aside>
   </div>
@@ -58,6 +58,8 @@
     <div class="dg822-front">
       <img id="dg822Faceplate" width="1983" height="793" alt="" aria-hidden="true" draggable="false">
       <button id="dg822Menu" class="dg822-hardware-menu" type="button" aria-label="Menu" aria-controls="dg822WaveMenu" aria-expanded="false">Menu</button>
+      <button id="dg822Output1" class="dg822-output-key dg822-output-one" type="button" aria-pressed="true" aria-label="Output1 (CH1): ON">Output1</button>
+      <button id="dg822Output2" class="dg822-output-key dg822-output-two" type="button" aria-pressed="false" aria-label="Output2 (CH2): OFF">Output2</button>
       <section class="dg822-screen" lang="en" aria-label="Rigol DG822 CH1">
         <div class="dg822-lcd-header"><strong>RIGOL</strong><span>Continuous</span></div>
         <div id="dg822Parameters" class="dg822-lcd-content">

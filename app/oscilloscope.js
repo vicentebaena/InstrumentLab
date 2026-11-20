@@ -8,13 +8,13 @@
       const left = 36, top = 44, width = 568, height = 320;
       const duration = 10 * defaults.timePerDivision;
       const period = 1 / generator.frequency;
-      const dense = duration * generator.frequency > width / 4;
+      const dense = generator.output1Enabled !== false && duration * generator.frequency > width / 4;
       const start = -period / 4;
       const times = new Set(Array.from({ length: 1201 }, (_, i) => start + duration * i / 1200));
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
       const tau = circuit.characteristics(parameters).tau;
-      for (let k = Math.floor(start / half); !dense && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
+      for (let k = Math.floor(start / half); !dense && generator.output1Enabled !== false && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
         const edge = k * half;
         for (const dt of [-period * 1e-10, 0, period * 1e-10, ...[0.02, 0.1, 0.25, 0.5, 1, 2, 4, 8].map(v => v * tau)]) {
           const time = edge + dt;

@@ -69,3 +69,9 @@ Unit and rendering checks: `node tests/dg822.test.cjs`.
 Click the physical Menu key on the DG822 faceplate to open the touchscreen waveform selector. Sine and Square are implemented. Ramp, Pulse, Noise, Dualtone, Harm and Arb are shown disabled. Selecting Sine or Square returns automatically to the parameter display and updates the preview, channel label, main summary and RC response. The instrument screen stays in English.
 
 Al pulsar Menu en la carátula se abre el selector táctil. Sine y Square están disponibles; las otras seis ondas aparecen desactivadas. La selección devuelve a la pantalla de parámetros y actualiza el dibujo y las señales, sin cambiar las escalas del osciloscopio. La amplitud programada se conserva en la unidad elegida, incluida Vrms; su conversión a Vpp depende de la forma de onda.
+
+## Output switches / Salidas
+
+Output1 and Output2 on the DG822 faceplate toggle independently and illuminate yellow (CH1) / blue (CH2) when enabled. Defaults: Output1 ON, Output2 OFF. Only CH1 is connected to the RC. Disabling Output1 removes both AC signal and DC offset; the steady-state circuit display becomes 0 V. Capacitor discharge transients are not modelled. Output2 has no effect on the RC. Programmed parameters persist while an output is disabled and when the window closes. Restore defaults also resets the output states. The main summary identifies the used channel (CH1) and its output state.
+
+Output1 y Output2 se activan de forma independiente. Solo CH1 está conectado al RC. Al desactivar Output1 se retiran la señal y el offset; el modelo en régimen permanente muestra 0 V, sin simular el transitorio de descarga. Los parámetros programados se conservan. El resumen indica Canal utilizado: CH1 y el estado de su salida.

@@ -18,6 +18,7 @@
     }
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     $('generatorWaveform').textContent = t(state.generator.waveform);
+    $('generatorOutputState').textContent = t(state.generator.output1Enabled ? 'outputOn' : 'outputOff');
     $('rcObservation').textContent = t(state.generator.waveform === 'sine' ? 'observeSine' : 'observe');
     dg822Panel.render();
     const circuit = circuits[state.circuitId];

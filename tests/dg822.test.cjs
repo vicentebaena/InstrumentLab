@@ -66,3 +66,23 @@ for (const waveform of ['sine', 'square']) for (const frequency of [1e-6, 1000, 
   assert.ok(!/NaN|Infinity|undefined/.test(svg));
 }
 console.log('Sine response, RC gain/phase and differential equation, waveform selection and waveform-aware RMS passed.');
+// Output switches are independent; CH1 gates the connected circuit, including DC offset.
+assert.equal(app.generatorDefaults.output1Enabled, true);
+assert.equal(app.generatorDefaults.output2Enabled, false);
+for (const waveform of ['sine', 'square']) {
+  const programmed = { ...app.generatorDefaults, waveform, offset: 1.25, amplitudeVpp: 3 };
+  for (const output2Enabled of [false, true]) {
+    for (const time of [0, .00013, .00075]) {
+      const off = rc.sample(time, params, { ...programmed, output1Enabled: false, output2Enabled });
+      close(off.input, 0);
+      close(off.output, 0);
+      const on = rc.sample(time, params, { ...programmed, output2Enabled });
+      close(on.input, rc.sample(time, params, programmed).input);
+      close(on.output, rc.sample(time, params, programmed).output);
+    }
+  }
+  const svg = app.oscilloscope.render(rc, params, { ...programmed, frequency: 25e6, output1Enabled: false }, key => app.translations.en[key], String);
+  assert.ok(!/NaN|Infinity|undefined|Cycles unresolved/.test(svg));
+  assert.ok(svg.includes('204.000'));
+}
+console.log('Output1 gating, independent Output2, DC removal and disabled high-frequency display passed.');
