@@ -54,6 +54,17 @@
       const traces = dense
         ? (show1 ? band(generator.amplitudeVpp / 2, '#f4d35e') : '') + (show2 ? band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff') : '')
         : (show1 ? `<path d="${trace('input')}" stroke="#f4d35e"/>` : '') + (show2 ? `<path d="${trace('output')}" stroke="#6ecbff"/>` : '');
+      function channelScale(channel, position) {
+        const visible = settings.channels[channel].visible;
+        const color = visible ? (channel === 1 ? '#f4d35e' : '#6ecbff') : '#526066';
+        const selected = visible && settings.selectedChannel === channel;
+        const value = `${format(defaults.voltsPerDivision)} V/div`;
+        return `<g aria-label="CH${channel} ${value}">
+          ${selected ? `<rect x="${position}" y="380" width="50" height="27" rx="2" fill="${color}"/>` : ''}
+          <text x="${position + 25}" y="400" text-anchor="middle" fill="${selected ? '#030709' : color}">CH${channel}</text>
+          <text x="${position + 56}" y="400" fill="${color}">${value}</text>
+        </g>`;
+      }
       const grid = [];
       for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -69,10 +80,10 @@
         </g>
         ${show1 || show2 ? `<path d="M24 198l10 6-10 6z" fill="${show1 ? '#f4d35e' : '#6ecbff'}"/>` : ''}
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
-        <g font-family="system-ui,sans-serif" font-size="22"><text x="36" y="400" fill="${show1 ? '#f4d35e' : '#526066'}" text-decoration="${show1 && settings.selectedChannel === 1 ? 'underline' : 'none'}">CH1 ${format(defaults.voltsPerDivision)} V/div</text>
-          ${instrumentFooter
-            ? `<text x="${left + width * 0.31}" y="400" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text><text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>`
-            : `<text x="${left + width}" y="400" text-anchor="end" fill="${show2 ? '#6ecbff' : '#526066'}" text-decoration="${show2 && settings.selectedChannel === 2 ? 'underline' : 'none'}">CH2 ${format(defaults.voltsPerDivision)} V/div</text>`}
+        <g font-family="system-ui,sans-serif" font-size="22">
+          ${channelScale(1, left)}
+          ${channelScale(2, instrumentFooter ? left + width * 0.31 : left + width - 148)}
+          ${instrumentFooter ? `<text x="${left + width}" y="400" text-anchor="end" fill="#a7bbb7">${timeLabel}</text>` : ''}
         </g>
       </svg>`;
     }
