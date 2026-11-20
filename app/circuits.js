@@ -14,13 +14,21 @@ window.InstrumentLab = {
         const tau = resistance * capacitance;
         return { tau, cutoff: 1 / (2 * Math.PI * tau) };
       },
-      // Exact periodic steady-state response to a symmetrical, 50% duty square wave.
-      sample(time, { resistance, capacitance }, { frequency, amplitudeVpp, offset }) {
+      // Exact periodic steady-state responses for sine and symmetrical square waves.
+      sample(time, { resistance, capacitance }, { frequency, amplitudeVpp, offset, waveform = 'square' }) {
         const period = 1 / frequency;
         const half = period / 2;
         const phase = ((time % period) + period) % period;
         const tau = resistance * capacitance;
         const amplitude = amplitudeVpp / 2;
+        if (waveform === 'sine') {
+          const angle = 2 * Math.PI * phase / period;
+          const omegaTau = 2 * Math.PI * frequency * tau;
+          return {
+            input: offset + amplitude * Math.sin(angle),
+            output: offset + amplitude / Math.hypot(1, omegaTau) * Math.sin(angle - Math.atan(omegaTau))
+          };
+        }
         const peak = amplitude * Math.tanh(half / (2 * tau));
         const high = phase < half;
         const elapsed = high ? phase : phase - half;

@@ -24,9 +24,9 @@ Circuito RC paso bajo con conexiones fijas. Los valores se editan pulsando R o C
 
 ## Model and limits / Modelo y límites
 
-The RC response is the exact periodic steady state of an ideal RC circuit driven by a symmetrical square wave. It is not a startup transient. Generator output impedance, probe loading, sampling, hardware bandwidth and trigger imperfections are not modelled.
+The RC response is the exact periodic steady state of an ideal RC circuit driven by a symmetrical square wave or sine wave. It is not a startup transient. Generator output impedance, probe loading, sampling, hardware bandwidth and trigger imperfections are not modelled.
 
-La respuesta corresponde al régimen periódico permanente de un RC ideal ante una onda cuadrada simétrica. No representa el arranque. No se modelan la impedancia del generador, la carga de las sondas, el muestreo, el ancho de banda del equipo ni las imperfecciones del disparo.
+La respuesta corresponde al régimen periódico permanente de un RC ideal ante una onda cuadrada simétrica o una senoide. No representa el arranque. No se modelan la impedancia del generador, la carga de las sondas, el muestreo, el ancho de banda del equipo ni las imperfecciones del disparo.
 
 Click the generator image to open the Rigol DG822 window. The movable window uses the high-resolution DG822 cutout as a faceplate, with a live display of the current frequency, amplitude and DC offset; Phase stays at zero. The instrument screen is always in English and uses DG822 fractional-digit grouping (e.g. `1.000,000,000 kHz`, `2.000,0 Vpp`, `0.000,0 Vdc`, `0.000º`), independent of the application language. Closing it preserves settings. Click Freq, Ampl or Offset to edit the reading and its units; Apply commits and Cancel/Escape preserves the prior settings. Phase remains fixed at zero. Further circuits are planned.
 
@@ -55,7 +55,7 @@ Código: MIT. Textos, diagramas, visualizaciones y contenido docente: CC BY 4.0,
 ## DG822 units / Unidades del DG822
 
 - Freq: MHz, kHz, Hz, mHz, uHz. Values are stored internally in Hz.
-- Ampl: Vpp, mVpp, Vrms, mVrms. For the current symmetrical square wave, Vpp = 2 × Vrms, excluding the DC offset. The model stores Vpp.
+- Ampl: Vpp, mVpp, Vrms, mVrms. For a symmetrical square wave, Vpp = 2 × Vrms; for a sine wave, Vpp = 2 × √2 × Vrms. The DC offset is excluded. The model stores Vpp.
 - Offset: Vdc, mVdc; the model stores volts. Negative and zero offsets are supported.
 - The chosen units remain selected after applying or reopening the editor. Changing a unit selects how the typed number is interpreted; no change is applied until Apply.
 - Scope scales remain fixed. When cycles cannot be resolved at the current timebase, the display shows input/output ranges and a notice instead of a false aliased curve.
@@ -63,3 +63,9 @@ Código: MIT. Textos, diagramas, visualizaciones y contenido docente: CC BY 4.0,
 Las unidades seleccionadas se conservan al aplicar y volver a abrir el editor. El offset se trata por separado de la amplitud eficaz de la componente alterna. Los cambios de frecuencia no reajustan las escalas del osciloscopio.
 
 Unit and rendering checks: `node tests/dg822.test.cjs`.
+
+## Waveform menu / Menú de ondas
+
+Click the physical Menu key on the DG822 faceplate to open the touchscreen waveform selector. Sine and Square are implemented. Ramp, Pulse, Noise, Dualtone, Harm and Arb are shown disabled. Selecting Sine or Square returns automatically to the parameter display and updates the preview, channel label, main summary and RC response. The instrument screen stays in English.
+
+Al pulsar Menu en la carátula se abre el selector táctil. Sine y Square están disponibles; las otras seis ondas aparecen desactivadas. La selección devuelve a la pantalla de parámetros y actualiza el dibujo y las señales, sin cambiar las escalas del osciloscopio. La amplitud programada se conserva en la unidad elegida, incluida Vrms; su conversión a Vpp depende de la forma de onda.

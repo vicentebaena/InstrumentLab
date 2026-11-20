@@ -14,7 +14,7 @@
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
       const tau = circuit.characteristics(parameters).tau;
-      for (let k = Math.floor(start / half); !dense && k <= Math.ceil((start + duration) / half); k++) {
+      for (let k = Math.floor(start / half); !dense && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
         const edge = k * half;
         for (const dt of [-period * 1e-10, 0, period * 1e-10, ...[0.02, 0.1, 0.25, 0.5, 1, 2, 4, 8].map(v => v * tau)]) {
           const time = edge + dt;
@@ -33,7 +33,7 @@
         return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
       }
       const traces = dense
-        ? band(generator.amplitudeVpp / 2, '#f4d35e') + band(generator.amplitudeVpp / 2 * Math.tanh(period / (4 * tau)), '#6ecbff')
+        ? band(generator.amplitudeVpp / 2, '#f4d35e') + band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff')
         : `<path d="${trace('input')}" stroke="#f4d35e"/><path d="${trace('output')}" stroke="#6ecbff"/>`;
       const grid = [];
       for (let i = 0; i <= 10; i++) grid.push(`<path d="M${left + width * i / 10} ${top}v${height}"/>`);

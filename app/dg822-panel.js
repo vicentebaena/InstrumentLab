@@ -11,16 +11,27 @@ window.InstrumentLab.DG822Panel = {
     amplitude: { label: 'Ampl', property: 'amplitudeVpp', unitProperty: 'amplitudeUnit', defaultUnit: 'Vpp', decimals: 4, units: { Vpp: 1, mVpp: 1e-3, Vrms: 2, mVrms: 2e-3 } },
     offset: { label: 'Offset', property: 'offset', unitProperty: 'offsetUnit', defaultUnit: 'Vdc', decimals: 4, units: { Vdc: 1, mVdc: 1e-3 } }
   },
-  // Amplitude RMS units refer to the AC component of the current square waveform.
+  amplitudeScale(unit, waveform = 'square') {
+    const rmsFactor = waveform === 'sine' ? 2 * Math.SQRT2 : 2;
+    return { Vpp: 1, mVpp: 1e-3, Vrms: rmsFactor, mVrms: rmsFactor * 1e-3 }[unit];
+  },
+  waveformChange(generator, waveform) {
+    if (!['sine', 'square'].includes(waveform)) throw new RangeError('Waveform not implemented.');
+    const amplitude = this.reading(generator, 'amplitude');
+    return { waveform, ...this.change('amplitude', amplitude.value, amplitude.unit, { ...generator, waveform }) };
+  },
+  // RMS units refer to the waveform's AC component, excluding the DC offset.
   reading(generator, parameter) {
     const definition = this.parameters[parameter];
     const unit = generator[definition.unitProperty] || definition.defaultUnit;
-    return { value: generator[definition.property] / definition.units[unit], unit };
+    const scale = parameter === 'amplitude' ? this.amplitudeScale(unit, generator.waveform) : definition.units[unit];
+    return { value: generator[definition.property] / scale, unit };
   },
-  change(parameter, value, unit) {
+  change(parameter, value, unit, generator = { waveform: 'square' }) {
     const definition = this.parameters[parameter];
     if (!definition || !Object.hasOwn(definition.units, unit)) throw new RangeError('Invalid unit.');
-    const base = Number(value) * definition.units[unit];
+    const scale = parameter === 'amplitude' ? this.amplitudeScale(unit, generator.waveform) : definition.units[unit];
+    const base = Number(value) * scale;
     if (!Number.isFinite(base) || (parameter !== 'offset' && base <= 0) || (parameter === 'frequency' && !Number.isFinite(1 / base))) {
       throw new RangeError(parameter === 'offset' ? 'Enter a finite offset.' : 'Enter a positive, finite value.');
     }
@@ -35,6 +46,25 @@ window.InstrumentLab.DG822Panel = {
     $('dg822Faceplate').src = window.InstrumentLabImages.generator;
     let drag = null;
     let editing = null;
+    let menuOpen = false;
+    function showMenu(open) {
+      menuOpen = open;
+      $('dg822Parameters').hidden = open;
+      $('dg822WaveMenu').hidden = !open;
+      $('dg822Menu').setAttribute('aria-expanded', String(open));
+    }
+    $('dg822Menu').addEventListener('click', () => {
+      showMenu(!menuOpen);
+      $('dg822Body').scrollLeft = 0;
+      if (menuOpen) $(getGenerator().waveform === 'sine' ? 'dg822SelectSine' : 'dg822SelectSquare').focus({ preventScroll: true });
+    });
+    for (const waveform of ['sine', 'square']) {
+      $(waveform === 'sine' ? 'dg822SelectSine' : 'dg822SelectSquare').addEventListener('click', () => {
+        onChange(api.waveformChange(getGenerator(), waveform));
+        showMenu(false);
+        $('dg822Frequency').focus({ preventScroll: true });
+      });
+    }
     const editor = $('dg822EditDialog');
     const input = $('dg822EditValue');
     const units = $('dg822EditUnit');
@@ -50,6 +80,9 @@ window.InstrumentLab.DG822Panel = {
         input.setCustomValidity('');
         units.replaceChildren(...Object.keys(definition.units).map(unit => new Option(unit, unit, false, unit === reading.unit)));
         $('dg822RmsNote').hidden = parameter !== 'amplitude';
+        $('dg822RmsNote').textContent = getGenerator().waveform === 'sine'
+          ? 'Sine: Vpp = 2 × √2 × Vrms. DC offset is separate.'
+          : 'Square: Vpp = 2 × Vrms. DC offset is separate.';
         editor.showModal();
         input.focus();
         input.select();
@@ -62,7 +95,7 @@ window.InstrumentLab.DG822Panel = {
       event.preventDefault();
       if (!editing || !input.reportValidity()) return;
       try {
-        const change = api.change(editing, input.value, units.value);
+        const change = api.change(editing, input.value, units.value, getGenerator());
         onChange(change);
         editor.close();
       } catch (error) {
@@ -76,9 +109,17 @@ window.InstrumentLab.DG822Panel = {
       const generator = getGenerator();
       for (const parameter of Object.keys(api.parameters)) {
         const reading = api.reading(generator, parameter);
-        $(api.parameters[parameter].element).textContent = `${format(reading.value, api.parameters[parameter].decimals)} ${reading.unit}`;
+        const button = $(api.parameters[parameter].element);
+        button.textContent = `${format(reading.value, api.parameters[parameter].decimals)} ${reading.unit}`;
+        button.setAttribute('aria-label', `Edit ${api.parameters[parameter].label}: ${button.textContent}`);
       }
       $('dg822Phase').textContent = `${format(0, 3)}º`;
+      $('dg822PreviewTrace').setAttribute('d', generator.waveform === 'sine'
+        ? 'M2 50C12 15 20 15 30 50S48 85 58 50S76 15 86 50S104 85 118 50'
+        : 'M2 76H20V24H58V76H96V24H118');
+      $('dg822Channel').textContent = `CH1 · ${generator.waveform === 'sine' ? 'Sine' : 'Square'}`;
+      $('dg822SelectSine').setAttribute('aria-pressed', String(generator.waveform === 'sine'));
+      $('dg822SelectSquare').setAttribute('aria-pressed', String(generator.waveform === 'square'));
     }
     function close() { dialog.close(); }
     $('dg822Close').addEventListener('click', close);
@@ -115,6 +156,7 @@ window.InstrumentLab.DG822Panel = {
     return {
       render,
       open() {
+        showMenu(false);
         render();
         if (!dialog.open) dialog.show();
         $('dg822Close').focus({ preventScroll: true });

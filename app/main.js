@@ -17,6 +17,8 @@
       $(id).textContent = `${number(reading.value)} ${reading.unit}`;
     }
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    $('generatorWaveform').textContent = t(state.generator.waveform);
+    $('rcObservation').textContent = t(state.generator.waveform === 'sine' ? 'observeSine' : 'observe');
     dg822Panel.render();
     const circuit = circuits[state.circuitId];
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));

@@ -37,3 +37,32 @@ for (const frequency of [1e-6, 1e-3, 1, 1000, 1e6, 25e6]) {
   assert.equal(svg.includes('Cycles unresolved'), frequency > 56800);
 }
 console.log('DG822 unit conversions, RMS amplitude, numeric format, validation and wide frequency rendering passed.');
+
+// Sine and square have different AC RMS-to-peak conversion factors.
+close(api.change('amplitude', 1, 'Vrms', { waveform: 'sine' }).amplitudeVpp, 2 * Math.SQRT2);
+close(api.reading({ ...app.generatorDefaults, waveform: 'sine', amplitudeVpp: 2 * Math.SQRT2, amplitudeUnit: 'Vrms' }, 'amplitude').value, 1);
+const rmsGenerator = { ...app.generatorDefaults, amplitudeVpp: 4, amplitudeUnit: 'Vrms' };
+const sineChange = api.waveformChange(rmsGenerator, 'sine');
+close(sineChange.amplitudeVpp, 4 * Math.SQRT2);
+close(api.reading({ ...rmsGenerator, ...sineChange }, 'amplitude').value, 2);
+close(api.waveformChange(app.generatorDefaults, 'sine').amplitudeVpp, 2);
+assert.throws(() => api.waveformChange(app.generatorDefaults, 'ramp'));
+const rc = app.circuits.rc;
+const params = rc.defaults;
+const sine = { ...app.generatorDefaults, waveform: 'sine' };
+const omegaTau = 2 * Math.PI * sine.frequency * params.resistance * params.capacitance;
+close(rc.sample(0, params, sine).input, 0);
+close(rc.sample(0, params, sine).output, -omegaTau / (1 + omegaTau ** 2));
+close(rc.sample(.00025, params, sine).input, 1);
+close(rc.sample(.00025, params, sine).output, 1 / (1 + omegaTau ** 2));
+for (const time of [0, .0001, .00037, .00075]) {
+  const h = 1e-9;
+  const sample = rc.sample(time, params, sine);
+  const derivative = (rc.sample(time + h, params, sine).output - rc.sample(time - h, params, sine).output) / (2 * h);
+  assert.ok(Math.abs(derivative - (sample.input - sample.output) / (params.resistance * params.capacitance)) < 1e-4);
+}
+for (const waveform of ['sine', 'square']) for (const frequency of [1e-6, 1000, 25e6]) {
+  const svg = app.oscilloscope.render(rc, params, { ...sine, waveform, frequency }, key => app.translations.en[key], String);
+  assert.ok(!/NaN|Infinity|undefined/.test(svg));
+}
+console.log('Sine response, RC gain/phase and differential equation, waveform selection and waveform-aware RMS passed.');
