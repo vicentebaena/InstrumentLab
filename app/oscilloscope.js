@@ -22,8 +22,18 @@
     createState() {
       return {
         selectedChannel: 1, menuChannel: null, timePerDivision: defaults.timePerDivision,
-        channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision } }
+        channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
+    },
+    stepVerticalPosition(state, direction) {
+      const channel = state.selectedChannel;
+      if (!state.channels[channel]?.visible) return state;
+      const current = state.channels[channel].positionDivisions ?? 0;
+      const next = Math.max(-4, Math.min(4, Math.round((current + Math.sign(direction) * 0.1) * 10) / 10));
+      if (next === current) return state;
+      return { ...state, channels: { ...state.channels,
+        [channel]: { ...state.channels[channel], positionDivisions: next }
+      } };
     },
     stepVerticalScale(state, direction) {
       const channel = state.selectedChannel;
@@ -75,13 +85,14 @@
       }
       const samples = dense ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
       const x = time => left + (time - start) / duration * width;
-      const y = (voltage, channel) => top + height / 2 - voltage / scale(channel) * height / 8;
+      const zeroY = channel => top + height / 2 - (settings.channels[channel].positionDivisions ?? 0) * height / 8;
+      const y = (voltage, channel) => zeroY(channel) - voltage / scale(channel) * height / 8;
       const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key], key === 'input' ? 1 : 2).toFixed(3)}`).join(' ');
       // At unresolved frequencies show the actual range, not a false aliased trace.
       function band(peak, color, channel) {
         const upper = Math.max(top, Math.min(top + height, y(generator.offset + peak, channel)));
         const lower = Math.max(top, Math.min(top + height, y(generator.offset - peak, channel)));
-        if (lower === upper && (generator.offset + peak < -4 * scale(channel) || generator.offset - peak > 4 * scale(channel))) return '';
+        if (y(generator.offset + peak, channel) > top + height || y(generator.offset - peak, channel) < top) return '';
         return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
       }
       const traces = dense
@@ -98,6 +109,16 @@
           <text x="${position + 56}" y="400" fill="${color}">${value}</text>
         </g>`;
       }
+      // Separate horizontal lanes keep both ground markers visible at the same height.
+      const groundMarker = channel => {
+        if (!settings.channels[channel].visible) return '';
+        const color = channel === 1 ? '#f4d35e' : '#6ecbff';
+        const x = channel === 1 ? 2 : 18, y0 = zeroY(channel);
+        return `<g data-ground-channel="${channel}" aria-label="CH${channel} 0 V" transform="translate(${x} ${y0})">
+          <path d="M0 -10h9l7 10-7 10H0z" fill="${color}"/>
+          <text x="6" y="4" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#030709">${channel}</text>
+        </g>`;
+      };
       const grid = [];
       for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -111,7 +132,7 @@
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}
         </g>
-        ${show1 || show2 ? `<path d="M24 198l10 6-10 6z" fill="${show1 ? '#f4d35e' : '#6ecbff'}"/>` : ''}
+        ${groundMarker(1)}${groundMarker(2)}
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
         <g font-family="system-ui,sans-serif" font-size="22">
           ${channelScale(1, left)}

@@ -10,3 +10,5 @@
 .ds1102e-vertical-scale{position:absolute;left:68.9%;top:59.8%;width:6%;height:12%;border-radius:50%;cursor:grab;touch-action:none;user-select:none}.ds1102e-vertical-scale:active{cursor:grabbing}.ds1102e-vertical-scale:focus-visible{outline:3px solid #2d7fc7;outline-offset:3px}.ds1102e-vertical-scale[aria-disabled="true"]{cursor:default}.ds1102e-vertical-scale span{position:absolute;inset:7%;border-radius:50%;transform:rotate(var(--rotation,0deg));pointer-events:none}.ds1102e-vertical-scale span:before{content:"";position:absolute;top:3%;left:48%;width:4%;height:16%;border-radius:2px;background:#777366}
 
 .ds1102e-horizontal-scale{left:78.45%;}
+
+.ds1102e-vertical-position{left:69.75%;top:38.7%;width:4.2%;height:8.4%;}

@@ -1,7 +1,7 @@
 'use strict';
 // Rigol DS1102E faceplate. Both scope views use the same experiment and renderer.
 window.InstrumentLab.DS1102EPanel = {
-  create({ getDisplay, getSettings, onChannel, onMenu, onScale, onTimeScale, t }) {
+  create({ getDisplay, getSettings, onChannel, onMenu, onScale, onTimeScale, onPosition, t }) {
     const $ = id => document.getElementById(id);
     $('ds1102eFaceplate').src = window.InstrumentLabImages.scope;
     const frame = window.InstrumentLab.createInstrumentWindow({
@@ -50,6 +50,7 @@ window.InstrumentLab.DS1102EPanel = {
       return knob;
     }
     const knob = bindScaleKnob('ds1102eVerticalScale', onScale, () => getSettings().channels[getSettings().selectedChannel].visible);
+    const positionKnob = bindScaleKnob('ds1102eVerticalPosition', direction => onPosition(-direction), () => getSettings().channels[getSettings().selectedChannel]?.visible);
     const horizontalKnob = bindScaleKnob('ds1102eHorizontalScale', onTimeScale);
     function render() {
       $('ds1102eDisplay').innerHTML = getDisplay();
@@ -75,6 +76,13 @@ window.InstrumentLab.DS1102EPanel = {
       horizontalKnob.setAttribute('aria-valuetext', window.InstrumentLab.oscilloscope.formatTimeScale(settings.timePerDivision));
       horizontalKnob.setAttribute('aria-label', t('scopeHorizontalScale'));
       horizontalKnob.title = t('scopeHorizontalHelp');
+      positionKnob.setAttribute('aria-valuemin', '-4');
+      positionKnob.setAttribute('aria-valuemax', '4');
+      positionKnob.setAttribute('aria-valuenow', String(settings.channels[channel].positionDivisions));
+      positionKnob.setAttribute('aria-valuetext', `CH${channel} ${settings.channels[channel].positionDivisions.toFixed(1)} div`);
+      positionKnob.setAttribute('aria-disabled', String(!settings.channels[channel].visible));
+      positionKnob.setAttribute('aria-label', t('scopeVerticalPosition'));
+      positionKnob.title = t('scopePositionHelp');
       const menu = $('ds1102eChannelMenu');
       menu.hidden = settings.menuChannel === null;
       $('ds1102eMenuToggle').setAttribute('aria-expanded', String(settings.menuChannel !== null));

@@ -145,3 +145,56 @@ for (const timePerDivision of [10e-6, 200e-6, 1e-3]) {
   }
 }
 console.log('Shared horizontal scale, exact labels, direction, stops, hidden/unselected channels, centred zoom and both traces passed.');
+
+// Vertical position is a display translation; ground and trace move together.
+const raised = scope.stepVerticalPosition(original, 1);
+assert.equal(raised.channels[1].positionDivisions, 0.1);
+assert.equal(raised.channels[2].positionDivisions, 0);
+assert.equal(original.channels[1].positionDivisions, 0);
+assert.equal(scope.stepVerticalPosition(raised, -1).channels[1].positionDivisions, 0);
+assert.equal(scope.stepVerticalPosition(hide1, 1), hide1);
+assert.equal(scope.stepVerticalPosition(hide2, -1), hide2);
+assert.equal(scope.stepVerticalPosition({ ...original, selectedChannel: null }, 1).selectedChannel, null);
+assert.equal(raised.channels[1].voltsPerDivision, original.channels[1].voltsPerDivision);
+assert.equal(raised.timePerDivision, original.timePerDivision);
+assert.equal(raised.menuChannel, original.menuChannel);
+const lowered2 = scope.stepVerticalPosition(scope.pressChannel(raised, 2), -1);
+assert.equal(lowered2.channels[1].positionDivisions, 0.1);
+assert.equal(lowered2.channels[2].positionDivisions, -0.1);
+for (const [direction, limit] of [[-1, -4], [1, 4]]) {
+  let bounded = original;
+  for (let n = 0; n < 100; n++) bounded = scope.stepVerticalPosition(bounded, direction);
+  assert.equal(bounded.channels[1].positionDivisions, limit);
+  assert.equal(scope.stepVerticalPosition(bounded, direction), bounded);
+  assert.equal(bounded.channels[2].positionDivisions, 0);
+}
+const markerY = (svg, channel) => Number(svg.match(new RegExp(`data-ground-channel="${channel}"[^>]+translate\\([0-9]+ ([^)]+)\\)`))[1]);
+for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
+  const initialSvg = render(original, prefix, divisions), raisedSvg = render(raised, prefix, divisions);
+  assert.equal(markerY(initialSvg, 1), 204);
+  assert.equal(markerY(initialSvg, 2), 204);
+  assert.equal(markerY(raisedSvg, 1), 200);
+  assert.equal(markerY(raisedSvg, 2), 204);
+  const initial = paths(initialSvg), moved = paths(raisedSvg);
+  assert.equal(initial[1], moved[1]);
+  const points = trace => Array.from(trace.matchAll(/[ML]([0-9.-]+),([0-9.-]+)/g), m => [Number(m[1]), Number(m[2])]);
+  const oldPoints = points(initial[0]), newPoints = points(moved[0]);
+  assert.equal(newPoints.length, oldPoints.length);
+  for (let n = 0; n < oldPoints.length; n++) {
+    assert.equal(newPoints[n][0], oldPoints[n][0]);
+    assert.ok(Math.abs(newPoints[n][1] - oldPoints[n][1] + 4) < .002);
+  }
+  const rescaled = scope.stepVerticalScale(raised, 1);
+  assert.equal(markerY(render(rescaled, prefix, divisions), 1), 200);
+  assert.ok(!render(hide1, prefix, divisions).includes('data-ground-channel="1"'));
+  assert.ok(!render(state, prefix, divisions).includes('data-ground-channel='));
+  // Dense-frequency bands must shift too, including when the full band is off-screen.
+  const smallSignal = { ...app.generatorDefaults, frequency: 25e6, amplitudeVpp: .02 };
+  const denseRender = settings => scope.render(app.circuits.rc, app.circuits.rc.defaults, smallSignal, key => app.translations.en[key], String, prefix, divisions, settings);
+  const bandTop = svg => Number(svg.match(/<rect x="36" y="([0-9.]+)"[^>]+fill="#f4d35e"/)[1]);
+  assert.ok(Math.abs(bandTop(denseRender(raised)) - bandTop(denseRender(original)) + 4) < 1e-9);
+  assert.ok(!/NaN|undefined|Infinity/.test(denseRender(lowered2)));
+}
+assert.equal(scope.createState().channels[1].positionDivisions, 0);
+assert.equal(scope.createState().channels[2].positionDivisions, 0);
+console.log('Independent vertical position, hidden-channel guard, bounds, moving ground markers and dense bands passed.');
