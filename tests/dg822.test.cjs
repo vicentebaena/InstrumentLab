@@ -97,7 +97,7 @@ for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, wave
   assert.equal(gridLines(instrument), 13 + 9);
   assert.ok(main.includes('2.5 ms') && instrument.includes('3 ms'));
   assert.ok(main.includes('H 250 µs/div') && instrument.includes('Time 250us'));
-  assert.ok(main.includes('CH1 0.5 V/div') && instrument.includes('CH1 0.5 V/div'));
+  assert.ok(main.includes('CH1 500mV') && instrument.includes('CH1 500mV'));
   const traces = markup => [...markup.matchAll(/<path d="([^"]+)" stroke="#(?:f4d35e|6ecbff)"/g)].map(match => match[1]);
   assert.equal(traces(main).length, 2);
   // Identical initial voltages at the same left edge of both time windows.

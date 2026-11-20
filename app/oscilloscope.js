@@ -4,6 +4,10 @@
   const defaults = { timePerDivision: 250e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
+    verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+    formatVerticalScale(value) {
+      return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
+    },
     createState() {
       return {
         selectedChannel: 1, menuChannel: null,
@@ -20,6 +24,7 @@
     },
     render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null) {
       const settings = scopeState || this.createState();
+      const verticalScaleLabel = this.formatVerticalScale(defaults.voltsPerDivision);
       const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
       const instrumentFooter = idPrefix === 'ds1102e';
       const left = 36, top = 44, width = (instrumentFooter ? 40 : 56.8) * horizontalDivisions, height = 320;
@@ -58,7 +63,7 @@
         const visible = settings.channels[channel].visible;
         const color = visible ? (channel === 1 ? '#f4d35e' : '#6ecbff') : '#526066';
         const selected = visible && settings.selectedChannel === channel;
-        const value = `${format(defaults.voltsPerDivision)} V/div`;
+        const value = verticalScaleLabel;
         return `<g aria-label="CH${channel} ${value}">
           ${selected ? `<rect x="${position}" y="380" width="50" height="27" rx="2" fill="${color}"/>` : ''}
           <text x="${position + 25}" y="400" text-anchor="middle" fill="${selected ? '#030709' : color}">CH${channel}</text>

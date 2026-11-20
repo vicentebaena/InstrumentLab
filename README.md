@@ -103,3 +103,5 @@ Channel-state checks: `node tests/oscilloscope-channels.test.cjs`.
 The active oscilloscope model is Rigol DS1102E, using the corrected user-provided photograph. The earlier DS1202Z-E identification was incorrect and its faceplate has been replaced. The DS1102E uses square grid cells, twelve horizontal divisions, eight vertical divisions and the existing Time/channel scale row. Its physical CH1/CH2 keys and channel-menu rows are positioned for this faceplate. Menu options remain display-only.
 
 El modelo activo es Rigol DS1102E. Se ha sustituido la carátula anterior y se han adaptado la pantalla, los botones CH1/CH2 y las filas del menú. Se conserva el comportamiento de canales y las doce divisiones horizontales; el menú sigue siendo solo visual.
+
+Scope vertical scale labels follow the instrument format: 10mV, 20mV, 50mV, 100mV, 200mV, 500mV, 1.00V, 2.00V, 5.00V, 10.00V. The current 0.5 V/div setting is labelled 500mV in both views, independently of the app language. This defines the scale steps and display format; vertical-knob editing remains deferred.
