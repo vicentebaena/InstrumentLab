@@ -46,6 +46,10 @@
     hideTriggerLevel(state) {
       return { ...state, trigger: { ...state.trigger, showLevel: false } };
     },
+    setTriggerLevel(state, level) {
+      if (!Number.isFinite(level)) return state;
+      return { ...state, trigger: { ...state.trigger, level: Number(level.toPrecision(12)), showLevel: true } };
+    },
     stepTriggerLevel(state, direction) {
       const trigger = state.trigger || { source: 1, level: 0 };
       const scale = state.channels[trigger.source].voltsPerDivision ?? defaults.voltsPerDivision;

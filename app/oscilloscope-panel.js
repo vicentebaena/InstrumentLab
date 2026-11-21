@@ -2,12 +2,13 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
+  const { auto, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, triggerMidpoint, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
   runStop?.addEventListener('click', actions.runStop);
   menuToggle.addEventListener('click', actions.menu);
   triggerButton?.addEventListener('click', actions.triggerMenu);
+  triggerMidpoint?.addEventListener('click', actions.triggerMidpoint);
   for (const [name, view] of Object.entries(submenuViews)) view.button.addEventListener('click', () => actions.submenu(name));
   for (const [channel, button] of Object.entries(channelButtons)) {
     button.addEventListener('click', () => actions.channel(Number(channel)));

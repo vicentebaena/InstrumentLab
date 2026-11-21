@@ -25,7 +25,7 @@ const controller = app.createOscilloscopeController({
   t: key => app.translations[language][key], format: String
 });
 const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'runStop', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel'].map(key => [key, new Element()]));
+  const elements = Object.fromEntries(['auto', 'runStop', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel', 'triggerMidpoint'].map(key => [key, new Element()]));
   elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
   elements.probeOptions = Object.fromEntries([1, 5, 10, 20, 50, 100, 200, 500, 1000].map(factor => [factor, new Element()]));
   elements.submenuViews = {
@@ -333,3 +333,8 @@ assert.equal(a.elements.runStop.attributes['aria-pressed'], 'false');
 assert.equal(settings.acquisitionRunning, true);
 a.elements.runStop.fire('click'); b.elements.auto.fire('click');
 assert.equal(a.elements.runStop.attributes['aria-pressed'], 'false');
+
+a.elements.triggerMidpoint.fire('click');
+assert.equal(settings.trigger.level, 0);
+assert.equal(settings.trigger.showLevel, true);
+assert.ok(b.elements.screen.innerHTML.includes('TRIG LVL= 0.00V'));

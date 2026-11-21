@@ -1,0 +1,36 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+let pending=null,delay=null;
+const context=vm.createContext({window:{setTimeout(callback,ms){pending=callback;delay=ms;return 1;},clearTimeout(){pending=null;}}});
+for(const file of ['circuits.js','oscilloscope.js','oscilloscope-controller.js','translations.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../app',file),'utf8'),context);
+const app=context.window.InstrumentLab;
+let practice=app.createPracticeState('rc');
+const controller=app.createOscilloscopeController({getSettings:()=>practice.oscilloscope,setSettings:s=>{practice.oscilloscope=s;},getExperiment:()=>({circuit:app.circuits.rc,parameters:practice.parameters,generator:practice.generator,probes:practice.probes}),onChange(){},onAuto(){practice=app.createPracticeState('rc');},t:k=>app.translations.en[k],format:String});
+const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${a} != ${b}`);
+for(const waveform of ['sine','square'])for(const source of [1,2]){
+ practice=app.createPracticeState('rc');
+ Object.assign(practice.generator,{waveform,offset:.4,amplitudeVpp:3});
+ practice.oscilloscope.trigger.source=source;
+ practice.oscilloscope.selectedChannel=source===1?2:1;
+ practice.oscilloscope.channels[source].visible=false;
+ practice.oscilloscope.channels[source].positionDivisions=2;
+ practice.oscilloscope.channels[source].probe=5;
+ practice.probes[source]=10;
+ controller.actions.triggerMidpoint();close(practice.oscilloscope.trigger.level,.2);
+ assert.equal(practice.oscilloscope.trigger.showLevel,true);assert.equal(delay,3000);
+ assert.equal(practice.oscilloscope.trigger.source,source);
+ assert.equal(practice.probes[source],10);assert.equal(practice.oscilloscope.channels[source].probe,5);
+ practice.oscilloscope.channels[source].coupling='AC';controller.actions.triggerMidpoint();close(practice.oscilloscope.trigger.level,0);
+ practice.oscilloscope.channels[source].coupling='GND';controller.actions.triggerMidpoint();close(practice.oscilloscope.trigger.level,0);
+}
+practice=app.createPracticeState('rc');practice.generator.offset=.6;
+controller.actions.runStop();practice.generator.offset=3;
+controller.actions.triggerMidpoint();close(practice.oscilloscope.trigger.level,.6);
+assert.equal(practice.oscilloscope.acquisitionRunning,false);
+controller.actions.runStop();controller.actions.triggerMidpoint();close(practice.oscilloscope.trigger.level,3);
+const earlier=pending;controller.actions.triggerLevel(1);assert.notEqual(pending,earlier);
+pending();assert.equal(practice.oscilloscope.trigger.showLevel,false);close(practice.oscilloscope.trigger.level,3.05);
+practice.generator.output1Enabled=false;controller.actions.triggerMidpoint();
+const signals=app.oscilloscope.createSignals(app.circuits.rc,practice.parameters,practice.generator,practice.oscilloscope,practice.probes);
+const range=signals.range(1);close(practice.oscilloscope.trigger.level,(range[0]+range[1])/2);
+console.log('Trigger 50%: source, hidden channels, attenuation, coupling, STOP, constants and shared indicator timer passed.');

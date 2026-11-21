@@ -11,6 +11,14 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
     setSettings(scope[operation](getSettings(), ...args));
     onChange();
   };
+  const showLevel = (operation, ...args) => {
+    clearLevelTimer();
+    update(operation, ...args);
+    if (window.setTimeout) levelTimer = window.setTimeout(() => {
+      levelTimer = null;
+      update('hideTriggerLevel');
+    }, 3000);
+  };
   return {
     getSettings,
     getConnections() {
@@ -65,13 +73,12 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
       channel: channel => update('pressChannel', channel),
       menu: () => update('toggleChannelMenu'),
       triggerMenu: () => update('openTriggerMenu'),
-      triggerLevel: direction => {
-        clearLevelTimer();
-        update('stepTriggerLevel', direction);
-        if (window.setTimeout) levelTimer = window.setTimeout(() => {
-          levelTimer = null;
-          update('hideTriggerLevel');
-        }, 3000);
+      triggerLevel: direction => showLevel('stepTriggerLevel', direction),
+      triggerMidpoint: () => {
+        const settings = getSettings();
+        const { circuit, parameters, generator, probes } = settings.acquisitionRunning === false && capture ? capture : getExperiment();
+        const [minimum, maximum] = scope.createSignals(circuit, parameters, generator, settings, probes).range(settings.trigger.source);
+        showLevel('setTriggerLevel', minimum / 2 + maximum / 2);
       },
       submenu: name => update('openSubmenu', name),
       submenuStep: direction => update('stepSubmenu', direction),

@@ -15,7 +15,7 @@ window.InstrumentLab.DS1102EPanel = {
       display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
       elements: {
         probeConnectors: { 1: $('ds1102eProbeConnector1'), 2: $('ds1102eProbeConnector2') },
-        triggerLevel: $('ds1102eTriggerLevel'),
+        triggerLevel: $('ds1102eTriggerLevel'), triggerMidpoint: $('ds1102eTriggerMidpoint'),
         triggerButton: $('ds1102eTriggerMenuKey'), triggerMenu: $('ds1102eTriggerMenu'),
         selectionKnob: $('ds1102eSelectionKnob'),
         submenuIndicator: $('ds1102eSubmenuIndicator'),

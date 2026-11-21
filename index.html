@@ -4,27 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-42">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-42">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-42">
-  <script defer src="assets/instruments/images.js?v=20261121-42"></script>
-  <script defer src="assets/instruments/probe-connector.js?v=20261121-42"></script>
-  <script defer src="assets/instruments/probe-body.js?v=20261121-42"></script>
-  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-42">
-  <script defer src="app/circuits.js?v=20261121-42"></script>
-  <script defer src="app/translations.js?v=20261121-42"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-42"></script>
-  <script defer src="app/instrument-window.js?v=20261121-42"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-42"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-42"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-42"></script>
-  <script defer src="app/generator.js?v=20261121-42"></script>
-  <script defer src="app/generator-controller.js?v=20261121-42"></script>
-  <script defer src="app/generator-panel.js?v=20261121-42"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-42"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-42"></script>
-  <script defer src="app/probe-panel.js?v=20261121-42"></script>
-  <script defer src="app/main.js?v=20261121-42"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261121-43">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-43">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-43">
+  <script defer src="assets/instruments/images.js?v=20261121-43"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261121-43"></script>
+  <script defer src="assets/instruments/probe-body.js?v=20261121-43"></script>
+  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-43">
+  <script defer src="app/circuits.js?v=20261121-43"></script>
+  <script defer src="app/translations.js?v=20261121-43"></script>
+  <script defer src="app/oscilloscope.js?v=20261121-43"></script>
+  <script defer src="app/instrument-window.js?v=20261121-43"></script>
+  <script defer src="app/instrument-controls.js?v=20261121-43"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261121-43"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261121-43"></script>
+  <script defer src="app/generator.js?v=20261121-43"></script>
+  <script defer src="app/generator-controller.js?v=20261121-43"></script>
+  <script defer src="app/generator-panel.js?v=20261121-43"></script>
+  <script defer src="app/dg822-panel.js?v=20261121-43"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261121-43"></script>
+  <script defer src="app/probe-panel.js?v=20261121-43"></script>
+  <script defer src="app/main.js?v=20261121-43"></script>
 </head>
 <body>
 <main class="workspace">
@@ -124,6 +124,7 @@
       <img id="ds1102eProbeConnector2" class="ds1102e-probe-connector ds1102e-probe-connector-two" alt="" draggable="false" hidden>
       <span class="ds1102e-spec-label" aria-hidden="true">100MHz 1GSa/s</span>
       <div id="ds1102eSelectionKnob" class="ds1102e-vertical-scale ds1102e-selection-knob" role="button" tabindex="0"></div>
+      <button id="ds1102eTriggerMidpoint" class="ds1102e-trigger-midpoint" type="button" aria-label="Trigger 50%">50%</button>
       <div id="ds1102eTriggerLevel" class="ds1102e-vertical-scale ds1102e-trigger-level" role="slider" tabindex="0" aria-orientation="vertical"></div>
       <button id="ds1102eTriggerSlopeKey" class="ds1102e-coupling-key ds1102e-trigger-slope-key" type="button" aria-controls="ds1102eTriggerSlopeSubmenu" aria-expanded="false"></button>
       <button id="ds1102eTriggerSourceKey" class="ds1102e-coupling-key ds1102e-trigger-source-key" type="button" aria-controls="ds1102eTriggerSourceSubmenu" aria-expanded="false"></button>
