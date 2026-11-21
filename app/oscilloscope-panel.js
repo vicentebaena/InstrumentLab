@@ -2,9 +2,10 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
+  const { auto, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
+  runStop?.addEventListener('click', actions.runStop);
   menuToggle.addEventListener('click', actions.menu);
   triggerButton?.addEventListener('click', actions.triggerMenu);
   for (const [name, view] of Object.entries(submenuViews)) view.button.addEventListener('click', () => actions.submenu(name));
@@ -31,6 +32,11 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
   function render() {
     screen.innerHTML = controller.getDisplay(display);
     const settings = getSettings();
+    if (runStop) {
+      const stopped = settings.acquisitionRunning === false;
+      runStop.setAttribute('aria-pressed', String(stopped));
+      runStop.setAttribute('aria-label', t(stopped ? 'scopeResume' : 'scopeStop'));
+    }
     const connections = controller.getConnections();
     for (const [channel, connector] of Object.entries(probeConnectors)) {
       connector.hidden = !connections[channel];

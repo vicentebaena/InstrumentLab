@@ -35,7 +35,7 @@
     createState(overrides = {}) {
       const state = {
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
-        selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
+        acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
       return { ...state, ...overrides, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
@@ -52,7 +52,7 @@
       const level = Math.max(-1e6, Math.min(1e6, Number((trigger.level + Math.sign(direction) * scale * 0.1).toPrecision(12))));
       return { ...state, trigger: { ...trigger, level, showLevel: true } };
     },
-    createSignals(circuit, parameters, generator, settings) {
+    createSignals(circuit, parameters, generator, settings, probes = {}) {
       const period = 1 / generator.frequency;
       let mean = { input: 0, output: 0 };
       if ([1, 2].some(channel => settings.channels[channel].coupling === 'AC')) {
@@ -63,9 +63,10 @@
         }
       }
       const key = channel => channel === 1 ? 'input' : 'output';
+      const gain = channel => (settings.channels[channel].probe ?? 1) / (probes[channel] ?? 1);
       const transform = (voltage, channel) => settings.channels[channel].coupling === 'GND' ? 0
-        : (voltage - (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0)) * (settings.channels[channel].probe ?? 1);
-      const toRaw = (level, channel) => level / (settings.channels[channel].probe ?? 1) + (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0);
+        : (voltage - (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0)) * gain(channel);
+      const toRaw = (level, channel) => level / gain(channel) + (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0);
       return {
         transform, toRaw,
         sample: (time, channel) => transform(circuit.sample(time, parameters, generator)[key(channel)], channel),
@@ -182,7 +183,7 @@
       const activeSignals = [1, 2].some(channel => settings.channels[channel].visible && settings.channels[channel].coupling !== 'GND');
       const dense = activeSignals && generator.output1Enabled !== false && duration * generator.frequency > width / 4;
       // Positive position shifts the common time reference and both traces to the right.
-      const signals = this.createSignals(circuit, parameters, generator, settings);
+      const signals = this.createSignals(circuit, parameters, generator, settings, presentation.probes);
       const acquisition = presentation.triggerAnalysis ?? this.analyzeTrigger(circuit, parameters, generator, settings, signals);
       const horizontalPosition = Math.max(-this.horizontalPositionLimit, Math.min(this.horizontalPositionLimit, settings.horizontalPositionDivisions ?? 0));
       const start = acquisition.time - duration / 2 - horizontalPosition * timePerDivision + (acquisition.locked ? 0 : presentation.freeRunTime ?? 0);

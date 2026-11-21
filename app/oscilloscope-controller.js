@@ -1,7 +1,7 @@
 'use strict';
 // Shared commands/state access. A front panel only maps its controls to these actions.
 window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings, onChange, onAuto, getExperiment, t, format }) => {
-  let freeRunOffset = 0, levelTimer = null;
+  let freeRunOffset = 0, levelTimer = null, capture = null;
   const clearLevelTimer = () => {
     if (levelTimer !== null) window.clearTimeout?.(levelTimer);
     levelTimer = null;
@@ -20,16 +20,18 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
         return [channel, Array.isArray(wiring) && wiring.length > 0];
       }));
     },
-    resetTransient() { clearLevelTimer(); freeRunOffset = 0; },
+    resetTransient() { clearLevelTimer(); freeRunOffset = 0; capture = null; },
     getAcquisition() {
-      const { circuit, parameters, generator } = getExperiment();
-      return scope.analyzeTrigger(circuit, parameters, generator, getSettings());
+      const { circuit, parameters, generator, probes } = getExperiment();
+      const settings = getSettings();
+      return scope.analyzeTrigger(circuit, parameters, generator, settings, scope.createSignals(circuit, parameters, generator, settings, probes));
     },
     needsAnimation() {
       const settings = getSettings(), { generator } = getExperiment();
-      return generator.output1Enabled !== false && Object.values(settings.channels).some(channel => channel.visible && channel.coupling !== 'GND') && !this.getAcquisition().locked;
+      return settings.acquisitionRunning !== false && generator.output1Enabled !== false && Object.values(settings.channels).some(channel => channel.visible && channel.coupling !== 'GND') && !this.getAcquisition().locked;
     },
     advance(seconds) {
+      if (getSettings().acquisitionRunning === false) return;
       if (this.getAcquisition().locked) freeRunOffset = 0;
       else {
         const period = 1 / getExperiment().generator.frequency;
@@ -38,6 +40,28 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
       }
     },
     actions: {
+      runStop: () => {
+        const settings = getSettings();
+        if (settings.acquisitionRunning === false) {
+          capture = null;
+          setSettings({ ...settings, acquisitionRunning: true });
+        } else {
+          const experiment = getExperiment();
+          // Snapshot the ideal waveform inputs, never its SVG or display settings.
+          // Display controls can then reproject both frozen signals on one time axis.
+          const parameters = JSON.parse(JSON.stringify(experiment.parameters));
+          const generator = JSON.parse(JSON.stringify(experiment.generator));
+          const circuit = { ...experiment.circuit };
+          const probes = { ...experiment.probes };
+          const acquisition = scope.analyzeTrigger(circuit, parameters, generator, settings, scope.createSignals(circuit, parameters, generator, settings, probes));
+          capture = { circuit, parameters, generator, probes, acquisition: {
+            ...acquisition, locked: true,
+            time: acquisition.time + (acquisition.locked ? 0 : -(freeRunOffset % (1 / generator.frequency)))
+          } };
+          setSettings({ ...settings, acquisitionRunning: false });
+        }
+        onChange();
+      },
       channel: channel => update('pressChannel', channel),
       menu: () => update('toggleChannelMenu'),
       triggerMenu: () => update('openTriggerMenu'),
@@ -56,14 +80,15 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
       timeScale: direction => update('stepHorizontalScale', direction),
       position: direction => update('stepVerticalPosition', direction),
       horizontalPosition: direction => update('stepHorizontalPosition', direction),
-      auto: () => { clearLevelTimer(); freeRunOffset = 0; onAuto(); }
+      auto: () => { clearLevelTimer(); freeRunOffset = 0; capture = null; onAuto(); }
     },
     getDisplay({ idPrefix = 'scope', horizontalDivisions = 10, ...presentation } = {}) {
-      const { circuit, parameters, generator } = getExperiment();
-      const acquisition = this.getAcquisition();
-      if (acquisition.locked) freeRunOffset = 0;
+      const frozen = getSettings().acquisitionRunning === false ? capture : null;
+      const { circuit, parameters, generator, probes } = frozen ?? getExperiment();
+      const acquisition = frozen?.acquisition ?? this.getAcquisition();
+      if (!frozen && acquisition.locked) freeRunOffset = 0;
       return scope.render(circuit, parameters, generator, t, format, idPrefix, horizontalDivisions, getSettings(),
-        { ...presentation, triggerAnalysis: acquisition, freeRunTime: -(freeRunOffset % (1 / generator.frequency)) });
+        { ...presentation, probes, triggerAnalysis: acquisition, freeRunTime: -(freeRunOffset % (1 / generator.frequency)) });
     }
   };
 };

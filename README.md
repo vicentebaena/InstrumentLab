@@ -167,3 +167,21 @@ Transparent probe connectors cover the DS1102E BNC inputs wired by the active pr
 Las sondas sobre los BNC indican las conexiones físicas de la práctica activa. En RC aparecen en CH1 y CH2, aunque se oculte una señal; EXT TRIG queda libre. Las referencias originales se conservan fuera del repositorio.
 
 The RC generator faceplate also shows the same connector on CH1 only. It remains connected when Output1 is off. / El generador de la práctica RC muestra el conector en CH1; permanece conectado al apagar Output1.
+
+## RUN/STOP
+
+RUN/STOP toggles between yellow (live acquisition) and red (stopped). STOP retains both ideal waveforms and their shared acquisition time, including the phase of an unlocked moving signal. Only the signals are retained: menus, channel visibility, scales, positions, coupling and probe display controls remain active in both views. Generator and component changes do not alter the capture; RUN resumes the current experiment. AUTO and practice restoration return to RUN. The shared oscilloscope controller owns acquisition and the DS1102E adapter only maps the key. In this ideal periodic simulator the capture is an independent snapshot of waveform inputs and acquisition origin, rather than a finite hardware sample buffer.
+
+RUN/STOP alterna amarillo (señal en vivo) y rojo (captura detenida). Conserva ambas señales y su referencia temporal común. Puedes cambiar escalas, posiciones, menús y ajustes de visualización sobre la captura. Cambiar el generador o los componentes no altera las señales retenidas; RUN recupera la señal actual. AUTO y Restaurar valores iniciales vuelven a RUN. Pruebas: `node tests/oscilloscope-run-stop.test.cjs`.
+
+Spanish is the initial application language; an explicitly saved English or Spanish preference takes precedence. / La aplicación se inicia en español y respeta el idioma elegido y guardado por el usuario.
+
+## Physical probe attenuation / Atenuación física de las sondas
+
+Click either coloured probe square (or its X1/X10 label) in the main circuit to open that channel's movable probe window. The cleaned probe photo has an orange switch and an adjacent X1/X10 toggle. Each physical probe starts at X1; X10 divides the voltage arriving at that oscilloscope input by ten, including DC offset. It changes neither the circuit voltage nor any oscilloscope setting. The main diagram always shows each probe's current factor.
+
+Physical attenuation and the oscilloscope menu's Sonda/Probe multiplier are independent. The displayed voltage is the coupled circuit voltage × the scope multiplier / the physical attenuation. For example, physical X10 with scope 1X displays one tenth; selecting scope 10X separately compensates it. Trigger detection uses the same attenuated and compensated signal. While stopped, physical probe changes leave the existing capture unchanged until RUN resumes. AUTO and Restore defaults restore both physical probes to X1.
+
+Pulsa los cuadrados de las sondas del esquema para abrir su ventana. El selector naranja o su etiqueta alternan X1 y X10 de forma independiente para cada canal; el factor también aparece en el esquema principal. X10 divide por diez la señal que llega al osciloscopio y no modifica su configuración. El ajuste «Sonda» del osciloscopio se cambia por separado. En STOP se conserva la atenuación de la captura; al reanudar se usa la posición actual de la sonda. AUTO y Restaurar valores iniciales devuelven las sondas a X1.
+
+`app/probe-panel.js` maps the physical switches; practice state owns `probes`. The scope controller carries those factors into signal rendering, trigger analysis and frozen acquisition snapshots. The derived photo is embedded in `assets/instruments/probe-body.js`; originals remain private. Validation: `node tests/physical-probe.test.cjs`.

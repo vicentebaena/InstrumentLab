@@ -6,6 +6,7 @@ window.InstrumentLab = {
       titleKey: 'rcTitle',
       defaults: { resistance: 1000, capacitance: 100e-9 },
       instrumentDefaults: {
+        probes: { 1: 1, 2: 1 },
         generator: {
           waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2,
           output1Enabled: true, output2Enabled: false,
@@ -87,7 +88,7 @@ window.InstrumentLab = {
           output: offset + (high ? -peak + change : peak - change)
         };
       },
-      diagram({ resistanceLabel, capacitanceLabel }, t) {
+      diagram({ resistanceLabel, capacitanceLabel, probes = {} }, t) {
         return `<svg viewBox="0 -30 940 510" role="group" aria-labelledby="diagramTitle diagramDescription">
           <title id="diagramTitle">${t('rcTitle')}</title><desc id="diagramDescription">${t('diagramDescription')}</desc>
           <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#21363b"/></pattern></defs>
@@ -103,8 +104,8 @@ window.InstrumentLab = {
           </g>
           <g stroke-linejoin="round">
             <g fill="#142b31" stroke-width="2.5">
-              <rect x="319" y="177" width="12" height="18" rx="3" stroke="#f4d35e"/>
-              <rect x="649" y="177" width="12" height="18" rx="3" stroke="#6ecbff"/>
+              <g class="probe-target" data-probe="1" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '1')}"><rect x="311" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="319" y="177" width="12" height="18" rx="3" stroke="#f4d35e"/><text x="307" y="192" text-anchor="end" fill="#f4d35e" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[1] ?? 1}</text></g>
+              <g class="probe-target" data-probe="2" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '2')}"><rect x="641" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="649" y="177" width="12" height="18" rx="3" stroke="#6ecbff"/><text x="637" y="192" text-anchor="end" fill="#6ecbff" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[2] ?? 1}</text></g>
             </g>
             <g fill="none" stroke-width="2.5">
               <path d="M325 195V205" stroke="#f4d35e"/>
@@ -142,6 +143,7 @@ window.InstrumentLab = {
     return {
       circuitId,
       parameters: { ...circuit.defaults },
+      probes: { 1: 1, 2: 1, ...circuit.instrumentDefaults?.probes },
       generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator },
       oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope)
     };

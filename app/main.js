@@ -2,8 +2,8 @@
 (() => {
   const { circuits, translations } = window.InstrumentLab;
   const $ = id => document.getElementById(id);
-  let language = 'en';
-  try { language = localStorage.getItem('instrumentlab-language') === 'es' ? 'es' : 'en'; } catch {}
+  let language = 'es';
+  try { language = localStorage.getItem('instrumentlab-language') === 'en' ? 'en' : 'es'; } catch {}
   const state = window.InstrumentLab.createPracticeState('rc');
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
@@ -13,10 +13,14 @@
   const scopeController = window.InstrumentLab.createOscilloscopeController({
     getSettings: () => state.oscilloscope,
     setSettings: settings => { state.oscilloscope = settings; },
-    getExperiment: () => ({ circuit: circuits[state.circuitId], parameters: state.parameters, generator: state.generator }),
+    getExperiment: () => ({ circuit: circuits[state.circuitId], parameters: state.parameters, generator: state.generator, probes: state.probes }),
     t, format: number, onChange: render, onAuto: () => restorePractice()
   });
   const rigolScopePanel = window.InstrumentLab.DS1102EPanel.create({ controller: scopeController, t });
+  const probePanel = window.InstrumentLab.createProbePanel({
+    getProbes: () => state.probes, t,
+    onToggle: channel => { state.probes[channel] = state.probes[channel] === 10 ? 1 : 10; render(); }
+  });
   let animationFrame = null, animationTime = null;
   function renderScopes() {
     $('scopeDisplay').innerHTML = scopeController.getDisplay();
@@ -53,10 +57,11 @@
     $('generatorOutputState').textContent = t(state.generator.output1Enabled ? 'outputOn' : 'outputOff');
     $('rcObservation').textContent = t(state.generator.waveform === 'sine' ? 'observeSine' : 'observe');
     dg822Panel.render();
+    probePanel.render();
     const circuit = circuits[state.circuitId];
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));
     $('circuitTitle').textContent = t(circuit.titleKey);
-    $('diagram').innerHTML = circuit.diagram({ resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
+    $('diagram').innerHTML = circuit.diagram({ probes: state.probes, resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
     renderScopes();
     syncAnimation();
     const { tau, cutoff } = circuit.characteristics(state.parameters);
@@ -78,12 +83,16 @@
     input.select();
   }
   $('diagram').addEventListener('click', event => {
+    const probe = event.target.closest('[data-probe]');
+    if (probe) { probePanel.open(Number(probe.dataset.probe)); return; }
     if (event.target.closest('[data-instrument="dg822"]')) { dg822Panel.open(); return; }
     if (event.target.closest('[data-instrument="ds1102e"]')) { rigolScopePanel.open(); return; }
     const target = event.target.closest('[data-parameter]');
     if (target) openEditor(target.dataset.parameter);
   });
   $('diagram').addEventListener('keydown', event => {
+    const probe = event.target.closest('[data-probe]');
+    if (probe && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); probePanel.open(Number(probe.dataset.probe)); return; }
     if (event.target.closest('[data-instrument="dg822"]') && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault(); dg822Panel.open(); return;
     }

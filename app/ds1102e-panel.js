@@ -43,7 +43,7 @@ window.InstrumentLab.DS1102EPanel = {
             formatValue: factor => `${factor}X`
           }
         },
-        auto: $('ds1102eAuto'), menuToggle: $('ds1102eMenuToggle'),
+        runStop: $('ds1102eRunStop'), auto: $('ds1102eAuto'), menuToggle: $('ds1102eMenuToggle'),
         channelButtons: { 1: $('ds1102eCH1'), 2: $('ds1102eCH2') },
         scale: $('ds1102eVerticalScale'), timeScale: $('ds1102eHorizontalScale'), position: $('ds1102eVerticalPosition'), horizontalPosition: $('ds1102eHorizontalPosition'),
         screen: $('ds1102eDisplay'), menu: $('ds1102eChannelMenu'), menuTitle: $('ds1102eMenuTitle')

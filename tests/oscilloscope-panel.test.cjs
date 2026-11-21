@@ -25,7 +25,7 @@ const controller = app.createOscilloscopeController({
   t: key => app.translations[language][key], format: String
 });
 const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel'].map(key => [key, new Element()]));
+  const elements = Object.fromEntries(['auto', 'runStop', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel'].map(key => [key, new Element()]));
   elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
   elements.probeOptions = Object.fromEntries([1, 5, 10, 20, 50, 100, 200, 500, 1000].map(factor => [factor, new Element()]));
   elements.submenuViews = {
@@ -319,3 +319,17 @@ app.circuits.rc.connections = originalWiring;
 notify();
 assert.equal(a.elements.probeConnectors[2].hidden, false);
 console.log('Physical probe connectors follow active practice wiring independently of hidden traces.');
+
+// Acquisition controls are shared by every model adapter.
+a.elements.auto.fire('click');
+const liveTrace = a.elements.screen.innerHTML;
+a.elements.runStop.fire('click');
+assert.equal(a.elements.runStop.attributes['aria-pressed'], 'true');
+assert.equal(b.elements.runStop.attributes['aria-pressed'], 'true');
+assert.equal(settings.acquisitionRunning, false);
+assert.equal(a.elements.screen.innerHTML, liveTrace);
+b.elements.runStop.fire('click');
+assert.equal(a.elements.runStop.attributes['aria-pressed'], 'false');
+assert.equal(settings.acquisitionRunning, true);
+a.elements.runStop.fire('click'); b.elements.auto.fire('click');
+assert.equal(a.elements.runStop.attributes['aria-pressed'], 'false');

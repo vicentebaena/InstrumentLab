@@ -1,27 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-39">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-39">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-39">
-  <script defer src="assets/instruments/images.js?v=20261121-39"></script>
-  <script defer src="assets/instruments/probe-connector.js?v=20261121-39"></script>
-  <script defer src="app/circuits.js?v=20261121-39"></script>
-  <script defer src="app/translations.js?v=20261121-39"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-39"></script>
-  <script defer src="app/instrument-window.js?v=20261121-39"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-39"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-39"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-39"></script>
-  <script defer src="app/generator.js?v=20261121-39"></script>
-  <script defer src="app/generator-controller.js?v=20261121-39"></script>
-  <script defer src="app/generator-panel.js?v=20261121-39"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-39"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-39"></script>
-  <script defer src="app/main.js?v=20261121-39"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261121-42">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-42">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-42">
+  <script defer src="assets/instruments/images.js?v=20261121-42"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261121-42"></script>
+  <script defer src="assets/instruments/probe-body.js?v=20261121-42"></script>
+  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-42">
+  <script defer src="app/circuits.js?v=20261121-42"></script>
+  <script defer src="app/translations.js?v=20261121-42"></script>
+  <script defer src="app/oscilloscope.js?v=20261121-42"></script>
+  <script defer src="app/instrument-window.js?v=20261121-42"></script>
+  <script defer src="app/instrument-controls.js?v=20261121-42"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261121-42"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261121-42"></script>
+  <script defer src="app/generator.js?v=20261121-42"></script>
+  <script defer src="app/generator-controller.js?v=20261121-42"></script>
+  <script defer src="app/generator-panel.js?v=20261121-42"></script>
+  <script defer src="app/dg822-panel.js?v=20261121-42"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261121-42"></script>
+  <script defer src="app/probe-panel.js?v=20261121-42"></script>
+  <script defer src="app/main.js?v=20261121-42"></script>
 </head>
 <body>
 <main class="workspace">
@@ -58,6 +61,16 @@
     <label class="component-field" for="componentValue"><span data-i18n="componentValue"></span><span class="input-unit"><input id="componentValue" type="number" step="any" required><span id="componentUnit"></span></span></label>
     <div class="dialog-actions"><button id="cancelComponent" type="button" data-i18n="cancel"></button><button type="submit" class="primary" data-i18n="apply"></button></div>
   </form>
+</dialog>
+<dialog id="probeDialog" class="probe-dialog" aria-labelledby="probeTitle">
+  <header id="probeWindowBar" class="dg822-window-bar">
+    <h2 id="probeTitle"></h2><button id="probeClose" type="button" data-i18n="closeInstrument"></button>
+  </header>
+  <div class="probe-body"><div class="probe-image-stage">
+    <img id="probePhoto" alt="" draggable="false">
+    <button id="probeSwitch" class="probe-switch" type="button" aria-pressed="false" aria-label="Attenuation"></button>
+    <button id="probeAttenuation" class="probe-attenuation" type="button" aria-pressed="false">X1</button>
+  </div><p class="probe-help" data-i18n="probeHelp"></p></div>
 </dialog>
 <dialog id="dg822Dialog" class="dg822-dialog" aria-labelledby="dg822Title">
   <header id="dg822WindowBar" class="dg822-window-bar">
@@ -118,6 +131,7 @@
       <button id="ds1102eProbeKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-controls="ds1102eProbeSubmenu" aria-expanded="false"></button>
       <button id="ds1102eCouplingKey" class="ds1102e-coupling-key" type="button" aria-controls="ds1102eCouplingSubmenu" aria-expanded="false"></button>
       <span id="ds1102eSubmenuIndicator" class="ds1102e-submenu-indicator" aria-hidden="true" hidden><svg viewBox="0 0 40 40"><path d="M19 8a12 12 0 1 1-10 7"/><path d="M4 21l4-8 8 4"/></svg></span>
+      <button id="ds1102eRunStop" class="ds1102e-run-stop" type="button" aria-pressed="false" aria-label="RUN/STOP">RUN/STOP</button>
       <button id="ds1102eAuto" class="ds1102e-auto" type="button" aria-label="AUTO"></button>
       <button id="ds1102eMenuToggle" class="ds1102e-menu-toggle" type="button" aria-label="MENU ON/OFF" aria-controls="ds1102eChannelMenu" aria-expanded="false"></button>
       <button id="ds1102eCH1" class="ds1102e-channel-key ds1102e-channel-one" type="button" aria-pressed="true">CH1</button>
