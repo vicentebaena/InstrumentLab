@@ -4,11 +4,20 @@
   const defaults = { timePerDivision: 200e-6, voltsPerDivision: 0.5 };
   window.InstrumentLab.oscilloscope = {
     defaults,
+    submenus: {
+      coupling: { property: 'coupling', options: ['DC', 'AC', 'GND'] },
+      probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] }
+    },
     verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
     horizontalScales: [10e-6, 20e-6, 50e-6, 100e-6, 200e-6, 500e-6, 1e-3, 2e-3, 5e-3, 10e-3],
     formatTimeScale(value) {
       const labels = ['10.00us', '20.00us', '50.00us', '100.0us', '200.0us', '500.0us', '1.000ms', '2.000ms', '5.000ms', '10.00ms'];
       return labels[this.horizontalScales.indexOf(value)];
+    },
+    stepHorizontalPosition(state, direction) {
+      const current = state.horizontalPositionDivisions ?? 0;
+      const next = Math.max(-12, Math.min(12, Math.round((current + Math.sign(direction) * 0.1) * 10) / 10));
+      return next === current ? state : { ...state, horizontalPositionDivisions: next };
     },
     stepHorizontalScale(state, direction) {
       const index = this.horizontalScales.indexOf(state.timePerDivision ?? defaults.timePerDivision);
@@ -21,7 +30,7 @@
     },
     createState(overrides = {}) {
       const state = {
-        selectedChannel: 1, menuChannel: null, submenu: null, timePerDivision: defaults.timePerDivision,
+        selectedChannel: 1, menuChannel: null, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
       return { ...state, ...overrides, channels: {
@@ -50,18 +59,35 @@
         [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
       } };
     },
-    openCouplingSubmenu(state) {
+    openSubmenu(state, name) {
+      const definition = this.submenus[name];
+      if (!definition) throw new RangeError('Unknown oscilloscope submenu.');
       if (state.menuChannel === null) return state;
-      return { ...state, submenu: 'coupling' };
+      return { ...state, submenu: name, submenuSelection: state.channels[state.menuChannel][definition.property] };
+    },
+    stepSubmenu(state, direction) {
+      const definition = this.submenus[state.submenu];
+      if (state.menuChannel === null || !definition) return state;
+      const index = definition.options.indexOf(state.submenuSelection);
+      const next = Math.max(0, Math.min(definition.options.length - 1, index + Math.sign(direction)));
+      return { ...state, submenuSelection: definition.options[next] };
+    },
+    confirmSubmenu(state) {
+      const definition = this.submenus[state.submenu];
+      if (state.menuChannel === null || !definition || !definition.options.includes(state.submenuSelection)) return state;
+      const channel = state.menuChannel;
+      return { ...state, submenu: null, submenuSelection: null, channels: { ...state.channels,
+        [channel]: { ...state.channels[channel], [definition.property]: state.submenuSelection }
+      } };
     },
     toggleChannelMenu(state) {
-      return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null, submenu: null };
+      return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null, submenu: null, submenuSelection: null };
     },
     pressChannel(state, channel) {
       if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
       return {
-        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, submenu: null,
+        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, submenu: null, submenuSelection: null,
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
     },
@@ -77,24 +103,39 @@
       const timeLabel = instrumentFooter ? `Time ${timeScaleLabel}` : `H ${timeScaleLabel}/div`;
       const duration = horizontalDivisions * timePerDivision;
       const period = 1 / generator.frequency;
-      const dense = (show1 || show2) && generator.output1Enabled !== false && duration * generator.frequency > width / 4;
-      // Keep the time reference at screen centre while changing the timebase.
-      const start = -duration / 2;
+      const activeSignals = [1, 2].some(channel => settings.channels[channel].visible && settings.channels[channel].coupling !== 'GND');
+      const dense = activeSignals && generator.output1Enabled !== false && duration * generator.frequency > width / 4;
+      // Positive position shifts the common time reference and both traces to the right.
+      const start = -duration / 2 - (settings.horizontalPositionDivisions ?? 0) * timePerDivision;
       const times = new Set(Array.from({ length: 1201 }, (_, i) => start + duration * i / 1200));
       // Include each side of every square-wave edge, and resolve fast RC responses.
       const half = period / 2;
       const tau = circuit.characteristics(parameters).tau;
-      for (let k = Math.floor(start / half); !dense && (show1 || show2) && generator.output1Enabled !== false && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
+      for (let k = Math.floor(start / half); !dense && activeSignals && generator.output1Enabled !== false && generator.waveform === 'square' && k <= Math.ceil((start + duration) / half); k++) {
         const edge = k * half;
         for (const dt of [-period * 1e-10, 0, period * 1e-10, ...[0.02, 0.1, 0.25, 0.5, 1, 2, 4, 8].map(v => v * tau)]) {
           const time = edge + dt;
           if (time >= start && time <= start + duration) times.add(time);
         }
       }
-      const samples = dense ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
+      const samples = dense || !activeSignals ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
       const x = time => left + (time - start) / duration * width;
       const zeroY = channel => top + height / 2 - (settings.channels[channel].positionDivisions ?? 0) * height / 8;
-      const y = (voltage, channel) => zeroY(channel) - voltage / scale(channel) * height / 8;
+      // Remove the mean over the complete periodic signal, not the visible time window.
+      let means = { input: 0, output: 0 };
+      if ([1, 2].some(channel => settings.channels[channel].visible && settings.channels[channel].coupling === 'AC')) {
+        if (circuit.mean) means = circuit.mean(parameters, generator);
+        else {
+          for (let i = 0; i < 2048; i++) {
+            const sample = circuit.sample((i + 0.5) * period / 2048, parameters, generator);
+            means.input += sample.input / 2048;
+            means.output += sample.output / 2048;
+          }
+        }
+      }
+      const displayedVoltage = (voltage, channel) => settings.channels[channel].coupling === 'GND' ? 0
+        : (voltage - (settings.channels[channel].coupling === 'AC' ? means[channel === 1 ? 'input' : 'output'] : 0)) * (settings.channels[channel].probe ?? 1);
+      const y = (voltage, channel) => zeroY(channel) - displayedVoltage(voltage, channel) / scale(channel) * height / 8;
       const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key], key === 'input' ? 1 : 2).toFixed(3)}`).join(' ');
       // At unresolved frequencies show the actual range, not a false aliased trace.
       function band(peak, color, channel) {
@@ -103,9 +144,16 @@
         if (y(generator.offset + peak, channel) > top + height || y(generator.offset - peak, channel) < top) return '';
         return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
       }
-      const traces = dense
-        ? (show1 ? band(generator.amplitudeVpp / 2, '#f4d35e', 1) : '') + (show2 ? band(generator.amplitudeVpp / 2 * (generator.waveform === 'sine' ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau))), '#6ecbff', 2) : '')
-        : (show1 ? `<path d="${trace('input')}" stroke="#f4d35e"/>` : '') + (show2 ? `<path d="${trace('output')}" stroke="#6ecbff"/>` : '');
+      const channelTrace = channel => {
+        if (!settings.channels[channel].visible) return '';
+        const color = channel === 1 ? '#f4d35e' : '#6ecbff';
+        if (settings.channels[channel].coupling === 'GND') return `<path d="M${left} ${zeroY(channel)}H${left + width}" stroke="${color}"/>`;
+        if (!dense) return `<path d="${trace(channel === 1 ? 'input' : 'output')}" stroke="${color}"/>`;
+        const peak = generator.amplitudeVpp / 2 * (channel === 1 ? 1 : generator.waveform === 'sine'
+          ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau)));
+        return band(peak, color, channel);
+      };
+      const traces = channelTrace(1) + channelTrace(2);
       const channelScale = (channel, position) => {
         const visible = settings.channels[channel].visible;
         const color = visible ? (channel === 1 ? '#f4d35e' : '#6ecbff') : '#526066';

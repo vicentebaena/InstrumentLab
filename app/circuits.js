@@ -12,7 +12,7 @@ window.InstrumentLab = {
           frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc'
         },
         oscilloscope: {
-          timePerDivision: 200e-6, selectedChannel: 1, menuChannel: null,
+          timePerDivision: 200e-6, horizontalPositionDivisions: 0, selectedChannel: 1, menuChannel: null,
           channels: {
             1: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 },
             2: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 }
@@ -27,6 +27,10 @@ window.InstrumentLab = {
       characteristics({ resistance, capacitance }) {
         const tau = resistance * capacitance;
         return { tau, cutoff: 1 / (2 * Math.PI * tau) };
+      },
+      mean(parameters, generator) {
+        const mean = generator.output1Enabled === false ? 0 : generator.offset;
+        return { input: mean, output: mean };
       },
       // Exact periodic steady-state responses for sine and symmetrical square waves.
       sample(time, { resistance, capacitance }, { frequency, amplitudeVpp, offset, waveform = 'square', output1Enabled = true }) {

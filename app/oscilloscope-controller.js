@@ -11,10 +11,13 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
     actions: {
       channel: channel => update('pressChannel', channel),
       menu: () => update('toggleChannelMenu'),
-      couplingMenu: () => update('openCouplingSubmenu'),
+      submenu: name => update('openSubmenu', name),
+      submenuStep: direction => update('stepSubmenu', direction),
+      submenuConfirm: () => update('confirmSubmenu'),
       scale: direction => update('stepVerticalScale', direction),
       timeScale: direction => update('stepHorizontalScale', direction),
       position: direction => update('stepVerticalPosition', direction),
+      horizontalPosition: direction => update('stepHorizontalPosition', direction),
       auto: () => onAuto()
     },
     getDisplay({ idPrefix = 'scope', horizontalDivisions = 10, ...presentation } = {}) {

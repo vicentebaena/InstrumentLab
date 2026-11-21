@@ -25,8 +25,13 @@ const controller = app.createOscilloscopeController({
   t: key => app.translations[language][key], format: String
 });
 const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator'].map(key => [key, new Element()]));
+  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition'].map(key => [key, new Element()]));
   elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
+  elements.probeOptions = Object.fromEntries([1, 5, 10, 20, 50, 100, 200, 500, 1000].map(factor => [factor, new Element()]));
+  elements.submenuViews = {
+    coupling: { button: elements.couplingButton, menu: elements.couplingSubmenu, value: elements.couplingValue, options: elements.couplingOptions, labelKey: 'scopeCoupling', formatValue: value => value === 'GND' ? app.translations[language].scopeGroundCoupling : value },
+    probe: { button: elements.probeButton, menu: elements.probeSubmenu, value: elements.probeValue, options: elements.probeOptions, labelKey: 'scopeProbe', formatValue: value => `${value}X` }
+  };
   elements.channelButtons = { 1: new Element(), 2: new Element() };
   let opens = 0;
   const panel = app.createOscilloscopePanel({ elements, controller, t: key => app.translations[language][key], display: { idPrefix, horizontalDivisions, footerScales, cellWidth }, openWindow: () => opens++ });
@@ -87,7 +92,7 @@ a.elements.position.fire('keydown', { key: 'ArrowUp' });
 assert.equal(settings.channels[1].positionDivisions, .1);
 console.log('Two model-independent panels share controls, menus, scales, position, visibility, AUTO, translation and screen rendering.');
 
-// Coupling choices are visual only; menu lifecycle is shared across models.
+// Opening the submenu alone leaves signals unchanged; choices require knob confirmation.
 controller.actions.auto();
 a.elements.couplingButton.fire('click');
 assert.equal(settings.submenu, null);
@@ -125,4 +130,86 @@ controller.actions.auto();
 assert.equal(a.elements.menu.hidden, true);
 assert.equal(a.elements.couplingSubmenu.hidden, true);
 assert.equal(a.elements.submenuIndicator.hidden, true);
-console.log('Visual coupling submenu, selected DC, no electrical changes, shared indicator and complete menu closure passed.');
+console.log('Coupling submenu opens without changing the signal and supports full menu cancellation.');
+
+a.elements.channelButtons[1].fire('click');
+a.elements.couplingButton.fire('click');
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+assert.equal(settings.submenuSelection, 'AC');
+assert.equal(settings.channels[1].coupling, 'DC');
+assert.equal(b.elements.couplingOptions.AC.attributes['data-selected'], 'true');
+a.elements.selectionKnob.fire('keydown', { key: 'Enter' });
+assert.equal(settings.channels[1].coupling, 'AC');
+assert.equal(a.elements.couplingValue.textContent, 'AC');
+assert.equal(a.elements.couplingSubmenu.hidden, true);
+assert.equal(b.elements.submenuIndicator.hidden, true);
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenuSelection, 'AC');
+b.elements.selectionKnob.fire('wheel', { deltaY: 40, deltaMode: 0 });
+assert.equal(settings.submenuSelection, 'GND');
+assert.equal(settings.channels[1].coupling, 'AC');
+b.elements.selectionKnob.fire('click');
+assert.equal(settings.channels[1].coupling, 'GND');
+assert.equal(a.elements.couplingValue.textContent, 'Tierra');
+// A rotation followed by its browser click must not accidentally commit the draft.
+a.elements.couplingButton.fire('click');
+a.elements.selectionKnob.fire('pointerdown', { clientX: 50, clientY: 0 });
+a.elements.selectionKnob.fire('pointermove', { clientX: 0, clientY: 50 });
+a.elements.selectionKnob.fire('pointerup');
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.submenuSelection, 'DC');
+assert.equal(settings.submenu, 'coupling');
+assert.equal(settings.channels[1].coupling, 'GND');
+a.elements.selectionKnob.fire('pointerdown', { clientX: 50, clientY: 0 });
+a.elements.selectionKnob.fire('pointerup');
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.channels[1].coupling, 'DC');
+assert.equal(settings.submenu, null);
+console.log('Selection knob navigation/press, reopening committed option, shared highlight, labels and drag-click suppression passed.');
+
+// Sonda reuses the same knob and draft/confirm flow as Acoplamiento.
+a.elements.probeButton.fire('click');
+assert.equal(settings.submenu, 'probe');
+assert.equal(a.elements.probeSubmenu.hidden, false);
+assert.equal(a.elements.couplingSubmenu.hidden, true);
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+assert.equal(settings.submenuSelection, 5);
+assert.equal(settings.channels[1].probe, 1);
+assert.equal(b.elements.probeOptions[5].attributes['data-selected'], 'true');
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.channels[1].probe, 5);
+assert.equal(settings.channels[2].probe, 1);
+assert.equal(a.elements.probeValue.textContent, '5X');
+assert.equal(a.elements.probeSubmenu.hidden, true);
+assert.equal(a.elements.submenuIndicator.hidden, true);
+a.elements.probeButton.fire('click');
+assert.equal(settings.submenuSelection, 5);
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+a.elements.couplingButton.fire('click');
+assert.equal(a.elements.probeSubmenu.hidden, true);
+assert.equal(a.elements.couplingSubmenu.hidden, false);
+assert.equal(settings.submenuSelection, 'DC');
+assert.equal(settings.channels[1].probe, 5);
+controller.actions.auto();
+assert.equal(a.elements.probeValue.textContent, '1X');
+assert.equal(a.elements.probeSubmenu.hidden, true);
+console.log('Probe submenu shares rotary confirmation, pending cancellation, independent factors and reset.');
+
+// Horizontal position remains enabled with both traces hidden and no selected channel.
+controller.actions.auto();
+a.elements.channelButtons[1].fire('click'); a.elements.channelButtons[1].fire('click');
+a.elements.channelButtons[2].fire('click'); a.elements.channelButtons[2].fire('click');
+a.elements.horizontalPosition.fire('keydown', { key: 'ArrowRight' });
+assert.equal(settings.horizontalPositionDivisions, .1);
+assert.equal(b.elements.horizontalPosition.attributes['aria-valuenow'], '0.1');
+assert.equal(a.elements.horizontalPosition.attributes['aria-disabled'], 'false');
+assert.equal(settings.channels[1].visible, false);
+assert.equal(settings.channels[2].visible, false);
+settings = { ...settings, selectedChannel: null }; notify();
+b.elements.horizontalPosition.fire('wheel', { deltaY: -40, deltaMode: 0 });
+assert.equal(settings.horizontalPositionDivisions, .2);
+controller.actions.auto();
+assert.equal(settings.horizontalPositionDivisions, 0);
+assert.equal(settings.channels[1].probe, 1);
+assert.equal(settings.channels[2].probe, 1);
+console.log('Horizontal POSITION is global and always enabled; AUTO resets its position and both probe factors.');
