@@ -30,7 +30,7 @@ assert.deepEqual(app.createPracticeState('rc'), expected);
 let generatorPanel, scopePanel, physicalProbes, menuResets = 0;
 app.createProbePanel = options => { physicalProbes = options; return { render() {}, open() {} }; };
 app.DG822Panel.create = options => { generatorPanel = options.controller; return { render() {}, reset() { menuResets++; } }; };
-app.DS1102EPanel = { create(options) { scopePanel = options.controller; return { render() {} }; } };
+app.DS1102EPanel = { create(options) { scopePanel = options.controller; return { render() {}, renderScreen() {} }; } };
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/main.js'), 'utf8'), context);
 const dirtyInstruments = () => {
   physicalProbes.onToggle(1); physicalProbes.onToggle(2);

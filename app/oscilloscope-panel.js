@@ -2,9 +2,12 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, triggerMidpoint, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
+  const { auto, cursorsButton, cursorsMenu, cursorTypeButton, cursorTypeValue, cursorSelections = {}, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, screenRoot, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, triggerMidpoint, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
+  cursorsButton?.addEventListener('click', actions.cursors);
+  cursorTypeButton?.addEventListener('click', actions.cursorType);
+  for (const [cursor, view] of Object.entries(cursorSelections)) view.button.addEventListener('click', () => actions.cursorSelection(cursor));
   runStop?.addEventListener('click', actions.runStop);
   menuToggle.addEventListener('click', actions.menu);
   triggerButton?.addEventListener('click', actions.triggerMenu);
@@ -20,8 +23,8 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
   if (triggerLevel) window.InstrumentLab.bindRotaryControl(triggerLevel, { onStep: direction => actions.triggerLevel(-direction) });
   if (horizontalPosition) window.InstrumentLab.bindRotaryControl(horizontalPosition, { onStep: direction => actions.horizontalPosition(-direction) });
   if (selectionKnob) window.InstrumentLab.bindRotaryControl(selectionKnob, {
-    onStep: actions.submenuStep, onPress: actions.submenuConfirm,
-    enabled: () => (getSettings().menuChannel !== null || getSettings().triggerMenuOpen) && getSettings().submenu !== null,
+    onStep: actions.selectionStep, onPress: actions.submenuConfirm,
+    enabled: () => scope.canStepSelection(getSettings()),
     clockwiseStep: 1, keyDirections: { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
   });
   function slider(element, { min, max, value, text, disabled = false, label, help }) {
@@ -68,28 +71,42 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
     if (triggerLevel) slider(triggerLevel, { min: -1e6, max: 1e6,
       value: settings.trigger.level, text: `${settings.trigger.level} V · CH${settings.trigger.source}`,
       label: 'scopeTriggerLevel', help: 'scopeTriggerLevelHelp' });
+    if (cursorsButton) {
+      cursorsButton.setAttribute('aria-pressed', String(Boolean(settings.cursorsEnabled)));
+      cursorsButton.setAttribute('aria-expanded', String(Boolean(settings.cursorsMenuOpen)));
+    }
+    if (cursorTypeButton) { cursorTypeButton.hidden = !settings.cursorsMenuOpen; cursorTypeButton.setAttribute('aria-label', `Cursor type ${settings.cursors.type}`); }
+    if (cursorTypeValue) cursorTypeValue.textContent = settings.cursors.type;
+    if (cursorsMenu) cursorsMenu.hidden = !settings.cursorsMenuOpen;
     menu.hidden = settings.menuChannel === null;
-    menuToggle.setAttribute('aria-expanded', String(settings.menuChannel !== null || Boolean(settings.triggerMenuOpen)));
+    menuToggle.setAttribute('aria-expanded', String(settings.menuChannel !== null || Boolean(settings.triggerMenuOpen) || Boolean(settings.cursorsMenuOpen)));
     if (triggerMenu) triggerMenu.hidden = !settings.triggerMenuOpen;
     if (triggerButton) triggerButton.setAttribute('aria-expanded', String(Boolean(settings.triggerMenuOpen)));
     menu.setAttribute('data-channel', String(settings.menuChannel));
     menuTitle.textContent = settings.menuChannel ? `CH${settings.menuChannel}` : '';
-    const submenuOpen = (settings.menuChannel !== null || settings.triggerMenuOpen) && settings.submenu !== null;
-    if (submenuIndicator) submenuIndicator.hidden = !submenuOpen;
+    const submenuOpen = (settings.menuChannel !== null || settings.triggerMenuOpen || settings.cursorsMenuOpen) && settings.submenu !== null;
+    const cursorSelectionActive = Boolean(settings.cursorsMenuOpen && settings.cursorsEnabled && (settings.cursors?.selectedA || settings.cursors?.selectedB));
+    if (submenuIndicator) submenuIndicator.hidden = !(submenuOpen || cursorSelectionActive);
+    for (const [cursor, view] of Object.entries(cursorSelections)) {
+      const selected = Boolean(settings.cursors?.[`selected${cursor}`]);
+      view.button.hidden = !settings.cursorsMenuOpen;
+      view.button.setAttribute('aria-pressed', String(selected));
+      view.label.setAttribute('data-selected', String(selected));
+    }
     if (selectionKnob) {
-      selectionKnob.setAttribute('aria-disabled', String(settings.submenu === null));
+      selectionKnob.setAttribute('aria-disabled', String(!scope.canStepSelection(settings)));
       selectionKnob.setAttribute('aria-label', t('scopeMenuSelect'));
       selectionKnob.title = t('scopeMenuSelectHelp');
     }
     for (const [name, view] of Object.entries(submenuViews)) {
       const open = submenuOpen && settings.submenu === name;
       const definition = scope.submenus[name];
-      const target = definition.target === 'trigger' ? settings.trigger : settings.channels[settings.menuChannel ?? settings.selectedChannel];
+      const target = scope.submenuTarget(settings, definition);
       const committed = target?.[definition.property] ?? definition.options[0];
       view.menu.hidden = !open;
       view.menu.setAttribute('aria-label', t(view.labelKey));
       view.button.setAttribute('aria-expanded', String(open));
-      const activeMainMenu = definition.target === 'trigger' ? Boolean(settings.triggerMenuOpen) : settings.menuChannel !== null;
+      const activeMainMenu = scope.submenuActive(settings, definition);
       view.button.hidden = !activeMainMenu;
       view.button.setAttribute('aria-label', t(view.labelKey));
       if (view.value) {
@@ -103,5 +120,20 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
       }
     }
   }
-  return { render, open() { render(); openWindow(); } };
+  // Standard device-screen interface. Project the complete LCD once, then mirror
+  // its trace, scales and all menu layers with independent DOM/SVG identifiers.
+  function renderScreen(target, { idPrefix = 'scopePreview', showMenus = true, showCursors = true } = {}) {
+    render();
+    if (!screenRoot || !showMenus) {
+      const trace = controller.getDisplay({ ...display, idPrefix, showCursors });
+      target.innerHTML = screenRoot ? `<section class="${screenRoot.className || ''}">${trace}</section>` : trace;
+      return;
+    }
+    let markup = screenRoot.outerHTML;
+    if (!showCursors) markup = markup.replace(screen.innerHTML, controller.getDisplay({ ...display, showCursors: false }));
+    const ids = [...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+    for (const id of ids.sort((a, b) => b.length - a.length)) markup = markup.split(id).join(`${idPrefix}-${id}`);
+    target.innerHTML = markup;
+  }
+  return { render, renderScreen, open() { render(); openWindow(); } };
 };

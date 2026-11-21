@@ -24,8 +24,8 @@ const controller = app.createOscilloscopeController({
   getExperiment: () => ({ circuit: app.circuits.rc, parameters: app.circuits.rc.defaults, generator: app.generatorDefaults }),
   t: key => app.translations[language][key], format: String
 });
-const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'runStop', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel', 'triggerMidpoint'].map(key => [key, new Element()]));
+const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth, completeScreen = false) => {
+  const elements = Object.fromEntries(['auto', 'cursorTypeButton', 'cursorTypeValue', 'cursorsButton', 'cursorsMenu', 'runStop', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel', 'triggerMidpoint'].map(key => [key, new Element()]));
   elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
   elements.probeOptions = Object.fromEntries([1, 5, 10, 20, 50, 100, 200, 500, 1000].map(factor => [factor, new Element()]));
   elements.submenuViews = {
@@ -38,8 +38,13 @@ const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
   elements.triggerSlopeButton = new Element(); elements.triggerSlopeMenu = new Element(); elements.triggerSlopeValue = new Element();
   elements.submenuViews.triggerSlope = { button: elements.triggerSlopeButton, menu: elements.triggerSlopeMenu, value: elements.triggerSlopeValue,
     options: { rising: new Element(), falling: new Element() }, labelKey: 'scopeTriggerSlope', renderValue: (element, value) => element.setAttribute('data-slope', value) };
+  elements.submenuViews.cursorSource = { button: new Element(), menu: new Element(), value: new Element(), options: {1: new Element(), 2: new Element()}, labelKey: 'scopeCursorSource', formatValue: value => `CH${value}` };
+  elements.cursorSelections = { A: { button: new Element(), label: new Element() }, B: { button: new Element(), label: new Element() } };
   elements.probeConnectors = { 1: new Element(), 2: new Element() };
   elements.channelButtons = { 1: new Element(), 2: new Element() };
+  if (completeScreen) elements.screenRoot = { get outerHTML() {
+    return `<section id="lcd"><div id="plot">${elements.screen.innerHTML}</div><aside id="channelMenu" aria-labelledby="channelTitle" ${elements.menu.hidden ? 'hidden' : ''}><h3 id="channelTitle">${elements.menuTitle.textContent}</h3></aside></section>`;
+  } };
   let opens = 0;
   const panel = app.createOscilloscopePanel({ elements, controller, t: key => app.translations[language][key], display: { idPrefix, horizontalDivisions, footerScales, cellWidth }, openWindow: () => opens++ });
   panels.push(panel); panel.render();
@@ -338,3 +343,139 @@ a.elements.triggerMidpoint.fire('click');
 assert.equal(settings.trigger.level, 0);
 assert.equal(settings.trigger.showLevel, true);
 assert.ok(b.elements.screen.innerHTML.includes('TRIG LVL= 0.00V'));
+
+// The standard screen entry point preserves the device's geometry.
+const preview = new Element();
+a.panel.renderScreen(preview, { idPrefix: 'bench' });
+assert.ok(preview.innerHTML.includes('viewBox="0 0 552 420"'));
+assert.ok(preview.innerHTML.includes('Time 200.0us'));
+// Complete model LCDs include every overlay and need independent identifiers.
+const complete = makePanel('device', 12, true, 40, true);
+complete.elements.channelButtons[2].fire('click');
+complete.panel.renderScreen(preview, { idPrefix: 'main' });
+assert.ok(preview.innerHTML.includes('id="main-lcd"'));
+assert.ok(preview.innerHTML.includes('aria-labelledby="main-channelTitle"'));
+assert.ok(preview.innerHTML.includes('>CH2</h3>'));
+assert.ok(!preview.innerHTML.includes('id="channelTitle"'));
+assert.ok(preview.innerHTML.includes('url(#main-deviceTraceClip)'));
+const canonical = complete.elements.screenRoot.outerHTML;
+assert.equal(preview.innerHTML.replaceAll('main-', ''), canonical);
+complete.elements.menuToggle.fire('click');
+complete.panel.renderScreen(preview, { idPrefix: 'main' });
+assert.ok(preview.innerHTML.includes('aria-labelledby="main-channelTitle" hidden'));
+
+// Cursors activation survives menu changes until explicitly switched off.
+a.elements.auto.fire('click');
+const beforeCursors = JSON.stringify(settings.channels);
+a.elements.cursorsButton.fire('click');
+assert.equal(settings.cursorsEnabled, true);
+assert.equal(a.elements.cursorsMenu.hidden, false);
+assert.equal(b.elements.cursorsButton.attributes['aria-pressed'], 'true');
+a.elements.channelButtons[1].fire('click');
+assert.equal(a.elements.cursorsMenu.hidden, true);
+assert.equal(settings.cursorsEnabled, true);
+a.elements.cursorsButton.fire('click');
+assert.equal(a.elements.cursorsMenu.hidden, false);
+assert.equal(a.elements.menu.hidden, true);
+a.elements.cursorsButton.fire('click');
+assert.equal(settings.cursorsEnabled, false);
+assert.equal(a.elements.cursorsMenu.hidden, true);
+a.elements.cursorsButton.fire('click');
+a.elements.menuToggle.fire('click');
+assert.equal(a.elements.cursorsMenu.hidden, true);
+assert.equal(settings.cursorsEnabled, true);
+assert.equal(settings.menuChannel, null);
+a.elements.triggerButton.fire('click');
+a.elements.cursorsButton.fire('click');
+assert.equal(a.elements.triggerMenu.hidden, true);
+assert.equal(a.elements.cursorsMenu.hidden, false);
+assert.equal(JSON.stringify(settings.channels), beforeCursors);
+a.elements.auto.fire('click');
+assert.equal(settings.cursorsEnabled, false);
+assert.equal(a.elements.cursorsMenu.hidden, true);
+assert.equal(b.elements.cursorsButton.attributes['aria-pressed'], 'false');
+console.log('Cursors: three-way key behaviour, independent activation/menu visibility, menu replacement and AUTO passed.');
+
+a.elements.cursorsButton.fire('click');
+const cursorSource = a.elements.submenuViews.cursorSource;
+cursorSource.button.fire('click');
+assert.equal(settings.submenu, 'cursorSource');
+assert.equal(settings.submenuSelection, 1);
+a.elements.selectionKnob.fire('keydown', {key:'ArrowDown'});
+assert.equal(settings.submenuSelection, 2);
+a.elements.selectionKnob.fire('keydown', {key:'ArrowDown'});
+assert.equal(settings.submenuSelection, 2, 'FFT is not selectable');
+a.elements.selectionKnob.fire('keydown', {key:'Enter'});
+assert.equal(settings.cursors.source, 2);
+assert.equal(settings.trigger.source, 1);
+assert.equal(settings.submenu, null);
+assert.equal(cursorSource.value.textContent, 'CH2');
+assert.equal(b.elements.submenuViews.cursorSource.value.textContent, 'CH2');
+a.elements.menuToggle.fire('click');
+assert.equal(cursorSource.button.hidden, true);
+a.elements.auto.fire('click');
+assert.equal(settings.cursors.source, 1);
+console.log('Cursor source uses common highlight/confirm, ignores FFT, preserves trigger source and resets to CH1.');
+
+a.elements.cursorsButton.fire('click');
+const selectedCursors = a.elements.cursorSelections;
+selectedCursors.A.button.fire('click');
+assert.equal(settings.cursors.selectedA, true);
+assert.equal(selectedCursors.A.label.attributes['data-selected'], 'true');
+assert.equal(a.elements.submenuIndicator.hidden, false);
+selectedCursors.B.button.fire('click');
+assert.equal(settings.cursors.selectedB, true);
+selectedCursors.A.button.fire('click');
+assert.equal(settings.cursors.selectedA, false);
+assert.equal(a.elements.submenuIndicator.hidden, false);
+selectedCursors.B.button.fire('click');
+assert.equal(settings.cursors.selectedB, false);
+assert.equal(a.elements.submenuIndicator.hidden, true);
+selectedCursors.B.button.fire('click');
+a.elements.menuToggle.fire('click');
+assert.equal(a.elements.submenuIndicator.hidden, true);
+a.elements.auto.fire('click');
+assert.equal(settings.cursors.selectedA, false);
+assert.equal(settings.cursors.selectedB, false);
+console.log('Independent cursor selection highlights arrow fields and illuminates the shared indicator.');
+
+complete.elements.auto.fire('click');
+complete.elements.cursorsButton.fire('click');
+const instrumentWithCursors = complete.elements.screen.innerHTML;
+assert.ok(instrumentWithCursors.includes('data-cursors="X"'));
+complete.panel.renderScreen(preview, {idPrefix:'cleanBench',showMenus:false,showCursors:false});
+assert.ok(!preview.innerHTML.includes('data-cursors="X"'));
+assert.ok(!preview.innerHTML.includes('data-cursor-readings'));
+assert.ok(!preview.innerHTML.includes('<aside'));
+assert.ok(preview.innerHTML.includes('viewBox="0 0 552 420"'));
+assert.ok(preview.innerHTML.includes('Time 200.0us'));
+assert.ok(complete.elements.screen.innerHTML.includes('data-cursors="X"'));
+assert.equal(settings.cursorsEnabled,true);
+const tracePaths = svg => [...svg.matchAll(/<path d="([^"]+)" stroke="#[^"]+"/g)].map(match=>match[1]);
+assert.deepEqual(tracePaths(preview.innerHTML),tracePaths(instrumentWithCursors));
+console.log('Bench suppresses menus and cursors while preserving device geometry and waveforms; instrument state unchanged.');
+a.elements.auto.fire('click');a.elements.cursorsButton.fire('click');
+a.elements.cursorSelections.A.button.fire('click');
+const cursorBefore=settings.cursors.positionA;
+a.elements.selectionKnob.fire('keydown',{key:'ArrowRight'});
+assert.ok(settings.cursors.positionA>cursorBefore);
+assert.equal(a.elements.selectionKnob.attributes['aria-disabled'],'false');
+a.elements.submenuViews.cursorSource.button.fire('click');
+const cursorInSubmenu=settings.cursors.positionA;
+a.elements.selectionKnob.fire('keydown',{key:'ArrowDown'});
+assert.equal(settings.cursors.positionA,cursorInSubmenu);
+assert.equal(settings.submenuSelection,2);
+a.elements.selectionKnob.fire('keydown',{key:'Enter'});
+assert.equal(settings.cursors.source,2);
+console.log('Beige knob routes to cursor movement or submenu navigation with correct priority.');
+
+a.elements.cursorTypeButton.fire('click');
+assert.equal(settings.cursors.type,'Y');
+assert.equal(b.elements.cursorTypeValue.textContent,'Y');
+assert.ok(a.elements.screen.innerHTML.includes('data-cursors="Y"'));
+assert.ok(!a.elements.screen.innerHTML.includes('|1/ΔX|'));
+a.elements.cursorTypeButton.fire('click');
+assert.equal(settings.cursors.type,'X');
+a.elements.auto.fire('click');
+assert.equal(settings.cursors.type,'X');
+console.log('Cursor Type toggle is shared across model panels and defaults to X.');

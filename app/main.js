@@ -23,8 +23,7 @@
   });
   let animationFrame = null, animationTime = null;
   function renderScopes() {
-    $('scopeDisplay').innerHTML = scopeController.getDisplay();
-    rigolScopePanel.render();
+    rigolScopePanel.renderScreen($('scopeDisplay'), { idPrefix: 'mainScope', showMenus: false, showCursors: false });
   }
   function syncAnimation() {
     if (!scopeController.needsAnimation()) {

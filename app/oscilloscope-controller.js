@@ -70,6 +70,9 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
         }
         onChange();
       },
+      cursors: () => update('pressCursors'),
+      cursorType: () => update('toggleCursorType'),
+      cursorSelection: cursor => update('toggleCursorSelection', cursor),
       channel: channel => update('pressChannel', channel),
       menu: () => update('toggleChannelMenu'),
       triggerMenu: () => update('openTriggerMenu'),
@@ -81,6 +84,7 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
         showLevel('setTriggerLevel', minimum / 2 + maximum / 2);
       },
       submenu: name => update('openSubmenu', name),
+      selectionStep: direction => update('stepSelection', direction),
       submenuStep: direction => update('stepSubmenu', direction),
       submenuConfirm: () => update('confirmSubmenu'),
       scale: direction => update('stepVerticalScale', direction),

@@ -4,27 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-44">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-44">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-44">
-  <script defer src="assets/instruments/images.js?v=20261121-44"></script>
-  <script defer src="assets/instruments/probe-connector.js?v=20261121-44"></script>
-  <script defer src="assets/instruments/probe-body.js?v=20261121-44"></script>
-  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-44">
-  <script defer src="app/circuits.js?v=20261121-44"></script>
-  <script defer src="app/translations.js?v=20261121-44"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-44"></script>
-  <script defer src="app/instrument-window.js?v=20261121-44"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-44"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-44"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-44"></script>
-  <script defer src="app/generator.js?v=20261121-44"></script>
-  <script defer src="app/generator-controller.js?v=20261121-44"></script>
-  <script defer src="app/generator-panel.js?v=20261121-44"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-44"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-44"></script>
-  <script defer src="app/probe-panel.js?v=20261121-44"></script>
-  <script defer src="app/main.js?v=20261121-44"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261121-54">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-54">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-54">
+  <script defer src="assets/instruments/images.js?v=20261121-54"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261121-54"></script>
+  <script defer src="assets/instruments/probe-body.js?v=20261121-54"></script>
+  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-54">
+  <script defer src="app/circuits.js?v=20261121-54"></script>
+  <script defer src="app/translations.js?v=20261121-54"></script>
+  <script defer src="app/oscilloscope.js?v=20261121-54"></script>
+  <script defer src="app/instrument-window.js?v=20261121-54"></script>
+  <script defer src="app/instrument-controls.js?v=20261121-54"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261121-54"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261121-54"></script>
+  <script defer src="app/generator.js?v=20261121-54"></script>
+  <script defer src="app/generator-controller.js?v=20261121-54"></script>
+  <script defer src="app/generator-panel.js?v=20261121-54"></script>
+  <script defer src="app/dg822-panel.js?v=20261121-54"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261121-54"></script>
+  <script defer src="app/probe-panel.js?v=20261121-54"></script>
+  <script defer src="app/main.js?v=20261121-54"></script>
 </head>
 <body>
 <main class="workspace">
@@ -127,11 +127,16 @@
       <button id="ds1102eTriggerMidpoint" class="ds1102e-trigger-midpoint" type="button" aria-label="Trigger 50%">50%</button>
       <div id="ds1102eTriggerLevel" class="ds1102e-vertical-scale ds1102e-trigger-level" role="slider" tabindex="0" aria-orientation="vertical"></div>
       <button id="ds1102eTriggerSlopeKey" class="ds1102e-coupling-key ds1102e-trigger-slope-key" type="button" aria-controls="ds1102eTriggerSlopeSubmenu" aria-expanded="false"></button>
+      <button id="ds1102eCursorTypeKey" class="ds1102e-coupling-key ds1102e-trigger-source-key" type="button" aria-label="Cursor type X" hidden></button>
+      <button id="ds1102eCursorAKey" class="ds1102e-coupling-key ds1102e-cursor-a-key" type="button" aria-label="Select cursor A" aria-pressed="false" hidden></button>
+      <button id="ds1102eCursorBKey" class="ds1102e-coupling-key ds1102e-cursor-b-key" type="button" aria-label="Select cursor B" aria-pressed="false" hidden></button>
+      <button id="ds1102eCursorSourceKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-controls="ds1102eCursorSourceSubmenu" aria-expanded="false" hidden></button>
       <button id="ds1102eTriggerSourceKey" class="ds1102e-coupling-key ds1102e-trigger-source-key" type="button" aria-controls="ds1102eTriggerSourceSubmenu" aria-expanded="false"></button>
       <button id="ds1102eTriggerMenuKey" class="ds1102e-trigger-menu-key" type="button" aria-label="Trigger menu" aria-controls="ds1102eTriggerMenu" aria-expanded="false"></button>
       <button id="ds1102eProbeKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-controls="ds1102eProbeSubmenu" aria-expanded="false"></button>
       <button id="ds1102eCouplingKey" class="ds1102e-coupling-key" type="button" aria-controls="ds1102eCouplingSubmenu" aria-expanded="false"></button>
       <span id="ds1102eSubmenuIndicator" class="ds1102e-submenu-indicator" aria-hidden="true" hidden><svg viewBox="0 0 40 40"><path d="M19 8a12 12 0 1 1-10 7"/><path d="M4 21l4-8 8 4"/></svg></span>
+      <button id="ds1102eCursors" class="ds1102e-cursors-key" type="button" aria-label="Cursors" aria-pressed="false" aria-expanded="false" aria-controls="ds1102eCursorsMenu">Cursor</button>
       <button id="ds1102eRunStop" class="ds1102e-run-stop" type="button" aria-pressed="false" aria-label="RUN/STOP">RUN/STOP</button>
       <button id="ds1102eAuto" class="ds1102e-auto" type="button" aria-label="AUTO"></button>
       <button id="ds1102eMenuToggle" class="ds1102e-menu-toggle" type="button" aria-label="MENU ON/OFF" aria-controls="ds1102eChannelMenu" aria-expanded="false"></button>
@@ -141,8 +146,18 @@
       <div id="ds1102eHorizontalScale" class="ds1102e-vertical-scale ds1102e-horizontal-scale" role="slider" tabindex="0" aria-orientation="horizontal"></div>
       <div id="ds1102eVerticalPosition" class="ds1102e-vertical-scale ds1102e-vertical-position" role="slider" tabindex="0" aria-orientation="vertical"></div>
       <div id="ds1102eHorizontalPosition" class="ds1102e-vertical-scale ds1102e-horizontal-position" role="slider" tabindex="0" aria-orientation="horizontal"></div>
-      <section class="ds1102e-screen">
+      <section id="ds1102eScreen" class="ds1102e-screen">
         <div id="ds1102eDisplay" class="ds1102e-plot"></div>
+        <aside id="ds1102eCursorsMenu" class="ds1102e-channel-menu ds1102e-cursors-menu" lang="en" hidden aria-labelledby="ds1102eCursorsTitle">
+          <h3 id="ds1102eCursorsTitle">Cursors</h3>
+          <dl>
+            <div class="ds1102e-menu-row"><dt>Mode</dt><dd>Manual</dd></div>
+            <div class="ds1102e-menu-row"><dt>Type</dt><dd id="ds1102eCursorTypeValue" class="ds1102e-cursor-type">X</dd></div>
+            <div class="ds1102e-menu-row"><dt>Source</dt><dd id="ds1102eCursorSourceValue">CH1</dd></div>
+            <div class="ds1102e-menu-row"><dt id="ds1102eCursorALabel" class="ds1102e-cursor-reading">CurA ----</dt><dd id="ds1102eCursorARotate" class="ds1102e-cursor-rotate">↶</dd></div>
+            <div class="ds1102e-menu-row"><dt id="ds1102eCursorBLabel" class="ds1102e-cursor-reading">CurB ----</dt><dd id="ds1102eCursorBRotate" class="ds1102e-cursor-rotate">↶</dd></div>
+          </dl>
+        </aside>
         <aside id="ds1102eChannelMenu" class="ds1102e-channel-menu" hidden aria-labelledby="ds1102eMenuTitle">
           <h3 id="ds1102eMenuTitle"></h3>
           <dl>
@@ -165,6 +180,12 @@
           <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
           <div id="ds1102eTriggerRising" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 24h14V5h17M12 11l6-6 6 6"/></svg><span>Rising</span></div>
           <div id="ds1102eTriggerFalling" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 5h14v19h17M12 18l6 6 6-6"/></svg><span>Falling</span></div>
+        </div>
+        <div id="ds1102eCursorSourceSubmenu" class="ds1102e-submenu" role="group" lang="en" hidden>
+          <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
+          <div id="ds1102eCursorSource1" class="ds1102e-submenu-option">CH1</div>
+          <div id="ds1102eCursorSource2" class="ds1102e-submenu-option">CH2</div>
+          <div class="ds1102e-submenu-option" aria-disabled="true" style="opacity:.45">FFT</div>
         </div>
         <div id="ds1102eTriggerSourceSubmenu" class="ds1102e-submenu" role="group" lang="en" hidden>
           <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>

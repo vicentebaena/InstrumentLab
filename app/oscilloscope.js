@@ -9,6 +9,7 @@
     submenus: {
       coupling: { property: 'coupling', options: ['DC', 'AC', 'GND'] },
       probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] },
+      cursorSource: { target: 'cursors', property: 'source', options: [1, 2] },
       triggerSource: { target: 'trigger', property: 'source', options: [1, 2] },
       triggerSlope: { target: 'trigger', property: 'slope', options: ['rising', 'falling'] }
     },
@@ -29,16 +30,24 @@
       if (index === next) return state;
       return { ...state, timePerDivision: this.horizontalScales[next] };
     },
+    formatCursorValue(value, frequency = false) {
+      if (!Number.isFinite(value)) return frequency ? '∞Hz' : '∞s';
+      const units = frequency ? [[1e9, 'GHz'], [1e6, 'MHz'], [1e3, 'kHz'], [1, 'Hz']]
+        : [[1, 's'], [1e-3, 'ms'], [1e-6, 'us'], [1e-9, 'ns']];
+      const [factor, unit] = units.find(([factor]) => Math.abs(value) >= factor * (1 - 1e-10)) ?? units[units.length - 1];
+      if (value === 0) return frequency ? '0Hz' : '0s';
+      return `${(value / factor).toPrecision(3)}${unit}`;
+    },
     formatVerticalScale(value) {
       return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
     },
     createState(overrides = {}) {
       const state = {
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
-        acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
+        cursors: { type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
-      return { ...state, ...overrides, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
+      return { ...state, ...overrides, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
         1: { ...state.channels[1], ...overrides.channels?.[1] },
         2: { ...state.channels[2], ...overrides.channels?.[2] }
       } };
@@ -135,40 +144,83 @@
         [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
       } };
     },
+    submenuActive(state, definition) {
+      return definition.target === 'trigger' ? Boolean(state.triggerMenuOpen)
+        : definition.target === 'cursors' ? Boolean(state.cursorsMenuOpen) : state.menuChannel !== null;
+    },
+    submenuTarget(state, definition) {
+      return definition.target === 'trigger' ? state.trigger
+        : definition.target === 'cursors' ? state.cursors : state.channels[state.menuChannel ?? state.selectedChannel];
+    },
     openSubmenu(state, name) {
       const definition = this.submenus[name];
       if (!definition) throw new RangeError('Unknown oscilloscope submenu.');
-      if (definition.target === 'trigger' ? !state.triggerMenuOpen : state.menuChannel === null) return state;
-      const target = definition.target === 'trigger' ? state.trigger : state.channels[state.menuChannel];
+      if (!this.submenuActive(state, definition)) return state;
+      const target = this.submenuTarget(state, definition);
       return { ...state, submenu: name, submenuSelection: target[definition.property] };
     },
     stepSubmenu(state, direction) {
       const definition = this.submenus[state.submenu];
-      if (!definition || (definition.target === 'trigger' ? !state.triggerMenuOpen : state.menuChannel === null)) return state;
+      if (!definition || !this.submenuActive(state, definition)) return state;
       const index = definition.options.indexOf(state.submenuSelection);
       const next = Math.max(0, Math.min(definition.options.length - 1, index + Math.sign(direction)));
       return { ...state, submenuSelection: definition.options[next] };
     },
     confirmSubmenu(state) {
       const definition = this.submenus[state.submenu];
-      if (!definition || (definition.target === 'trigger' ? !state.triggerMenuOpen : state.menuChannel === null) || !definition.options.includes(state.submenuSelection)) return state;
+      if (!definition || !this.submenuActive(state, definition) || !definition.options.includes(state.submenuSelection)) return state;
+      if (definition.target === 'cursors') return { ...state, submenu: null, submenuSelection: null, cursors: { ...state.cursors, [definition.property]: state.submenuSelection } };
       if (definition.target === 'trigger') return { ...state, submenu: null, submenuSelection: null, trigger: { ...state.trigger, [definition.property]: state.submenuSelection } };
       const channel = state.menuChannel;
       return { ...state, submenu: null, submenuSelection: null, channels: { ...state.channels,
         [channel]: { ...state.channels[channel], [definition.property]: state.submenuSelection }
       } };
     },
+    canMoveCursors(state) {
+      return Boolean(state.cursorsEnabled && state.channels[state.cursors.source]?.visible && (state.cursors.selectedA || state.cursors.selectedB));
+    },
+    canStepSelection(state) {
+      const definition = this.submenus[state.submenu];
+      return state.submenu !== null ? Boolean(definition && this.submenuActive(state, definition)) : this.canMoveCursors(state);
+    },
+    stepSelection(state, direction) {
+      // An open submenu always owns the knob, even at the end of its list.
+      if (state.submenu !== null) return this.stepSubmenu(state, direction);
+      if (!this.canMoveCursors(state)) return state;
+      const keys = ['A', 'B'].filter(cursor => state.cursors[`selected${cursor}`]).map(cursor => `position${state.cursors.type === 'Y' ? 'Y' : ''}${cursor}`);
+      const delta = Math.max(-Math.min(...keys.map(key => state.cursors[key])),
+        Math.min(1 - Math.max(...keys.map(key => state.cursors[key])), Math.sign(direction) * (state.cursors.type === 'Y' ? -1 : 1) / 120));
+      const cursors = { ...state.cursors };
+      for (const key of keys) cursors[key] += delta;
+      return { ...state, cursors };
+    },
+    toggleCursorType(state) {
+      if (!state.cursorsMenuOpen) return state;
+      return { ...state, submenu: null, submenuSelection: null,
+        cursors: { ...state.cursors, type: state.cursors.type === 'Y' ? 'X' : 'Y' } };
+    },
+    toggleCursorSelection(state, cursor) {
+      if (!['A', 'B'].includes(cursor) || !state.cursorsMenuOpen || !state.cursorsEnabled) return state;
+      const property = `selected${cursor}`;
+      return { ...state, cursors: { ...state.cursors, [property]: !state.cursors[property] } };
+    },
+    pressCursors(state) {
+      const enabled = !(state.cursorsEnabled && state.cursorsMenuOpen);
+      return { ...state, cursorsEnabled: enabled, cursorsMenuOpen: enabled,
+        cursors: enabled ? state.cursors : { ...state.cursors, selectedA: false, selectedB: false },
+        menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null };
+    },
     openTriggerMenu(state) {
-      return { ...state, triggerMenuOpen: true, menuChannel: null, submenu: null, submenuSelection: null };
+      return { ...state, triggerMenuOpen: true, cursorsMenuOpen: false, menuChannel: null, submenu: null, submenuSelection: null };
     },
     toggleChannelMenu(state) {
-      return { ...state, menuChannel: state.triggerMenuOpen || state.menuChannel !== null ? null : state.selectedChannel, triggerMenuOpen: false, submenu: null, submenuSelection: null };
+      return { ...state, menuChannel: state.cursorsMenuOpen || state.triggerMenuOpen || state.menuChannel !== null ? null : state.selectedChannel, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null };
     },
     pressChannel(state, channel) {
       if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
       return {
-        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, triggerMenuOpen: false, submenu: null, submenuSelection: null,
+        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null,
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
     },
@@ -249,6 +301,34 @@
           <text x="6" y="4" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#030709">${channel}</text>
         </g>`;
       };
+      const cursorSource = settings.cursors?.source ?? 1;
+      const showCursors = presentation.showCursors !== false && settings.cursorsEnabled && settings.channels[cursorSource]?.visible;
+      const cursorType = settings.cursors?.type === 'Y' ? 'Y' : 'X';
+      const cursorPositions = cursorType === 'Y'
+        ? [settings.cursors?.positionYA ?? 1 / 3, settings.cursors?.positionYB ?? 2 / 3]
+        : [settings.cursors?.positionA ?? 1 / 3, settings.cursors?.positionB ?? 2 / 3];
+      const cursorVoltages = cursorPositions.map(fraction => (zeroY(cursorSource) - (top + fraction * height)) / height * 8 * scale(cursorSource));
+      const voltageText = value => value === 0 ? '0V' : `${(Math.abs(value) >= 1 ? value : value * 1000).toPrecision(3)}${Math.abs(value) >= 1 ? 'V' : 'mV'}`;
+      const cursorTimes = cursorPositions.map(fraction => ((fraction - 0.5) * horizontalDivisions - horizontalPosition) * timePerDivision);
+      const cursorDelta = Math.abs(cursorTimes[1] - cursorTimes[0]);
+      const cursorReadoutWidth = Math.min(160, width / 2);
+      const cursorReadoutX = viewWidth * (1 - (presentation.menuWidthRatio ?? 0)) - 8 - cursorReadoutWidth;
+      const cursorReadings = cursorType === 'Y' ? [
+        `CurA:${voltageText(cursorVoltages[0])}`,
+        `CurB:${voltageText(cursorVoltages[1])}`,
+        `|ΔY|:${voltageText(Math.abs(cursorVoltages[1] - cursorVoltages[0]))}`
+      ] : [
+        `CurA:${this.formatCursorValue(cursorTimes[0])}`,
+        `CurB:${this.formatCursorValue(cursorTimes[1])}`,
+        `|ΔX|:${this.formatCursorValue(cursorDelta)}`,
+        `|1/ΔX|:${this.formatCursorValue(1 / cursorDelta, true)}`
+      ];
+      const cursors = !showCursors ? '' : `<g data-cursors="${cursorType}" data-cursor-source="${cursorSource}">
+        ${cursorPositions.map((fraction, index) => `<line data-cursor="${index === 0 ? 'A' : 'B'}" ${cursorType === 'Y' ? `x1="${left}" x2="${left + width}" y1="${top + height * fraction}" y2="${top + height * fraction}"` : `x1="${left + width * fraction}" x2="${left + width * fraction}" y1="${top}" y2="${top + height}"`} stroke="${index === 0 ? '#ffffff' : '#f4d35e'}" stroke-width="1.5" stroke-dasharray="6 5"/>`).join('')}
+        <g data-cursor-readings="true" font-family="monospace" font-size="14" font-weight="700" fill="#eef5ff">
+          ${cursorReadings.map((reading, index) => `<g><rect x="${cursorReadoutX}" y="${top + 5 + index * 18}" width="${cursorReadoutWidth}" height="18" rx="3" fill="#102744" stroke="#4388ff" stroke-width="1"/><text x="${cursorReadoutX + 5}" y="${top + 19 + index * 18}">${reading}</text></g>`).join('')}
+        </g>
+      </g>`;
       const grid = [];
       for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -266,6 +346,7 @@
           ${traces}
         </g>
         ${(settings.selectedChannel === 1 ? [2, 1] : [1, 2]).map(groundMarker).join('')}
+        ${cursors}
         ${settings.trigger?.showLevel ? `<g data-trigger-level="${settings.trigger.level}" fill="#ff9e3d" font-family="system-ui,sans-serif" font-size="17">
           <g data-trigger-readout="true"><rect x="${left}" y="337" width="${Math.max(190, triggerLabel.length * 10 + 14)}" height="27" rx="4" fill="#102744" stroke="#4388ff" stroke-width="1.5"/>
             <text x="${left + 7}" y="357" fill="#ff9e3d" font-size="19" font-weight="600">${triggerLabel}</text></g>

@@ -12,14 +12,21 @@ window.InstrumentLab.DS1102EPanel = {
     });
     return window.InstrumentLab.createOscilloscopePanel({
       controller, t, openWindow: () => frame.open(),
-      display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
+      display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40, menuWidthRatio: 0.21 },
       elements: {
+        cursorTypeButton: $('ds1102eCursorTypeKey'), cursorTypeValue: $('ds1102eCursorTypeValue'),
+        cursorSelections: { A: { button: $('ds1102eCursorAKey'), label: $('ds1102eCursorARotate') }, B: { button: $('ds1102eCursorBKey'), label: $('ds1102eCursorBRotate') } },
+        cursorsButton: $('ds1102eCursors'), cursorsMenu: $('ds1102eCursorsMenu'),
         probeConnectors: { 1: $('ds1102eProbeConnector1'), 2: $('ds1102eProbeConnector2') },
         triggerLevel: $('ds1102eTriggerLevel'), triggerMidpoint: $('ds1102eTriggerMidpoint'),
         triggerButton: $('ds1102eTriggerMenuKey'), triggerMenu: $('ds1102eTriggerMenu'),
         selectionKnob: $('ds1102eSelectionKnob'),
         submenuIndicator: $('ds1102eSubmenuIndicator'),
         submenuViews: {
+          cursorSource: {
+            button: $('ds1102eCursorSourceKey'), menu: $('ds1102eCursorSourceSubmenu'), value: $('ds1102eCursorSourceValue'), labelKey: 'scopeCursorSource',
+            options: { 1: $('ds1102eCursorSource1'), 2: $('ds1102eCursorSource2') }, formatValue: value => `CH${value}`
+          },
           triggerSlope: {
             button: $('ds1102eTriggerSlopeKey'), menu: $('ds1102eTriggerSlopeSubmenu'), value: $('ds1102eTriggerSlopeIcon'), labelKey: 'scopeTriggerSlope',
             options: { rising: $('ds1102eTriggerRising'), falling: $('ds1102eTriggerFalling') },
@@ -46,7 +53,7 @@ window.InstrumentLab.DS1102EPanel = {
         runStop: $('ds1102eRunStop'), auto: $('ds1102eAuto'), menuToggle: $('ds1102eMenuToggle'),
         channelButtons: { 1: $('ds1102eCH1'), 2: $('ds1102eCH2') },
         scale: $('ds1102eVerticalScale'), timeScale: $('ds1102eHorizontalScale'), position: $('ds1102eVerticalPosition'), horizontalPosition: $('ds1102eHorizontalPosition'),
-        screen: $('ds1102eDisplay'), menu: $('ds1102eChannelMenu'), menuTitle: $('ds1102eMenuTitle')
+        screenRoot: $('ds1102eScreen'), screen: $('ds1102eDisplay'), menu: $('ds1102eChannelMenu'), menuTitle: $('ds1102eMenuTitle')
       }
     });
   }
