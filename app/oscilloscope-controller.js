@@ -11,6 +11,7 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
     actions: {
       channel: channel => update('pressChannel', channel),
       menu: () => update('toggleChannelMenu'),
+      couplingMenu: () => update('openCouplingSubmenu'),
       scale: direction => update('stepVerticalScale', direction),
       timeScale: direction => update('stepHorizontalScale', direction),
       position: direction => update('stepVerticalPosition', direction),

@@ -2,10 +2,11 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, menuToggle, channelButtons, scale, timeScale, position, screen, menu, menuTitle } = elements;
+  const { auto, menuToggle, channelButtons, scale, timeScale, position, screen, menu, menuTitle, couplingButton, couplingSubmenu, couplingOptions, couplingValue, submenuIndicator } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
   menuToggle.addEventListener('click', actions.menu);
+  couplingButton?.addEventListener('click', actions.couplingMenu);
   for (const [channel, button] of Object.entries(channelButtons)) {
     button.addEventListener('click', () => actions.channel(Number(channel)));
   }
@@ -45,6 +46,19 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
     menuToggle.setAttribute('aria-expanded', String(settings.menuChannel !== null));
     menu.setAttribute('data-channel', String(settings.menuChannel));
     menuTitle.textContent = settings.menuChannel ? `CH${settings.menuChannel}` : '';
+    const submenuOpen = settings.menuChannel !== null && settings.submenu === 'coupling';
+    if (couplingSubmenu) { couplingSubmenu.hidden = !submenuOpen; couplingSubmenu.setAttribute('aria-label', t('scopeCoupling')); }
+    if (submenuIndicator) submenuIndicator.hidden = !submenuOpen;
+    if (couplingButton) {
+      couplingButton.setAttribute('aria-expanded', String(submenuOpen));
+      couplingButton.setAttribute('aria-label', t('scopeCoupling'));
+    }
+    const coupling = settings.channels[settings.menuChannel]?.coupling ?? 'DC';
+    if (couplingValue) couplingValue.textContent = coupling;
+    for (const [value, option] of Object.entries(couplingOptions || {})) {
+      option.setAttribute('data-selected', String(value === coupling));
+      option.setAttribute('aria-current', String(value === coupling));
+    }
   }
   return { render, open() { render(); openWindow(); } };
 };

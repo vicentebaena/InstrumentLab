@@ -12,6 +12,9 @@ window.InstrumentLab.DS1102EPanel = {
       controller, t, openWindow: () => frame.open(),
       display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
       elements: {
+        couplingButton: $('ds1102eCouplingKey'), couplingSubmenu: $('ds1102eCouplingSubmenu'),
+        couplingOptions: { DC: $('ds1102eCouplingDC'), AC: $('ds1102eCouplingAC'), GND: $('ds1102eCouplingGround') },
+        couplingValue: $('ds1102eCouplingValue'), submenuIndicator: $('ds1102eSubmenuIndicator'),
         auto: $('ds1102eAuto'), menuToggle: $('ds1102eMenuToggle'),
         channelButtons: { 1: $('ds1102eCH1'), 2: $('ds1102eCH2') },
         scale: $('ds1102eVerticalScale'), timeScale: $('ds1102eHorizontalScale'), position: $('ds1102eVerticalPosition'),

@@ -21,7 +21,7 @@
     },
     createState(overrides = {}) {
       const state = {
-        selectedChannel: 1, menuChannel: null, timePerDivision: defaults.timePerDivision,
+        selectedChannel: 1, menuChannel: null, submenu: null, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
       return { ...state, ...overrides, channels: {
@@ -50,14 +50,18 @@
         [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
       } };
     },
+    openCouplingSubmenu(state) {
+      if (state.menuChannel === null) return state;
+      return { ...state, submenu: 'coupling' };
+    },
     toggleChannelMenu(state) {
-      return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null };
+      return { ...state, menuChannel: state.menuChannel === null ? state.selectedChannel : null, submenu: null };
     },
     pressChannel(state, channel) {
       if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
       return {
-        ...state, selectedChannel: channel, menuChannel: hide ? null : channel,
+        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, submenu: null,
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
     },

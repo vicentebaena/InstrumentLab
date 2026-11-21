@@ -25,7 +25,8 @@ const controller = app.createOscilloscopeController({
   t: key => app.translations[language][key], format: String
 });
 const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle'].map(key => [key, new Element()]));
+  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator'].map(key => [key, new Element()]));
+  elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
   elements.channelButtons = { 1: new Element(), 2: new Element() };
   let opens = 0;
   const panel = app.createOscilloscopePanel({ elements, controller, t: key => app.translations[language][key], display: { idPrefix, horizontalDivisions, footerScales, cellWidth }, openWindow: () => opens++ });
@@ -85,3 +86,43 @@ for (let n = 0; n < 10; n++) a.panel.render();
 a.elements.position.fire('keydown', { key: 'ArrowUp' });
 assert.equal(settings.channels[1].positionDivisions, .1);
 console.log('Two model-independent panels share controls, menus, scales, position, visibility, AUTO, translation and screen rendering.');
+
+// Coupling choices are visual only; menu lifecycle is shared across models.
+controller.actions.auto();
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenu, null);
+assert.equal(a.elements.couplingSubmenu.hidden, true);
+a.elements.channelButtons[1].fire('click');
+const screenBeforeSubmenu = a.elements.screen.innerHTML;
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenu, 'coupling');
+assert.equal(a.elements.couplingSubmenu.hidden, false);
+assert.equal(b.elements.submenuIndicator.hidden, false);
+assert.equal(a.elements.couplingButton.attributes['aria-expanded'], 'true');
+assert.equal(b.elements.couplingOptions.DC.attributes['data-selected'], 'true');
+assert.equal(b.elements.couplingOptions.AC.attributes['data-selected'], 'false');
+assert.equal(b.elements.couplingOptions.GND.attributes['data-selected'], 'false');
+assert.equal(a.elements.screen.innerHTML, screenBeforeSubmenu);
+const beforeChoiceClick = JSON.stringify(settings);
+a.elements.couplingOptions.AC.fire('click');
+a.elements.couplingOptions.GND.fire('click');
+assert.equal(JSON.stringify(settings), beforeChoiceClick);
+b.elements.menuToggle.fire('click');
+assert.equal(settings.menuChannel, null);
+assert.equal(settings.submenu, null);
+assert.equal(a.elements.menu.hidden, true);
+assert.equal(a.elements.couplingSubmenu.hidden, true);
+assert.equal(b.elements.submenuIndicator.hidden, true);
+b.elements.menuToggle.fire('click');
+assert.equal(b.elements.menu.hidden, false);
+assert.equal(b.elements.couplingSubmenu.hidden, true);
+a.elements.couplingButton.fire('click');
+a.elements.channelButtons[2].fire('click');
+assert.equal(settings.submenu, null);
+assert.equal(b.elements.submenuIndicator.hidden, true);
+b.elements.couplingButton.fire('click');
+controller.actions.auto();
+assert.equal(a.elements.menu.hidden, true);
+assert.equal(a.elements.couplingSubmenu.hidden, true);
+assert.equal(a.elements.submenuIndicator.hidden, true);
+console.log('Visual coupling submenu, selected DC, no electrical changes, shared indicator and complete menu closure passed.');

@@ -28,3 +28,5 @@ Create one controller for the experiment, then pass it to the desired model adap
 ## Resumen en español
 
 Un modelo nuevo aporta su carátula, los elementos de control, su disposición y la geometría de pantalla. Reutiliza el controlador, las acciones, el estado y el dibujo de señales. Los gestos de los mandos y la presentación común de menús están separados del DS1102E. Si otro equipo organiza los menús de otra forma, su adaptador puede llamar directamente a las mismas acciones sin copiar su funcionamiento. Los valores iniciales siguen perteneciendo a la práctica activa.
+
+Optional panel elements `couplingButton`, `couplingSubmenu`, `couplingOptions`, `couplingValue` and `submenuIndicator` bind the shared `couplingMenu` action and submenu projection. The model state has a `submenu` field, cleared on channel/menu changes and practice reset. These choices are currently display-only: opening the submenu does not change channel settings or the signal renderer. Models can position and style them differently.
