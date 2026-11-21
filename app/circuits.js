@@ -12,6 +12,7 @@ window.InstrumentLab = {
           frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc'
         },
         oscilloscope: {
+          trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
           timePerDivision: 200e-6, horizontalPositionDivisions: 0, selectedChannel: 1, menuChannel: null,
           channels: {
             1: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 },
@@ -27,6 +28,35 @@ window.InstrumentLab = {
       characteristics({ resistance, capacitance }) {
         const tau = resistance * capacitance;
         return { tau, cutoff: 1 / (2 * Math.PI * tau) };
+      },
+      range({ resistance, capacitance }, generator) {
+        if (generator.output1Enabled === false) return { input: [0, 0], output: [0, 0] };
+        const amplitude = generator.amplitudeVpp / 2, tau = resistance * capacitance;
+        const peak = amplitude * (generator.waveform === 'sine'
+          ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau)
+          : Math.tanh(1 / (4 * generator.frequency * tau)));
+        return { input: [generator.offset - amplitude, generator.offset + amplitude], output: [generator.offset - peak, generator.offset + peak] };
+      },
+      triggerCrossing({ resistance, capacitance }, generator, channel, rawLevel, slope = 'rising') {
+        if (generator.output1Enabled === false) return null;
+        const amplitude = generator.amplitudeVpp / 2, tau = resistance * capacitance;
+        const period = 1 / generator.frequency;
+        if (generator.waveform === 'sine') {
+          const lag = channel === 1 ? 0 : Math.atan(2 * Math.PI * generator.frequency * tau);
+          const peak = channel === 1 ? amplitude : amplitude / Math.hypot(1, 2 * Math.PI * generator.frequency * tau);
+          const normalized = (rawLevel - generator.offset) / peak;
+          if (normalized < -1 - 1e-12 || normalized > 1 + 1e-12 || peak === 0) return null;
+          const angle = Math.asin(Math.max(-1, Math.min(1, normalized)));
+          return ((slope === 'falling' ? Math.PI - angle : angle) + lag) * period / (2 * Math.PI);
+        }
+        if (channel === 1) return Math.abs(rawLevel - generator.offset) <= amplitude + amplitude * 1e-12 ? (slope === 'falling' ? period / 2 : 0) : null;
+        const peak = amplitude * Math.tanh(period / (4 * tau)), target = rawLevel - generator.offset;
+        if (target < -peak - amplitude * 1e-12 || target > peak + amplitude * 1e-12 || peak === 0) return null;
+        const effectiveTarget = slope === 'falling' ? -target : target;
+        const origin = slope === 'falling' ? period / 2 : 0;
+        if (effectiveTarget <= -peak) return origin;
+        if (effectiveTarget >= peak) return origin + period / 2;
+        return origin + Math.max(0, Math.min(period / 2, -tau * Math.log1p(-(effectiveTarget + peak) / (amplitude + peak))));
       },
       mean(parameters, generator) {
         const mean = generator.output1Enabled === false ? 0 : generator.offset;

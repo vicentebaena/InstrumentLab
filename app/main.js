@@ -17,6 +17,30 @@
     t, format: number, onChange: render, onAuto: () => restorePractice()
   });
   const rigolScopePanel = window.InstrumentLab.DS1102EPanel.create({ controller: scopeController, t });
+  let animationFrame = null, animationTime = null;
+  function renderScopes() {
+    $('scopeDisplay').innerHTML = scopeController.getDisplay();
+    rigolScopePanel.render();
+  }
+  function syncAnimation() {
+    if (!scopeController.needsAnimation()) {
+      if (animationFrame !== null) window.cancelAnimationFrame?.(animationFrame);
+      animationFrame = null; animationTime = null;
+    } else if (animationFrame === null && window.requestAnimationFrame) {
+      animationFrame = window.requestAnimationFrame(animate);
+    }
+  }
+  function animate(now) {
+    animationFrame = null;
+    if (!scopeController.needsAnimation()) { animationTime = null; return; }
+    if (animationTime === null) animationTime = now;
+    if (now - animationTime >= 50) {
+      scopeController.advance((now - animationTime) / 1000);
+      animationTime = now;
+      renderScopes();
+    }
+    syncAnimation();
+  }
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;
@@ -33,8 +57,8 @@
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));
     $('circuitTitle').textContent = t(circuit.titleKey);
     $('diagram').innerHTML = circuit.diagram({ resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
-    $('scopeDisplay').innerHTML = scopeController.getDisplay();
-    rigolScopePanel.render();
+    renderScopes();
+    syncAnimation();
     const { tau, cutoff } = circuit.characteristics(state.parameters);
     $('tau').textContent = tau < 0.001 ? `${number(tau * 1e6)} µs` : `${number(tau * 1000)} ms`;
     $('cutoff').textContent = cutoff >= 1000 ? `${number(cutoff / 1000)} kHz` : `${number(cutoff)} Hz`;
@@ -86,6 +110,7 @@
     editing = null;
   });
   function restorePractice(circuitId = state.circuitId) {
+    scopeController.resetTransient();
     Object.assign(state, window.InstrumentLab.createPracticeState(circuitId));
     dg822Panel.reset();
     render();

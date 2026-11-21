@@ -16,6 +16,9 @@ assert.equal(expected.generator.frequency, 1000);
 assert.equal(expected.generator.frequencyUnit, 'kHz');
 assert.equal(expected.oscilloscope.channels[1].positionDivisions, 0);
 assert.equal(expected.oscilloscope.horizontalPositionDivisions, 0);
+assert.equal(expected.oscilloscope.trigger.source, 1);
+assert.equal(expected.oscilloscope.trigger.level, 0);
+assert.equal(expected.oscilloscope.trigger.slope, 'rising');
 assert.equal(expected.oscilloscope.channels[1].probe, 1);
 assert.equal(expected.oscilloscope.channels[2].probe, 1);
 // Mutating a running practice must never overwrite the templates used by reset.
@@ -34,6 +37,9 @@ const dirtyInstruments = () => {
   generatorPanel.actions.parameter('amplitude', 7, 'Vrms');
   generatorPanel.actions.parameter('offset', 1500, 'mVdc');
   generatorPanel.actions.output(1); generatorPanel.actions.output(2);
+  scopePanel.actions.triggerLevel(1);
+  scopePanel.actions.triggerMenu(); scopePanel.actions.submenu('triggerSource'); scopePanel.actions.submenuStep(1); scopePanel.actions.submenuConfirm();
+  scopePanel.actions.submenu('triggerSlope'); scopePanel.actions.submenuStep(1); scopePanel.actions.submenuConfirm();
   scopePanel.actions.horizontalPosition(1); scopePanel.actions.position(1); scopePanel.actions.scale(-1); scopePanel.actions.timeScale(1);
   scopePanel.actions.channel(2); scopePanel.actions.channel(2);
   scopePanel.actions.channel(1); scopePanel.actions.submenu('probe'); scopePanel.actions.submenuStep(1); scopePanel.actions.submenuConfirm();

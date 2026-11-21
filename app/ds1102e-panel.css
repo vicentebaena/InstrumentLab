@@ -24,3 +24,9 @@
 .ds1102e-probe-key{top:48.4%}.ds1102e-probe-submenu .ds1102e-submenu-option{height:20px}
 
 .ds1102e-horizontal-position{left:79.3%;top:38.7%;width:4.2%;height:8.4%;}
+
+.ds1102e-trigger-menu-key{position:absolute;left:88.4%;top:50.2%;width:4.4%;height:4.9%;padding:0;border:0;border-radius:6px;background:transparent;cursor:pointer}.ds1102e-trigger-menu-key:hover{background:#ffffff25}.ds1102e-trigger-menu-key:focus-visible{outline:3px solid #2d7fc7;outline-offset:3px}.ds1102e-trigger-menu{clip-path:inset(0 0 9% 0)}.ds1102e-trigger-menu h3{background:#b5e5ff;color:#132c42}.ds1102e-screen .ds1102e-trigger-slope{display:block;width:32px;height:22px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+.ds1102e-trigger-level{left:88.25%;top:38.7%;width:4.2%;height:8.4%}.ds1102e-trigger-source-key{top:39.6%}
+
+.ds1102e-trigger-slope-key{top:48.4%}.ds1102e-slope-option{flex-direction:row;gap:3px}.ds1102e-screen .ds1102e-slope-option-icon{width:28px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}

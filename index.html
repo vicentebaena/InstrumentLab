@@ -4,23 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-30">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-30">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-30">
-  <script defer src="assets/instruments/images.js?v=20261121-30"></script>
-  <script defer src="app/circuits.js?v=20261121-30"></script>
-  <script defer src="app/translations.js?v=20261121-30"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-30"></script>
-  <script defer src="app/instrument-window.js?v=20261121-30"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-30"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-30"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-30"></script>
-  <script defer src="app/generator.js?v=20261121-30"></script>
-  <script defer src="app/generator-controller.js?v=20261121-30"></script>
-  <script defer src="app/generator-panel.js?v=20261121-30"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-30"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-30"></script>
-  <script defer src="app/main.js?v=20261121-30"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261121-36">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-36">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-36">
+  <script defer src="assets/instruments/images.js?v=20261121-36"></script>
+  <script defer src="app/circuits.js?v=20261121-36"></script>
+  <script defer src="app/translations.js?v=20261121-36"></script>
+  <script defer src="app/oscilloscope.js?v=20261121-36"></script>
+  <script defer src="app/instrument-window.js?v=20261121-36"></script>
+  <script defer src="app/instrument-controls.js?v=20261121-36"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261121-36"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261121-36"></script>
+  <script defer src="app/generator.js?v=20261121-36"></script>
+  <script defer src="app/generator-controller.js?v=20261121-36"></script>
+  <script defer src="app/generator-panel.js?v=20261121-36"></script>
+  <script defer src="app/dg822-panel.js?v=20261121-36"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261121-36"></script>
+  <script defer src="app/main.js?v=20261121-36"></script>
 </head>
 <body>
 <main class="workspace">
@@ -107,6 +107,10 @@
       <img id="ds1102eFaceplate" width="1774" height="887" alt="" aria-hidden="true" draggable="false">
       <span class="ds1102e-spec-label" aria-hidden="true">100MHz 1GSa/s</span>
       <div id="ds1102eSelectionKnob" class="ds1102e-vertical-scale ds1102e-selection-knob" role="button" tabindex="0"></div>
+      <div id="ds1102eTriggerLevel" class="ds1102e-vertical-scale ds1102e-trigger-level" role="slider" tabindex="0" aria-orientation="vertical"></div>
+      <button id="ds1102eTriggerSlopeKey" class="ds1102e-coupling-key ds1102e-trigger-slope-key" type="button" aria-controls="ds1102eTriggerSlopeSubmenu" aria-expanded="false"></button>
+      <button id="ds1102eTriggerSourceKey" class="ds1102e-coupling-key ds1102e-trigger-source-key" type="button" aria-controls="ds1102eTriggerSourceSubmenu" aria-expanded="false"></button>
+      <button id="ds1102eTriggerMenuKey" class="ds1102e-trigger-menu-key" type="button" aria-label="Trigger menu" aria-controls="ds1102eTriggerMenu" aria-expanded="false"></button>
       <button id="ds1102eProbeKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-controls="ds1102eProbeSubmenu" aria-expanded="false"></button>
       <button id="ds1102eCouplingKey" class="ds1102e-coupling-key" type="button" aria-controls="ds1102eCouplingSubmenu" aria-expanded="false"></button>
       <span id="ds1102eSubmenuIndicator" class="ds1102e-submenu-indicator" aria-hidden="true" hidden><svg viewBox="0 0 40 40"><path d="M19 8a12 12 0 1 1-10 7"/><path d="M4 21l4-8 8 4"/></svg></span>
@@ -128,6 +132,26 @@
             <div class="ds1102e-menu-row"><dt data-i18n="scopeProbe"></dt><dd id="ds1102eProbeValue">1X</dd></div>
           </dl>
         </aside>
+        <aside id="ds1102eTriggerMenu" class="ds1102e-channel-menu ds1102e-trigger-menu" lang="en" hidden aria-labelledby="ds1102eTriggerTitle">
+          <h3 id="ds1102eTriggerTitle">Trigger</h3>
+          <dl>
+            <div class="ds1102e-menu-row"><dt>Mode</dt><dd>Edge</dd></div>
+            <div class="ds1102e-menu-row"><dt>Source</dt><dd id="ds1102eTriggerSourceValue">CH1</dd></div>
+            <div class="ds1102e-menu-row"><dt>Slope</dt><dd><svg id="ds1102eTriggerSlopeIcon" class="ds1102e-trigger-slope" viewBox="0 0 40 28" role="img" aria-label="Rising edge"><path id="ds1102eTriggerSlopePath" d="M4 24h14V5h17M12 11l6-6 6 6"/></svg></dd></div>
+            <div class="ds1102e-menu-row"><dt>Sweep</dt><dd>Auto</dd></div>
+            <div class="ds1102e-menu-row"><dt>Set Up</dt></div>
+          </dl>
+        </aside>
+        <div id="ds1102eTriggerSlopeSubmenu" class="ds1102e-submenu" role="group" lang="en" hidden>
+          <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
+          <div id="ds1102eTriggerRising" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 24h14V5h17M12 11l6-6 6 6"/></svg><span>Rising</span></div>
+          <div id="ds1102eTriggerFalling" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 5h14v19h17M12 18l6 6 6-6"/></svg><span>Falling</span></div>
+        </div>
+        <div id="ds1102eTriggerSourceSubmenu" class="ds1102e-submenu" role="group" lang="en" hidden>
+          <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
+          <div id="ds1102eTriggerSource1" class="ds1102e-submenu-option">CH1</div>
+          <div id="ds1102eTriggerSource2" class="ds1102e-submenu-option">CH2</div>
+        </div>
         <div id="ds1102eCouplingSubmenu" class="ds1102e-submenu" role="group" hidden>
           <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
           <div id="ds1102eCouplingDC" class="ds1102e-submenu-option" data-selected="true" aria-current="true">DC</div>

@@ -3,6 +3,7 @@
 window.InstrumentLab.DS1102EPanel = {
   create({ controller, t }) {
     const $ = id => document.getElementById(id);
+    const slopePaths = { rising: 'M4 24h14V5h17M12 11l6-6 6 6', falling: 'M4 5h14v19h17M12 18l6 6 6-6' };
     $('ds1102eFaceplate').src = window.InstrumentLabImages.scope;
     const frame = window.InstrumentLab.createInstrumentWindow({
       dialogId: 'ds1102eDialog', handleId: 'ds1102eWindowBar', closeId: 'ds1102eClose',
@@ -12,9 +13,23 @@ window.InstrumentLab.DS1102EPanel = {
       controller, t, openWindow: () => frame.open(),
       display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
       elements: {
+        triggerLevel: $('ds1102eTriggerLevel'),
+        triggerButton: $('ds1102eTriggerMenuKey'), triggerMenu: $('ds1102eTriggerMenu'),
         selectionKnob: $('ds1102eSelectionKnob'),
         submenuIndicator: $('ds1102eSubmenuIndicator'),
         submenuViews: {
+          triggerSlope: {
+            button: $('ds1102eTriggerSlopeKey'), menu: $('ds1102eTriggerSlopeSubmenu'), value: $('ds1102eTriggerSlopeIcon'), labelKey: 'scopeTriggerSlope',
+            options: { rising: $('ds1102eTriggerRising'), falling: $('ds1102eTriggerFalling') },
+            renderValue: (element, slope) => {
+              element.setAttribute('aria-label', slope === 'falling' ? 'Falling edge' : 'Rising edge');
+              $('ds1102eTriggerSlopePath').setAttribute('d', slopePaths[slope]);
+            }
+          },
+          triggerSource: {
+            button: $('ds1102eTriggerSourceKey'), menu: $('ds1102eTriggerSourceSubmenu'), value: $('ds1102eTriggerSourceValue'), labelKey: 'scopeTriggerSource',
+            options: { 1: $('ds1102eTriggerSource1'), 2: $('ds1102eTriggerSource2') }, formatValue: value => `CH${value}`
+          },
           coupling: {
             button: $('ds1102eCouplingKey'), menu: $('ds1102eCouplingSubmenu'), value: $('ds1102eCouplingValue'), labelKey: 'scopeCoupling',
             options: { DC: $('ds1102eCouplingDC'), AC: $('ds1102eCouplingAC'), GND: $('ds1102eCouplingGround') },

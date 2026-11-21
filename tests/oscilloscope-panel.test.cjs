@@ -25,13 +25,19 @@ const controller = app.createOscilloscopeController({
   t: key => app.translations[language][key], format: String
 });
 const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
-  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition'].map(key => [key, new Element()]));
+  const elements = Object.fromEntries(['auto', 'menuToggle', 'scale', 'timeScale', 'position', 'screen', 'menu', 'menuTitle', 'couplingButton', 'couplingSubmenu', 'couplingValue', 'submenuIndicator', 'selectionKnob', 'probeButton', 'probeSubmenu', 'probeValue', 'horizontalPosition', 'triggerButton', 'triggerMenu', 'triggerLevel'].map(key => [key, new Element()]));
   elements.couplingOptions = { DC: new Element(), AC: new Element(), GND: new Element() };
   elements.probeOptions = Object.fromEntries([1, 5, 10, 20, 50, 100, 200, 500, 1000].map(factor => [factor, new Element()]));
   elements.submenuViews = {
     coupling: { button: elements.couplingButton, menu: elements.couplingSubmenu, value: elements.couplingValue, options: elements.couplingOptions, labelKey: 'scopeCoupling', formatValue: value => value === 'GND' ? app.translations[language].scopeGroundCoupling : value },
     probe: { button: elements.probeButton, menu: elements.probeSubmenu, value: elements.probeValue, options: elements.probeOptions, labelKey: 'scopeProbe', formatValue: value => `${value}X` }
   };
+  elements.triggerSourceButton = new Element(); elements.triggerSourceMenu = new Element(); elements.triggerSourceValue = new Element();
+  elements.submenuViews.triggerSource = { button: elements.triggerSourceButton, menu: elements.triggerSourceMenu, value: elements.triggerSourceValue,
+    options: { 1: new Element(), 2: new Element() }, labelKey: 'scopeTriggerSource', formatValue: value => `CH${value}` };
+  elements.triggerSlopeButton = new Element(); elements.triggerSlopeMenu = new Element(); elements.triggerSlopeValue = new Element();
+  elements.submenuViews.triggerSlope = { button: elements.triggerSlopeButton, menu: elements.triggerSlopeMenu, value: elements.triggerSlopeValue,
+    options: { rising: new Element(), falling: new Element() }, labelKey: 'scopeTriggerSlope', renderValue: (element, value) => element.setAttribute('data-slope', value) };
   elements.channelButtons = { 1: new Element(), 2: new Element() };
   let opens = 0;
   const panel = app.createOscilloscopePanel({ elements, controller, t: key => app.translations[language][key], display: { idPrefix, horizontalDivisions, footerScales, cellWidth }, openWindow: () => opens++ });
@@ -213,3 +219,84 @@ assert.equal(settings.horizontalPositionDivisions, 0);
 assert.equal(settings.channels[1].probe, 1);
 assert.equal(settings.channels[2].probe, 1);
 console.log('Horizontal POSITION is global and always enabled; AUTO resets its position and both probe factors.');
+
+// Trigger is a main menu, never a channel visibility toggle or a signal change.
+controller.actions.auto();
+a.elements.channelButtons[1].fire('click');
+a.elements.submenuViews.probe.button.fire('click');
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+const beforeTrigger = a.elements.screen.innerHTML;
+const channelsBeforeTrigger = JSON.stringify(settings.channels);
+a.elements.triggerButton.fire('click');
+assert.equal(settings.triggerMenuOpen, true);
+assert.equal(settings.menuChannel, null);
+assert.equal(settings.submenu, null);
+assert.equal(settings.submenuSelection, null);
+assert.equal(JSON.stringify(settings.channels), channelsBeforeTrigger);
+assert.equal(a.elements.screen.innerHTML, beforeTrigger);
+assert.equal(a.elements.menu.hidden, true);
+assert.equal(b.elements.triggerMenu.hidden, false);
+assert.equal(a.elements.submenuIndicator.hidden, true);
+assert.equal(a.elements.triggerButton.attributes['aria-expanded'], 'true');
+a.elements.menuToggle.fire('click');
+assert.equal(settings.triggerMenuOpen, false);
+assert.equal(a.elements.menu.hidden, true);
+assert.equal(b.elements.triggerMenu.hidden, true);
+a.elements.triggerButton.fire('click');
+a.elements.channelButtons[2].fire('click');
+assert.equal(settings.triggerMenuOpen, false);
+assert.equal(settings.selectedChannel, 2);
+assert.equal(settings.menuChannel, 2);
+assert.equal(a.elements.triggerMenu.hidden, true);
+assert.equal(a.elements.menu.hidden, false);
+a.elements.channelButtons[2].fire('click');
+a.elements.channelButtons[1].fire('click'); a.elements.channelButtons[1].fire('click');
+a.elements.triggerButton.fire('click');
+assert.equal(settings.channels[1].visible, false);
+assert.equal(settings.channels[2].visible, false);
+controller.actions.auto();
+assert.equal(settings.triggerMenuOpen, false);
+assert.equal(a.elements.triggerMenu.hidden, true);
+console.log('Trigger menu opens without changing signals or visibility, cancels draft submenus, closes on MENU, channel selection and AUTO.');
+
+// Source belongs to trigger settings, independently of the selected vertical channel.
+controller.actions.auto();
+a.elements.triggerButton.fire('click');
+a.elements.triggerSourceButton.fire('click');
+assert.equal(settings.submenuSelection, 1);
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.trigger.source, 2);
+assert.equal(settings.selectedChannel, 1);
+assert.equal(a.elements.triggerSourceValue.textContent, 'CH2');
+assert.equal(a.elements.triggerSourceMenu.hidden, true);
+assert.equal(a.elements.triggerMenu.hidden, false);
+a.elements.triggerLevel.fire('keydown', { key: 'ArrowUp' });
+assert.equal(settings.trigger.level, .05);
+assert.equal(settings.trigger.showLevel, true);
+assert.equal(b.elements.triggerLevel.attributes['aria-valuetext'], '0.05 V · CH2');
+controller.actions.auto();
+assert.equal(settings.trigger.source, 1);
+assert.equal(settings.trigger.level, 0);
+assert.equal(settings.trigger.showLevel, false);
+console.log('Source submenu and LEVEL use trigger channel independently of vertical selection; AUTO restores CH1/0V.');
+
+controller.actions.auto();
+a.elements.triggerButton.fire('click');
+a.elements.triggerSlopeButton.fire('click');
+assert.equal(settings.submenuSelection, 'rising');
+a.elements.selectionKnob.fire('keydown', { key: 'ArrowDown' });
+assert.equal(settings.submenuSelection, 'falling');
+assert.equal(settings.trigger.slope, 'rising');
+assert.equal(b.elements.submenuViews.triggerSlope.options.falling.attributes['data-selected'], 'true');
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.trigger.slope, 'falling');
+assert.equal(a.elements.triggerSlopeValue.attributes['data-slope'], 'falling');
+assert.equal(a.elements.triggerSlopeMenu.hidden, true);
+assert.equal(a.elements.submenuIndicator.hidden, true);
+a.elements.triggerSlopeButton.fire('click');
+assert.equal(settings.submenuSelection, 'falling');
+controller.actions.auto();
+assert.equal(settings.trigger.slope, 'rising');
+assert.equal(a.elements.triggerSlopeValue.attributes['data-slope'], 'rising');
+console.log('Slope shares rotary highlight/confirm, updates both model views and resets to Rising on AUTO.');

@@ -33,7 +33,7 @@ const paths = svg => Array.from(svg.matchAll(/<path d="([^"]+)" stroke="(#[^"]+)
 const points = path => Array.from(path.matchAll(/[ML]([0-9.-]+),([0-9.-]+)/g), m => [Number(m[1]), Number(m[2])]);
 for (const waveform of ['sine', 'square']) for (const [prefix, divisions, cellWidth] of [['scope', 10, 56.8], ['instrument', 12, 40]]) {
   const generator = { ...app.generatorDefaults, waveform, offset: .7 };
-  const render = (settings, source = generator) => scope.render(app.circuits.rc, app.circuits.rc.defaults, source, key => app.translations.en[key], String, prefix, divisions, settings, { cellWidth, footerScales: prefix === 'instrument' });
+  const render = (settings, source = generator) => scope.render(app.circuits.rc, app.circuits.rc.defaults, source, key => app.translations.en[key], String, prefix, divisions, settings, { cellWidth, footerScales: prefix === 'instrument', triggerAnalysis: { locked: true, time: 0 } });
   const dc = scope.createState(), ac = scope.createState({ channels: { 1: { coupling: 'AC' }, 2: { coupling: 'AC' } } });
   const dcPaths = paths(render(dc)), acPaths = paths(render(ac));
   for (const channel of [0, 1]) {

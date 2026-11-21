@@ -14,7 +14,7 @@ for (const selectedChannel of [1, 2, null]) for (const visible of [true, false])
   assert.equal(moved.timePerDivision, state.timePerDivision);
   assert.equal(scope.stepHorizontalPosition(moved, -1).horizontalPositionDivisions, 0);
 }
-for (const [direction, bound] of [[1, 12], [-1, -12]]) {
+for (const [direction, bound] of [[1, 5], [-1, -5]]) {
   let state = initial;
   for (let i = 0; i < 200; i++) state = scope.stepHorizontalPosition(state, direction);
   assert.equal(state.horizontalPositionDivisions, bound);
