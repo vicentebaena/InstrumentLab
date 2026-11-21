@@ -1,13 +1,14 @@
 'use strict';
 // Rigol DS1102E faceplate. Both scope views use the same experiment and renderer.
 window.InstrumentLab.DS1102EPanel = {
-  create({ getDisplay, getSettings, onChannel, onMenu, onScale, onTimeScale, onPosition, t }) {
+  create({ getDisplay, getSettings, onChannel, onMenu, onScale, onTimeScale, onPosition, onAuto, t }) {
     const $ = id => document.getElementById(id);
     $('ds1102eFaceplate').src = window.InstrumentLabImages.scope;
     const frame = window.InstrumentLab.createInstrumentWindow({
       dialogId: 'ds1102eDialog', handleId: 'ds1102eWindowBar', closeId: 'ds1102eClose',
       triggerSelector: '[data-instrument="ds1102e"]'
     });
+    $('ds1102eAuto').addEventListener('click', onAuto);
     $('ds1102eMenuToggle').addEventListener('click', onMenu);
     for (const channel of [1, 2]) {
       $(`ds1102eCH${channel}`).addEventListener('click', () => onChannel(channel));

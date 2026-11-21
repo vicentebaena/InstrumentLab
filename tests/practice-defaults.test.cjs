@@ -54,3 +54,16 @@ assert.equal(context.document.documentElement.lang, 'es');
 assert.equal(app.circuits.other.instrumentDefaults.oscilloscope.channels[2].positionDivisions, -1);
 assert.equal(app.circuits.rc.instrumentDefaults.oscilloscope.channels[1].visible, true);
 console.log('Initial state, full instrument reset, independent templates, practice switching and active-practice defaults passed.');
+
+// The physical AUTO key uses the same active-practice restoration as the page button.
+dirtyInstruments();
+scopePanel.onAuto();
+assert.deepEqual(generatorPanel.getGenerator(), other.generator);
+assert.deepEqual(scopePanel.getSettings(), other.oscilloscope);
+assert.equal(context.document.documentElement.lang, 'es');
+element('circuit').listeners.change({ target: { value: 'rc' } });
+dirtyInstruments();
+scopePanel.onAuto();
+assert.deepEqual(generatorPanel.getGenerator(), expected.generator);
+assert.deepEqual(scopePanel.getSettings(), expected.oscilloscope);
+console.log('AUTO restores the complete active-practice defaults, for RC and a different practice.');
