@@ -4,11 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({ window: {} });
-for (const file of ['circuits.js', 'dg822-panel.js', 'translations.js', 'oscilloscope.js']) {
+for (const file of ['circuits.js', 'generator.js', 'dg822-panel.js', 'translations.js', 'oscilloscope.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../app', file), 'utf8'), context);
 }
 const app = context.window.InstrumentLab;
-const api = app.DG822Panel;
+const api = app.generator;
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) <= Math.max(1e-15, Math.abs(expected) * 1e-12));
 for (const [unit, value] of [['MHz', 2e6], ['kHz', 2000], ['Hz', 2], ['mHz', .002], ['uHz', .000002]]) {
   const change = api.change('frequency', 2, unit);
@@ -26,9 +26,9 @@ close(api.change('offset', 0, 'mVdc').offset, 0);
 for (const args of [['frequency', 0, 'Hz'], ['frequency', -1, 'Hz'], ['amplitude', 0, 'Vpp'], ['amplitude', NaN, 'Vpp'], ['offset', Infinity, 'Vdc'], ['frequency', 1, 'Vpp']]) {
   assert.throws(() => api.change(...args));
 }
-assert.equal(api.formatNumber(1, 9), '1.000,000,000');
-assert.equal(api.formatNumber(5, 4), '5.000,0');
-assert.equal(api.formatNumber(-.5, 4), '-0.500,0');
+assert.equal(app.DG822Panel.formatNumber(1, 9), '1.000,000,000');
+assert.equal(app.DG822Panel.formatNumber(5, 4), '5.000,0');
+assert.equal(app.DG822Panel.formatNumber(-.5, 4), '-0.500,0');
 // MHz frequencies must render in bounded work without producing a false sampled trace.
 for (const frequency of [1e-6, 1e-3, 1, 1000, 1e6, 25e6]) {
   const svg = app.oscilloscope.render(app.circuits.rc, app.circuits.rc.defaults, { ...app.generatorDefaults, frequency }, key => app.translations.en[key], String);

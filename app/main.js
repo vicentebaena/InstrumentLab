@@ -8,7 +8,8 @@
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
-  const dg822Panel = window.InstrumentLab.DG822Panel.create({ getGenerator: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
+  const generatorController = window.InstrumentLab.createGeneratorController({ getSettings: () => state.generator, onChange: change => { Object.assign(state.generator, change); render(); } });
+  const dg822Panel = window.InstrumentLab.DG822Panel.create({ controller: generatorController });
   const scopeController = window.InstrumentLab.createOscilloscopeController({
     getSettings: () => state.oscilloscope,
     setSettings: settings => { state.oscilloscope = settings; },
@@ -20,7 +21,7 @@
     document.documentElement.lang = language;
     $('language').value = language;
     for (const [parameter, id] of [['frequency', 'generatorFrequency'], ['amplitude', 'generatorAmplitude'], ['offset', 'generatorOffset']]) {
-      const reading = window.InstrumentLab.DG822Panel.reading(state.generator, parameter);
+      const reading = generatorController.reading(parameter);
       $(id).textContent = `${number(reading.value)} ${reading.unit}`;
     }
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });

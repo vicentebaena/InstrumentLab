@@ -127,3 +127,9 @@ The DS1102E adapter now contains only its faceplate, element mapping, window con
 El DS1102E conserva su aspecto y funcionamiento. Los mandos, las acciones y la gestión común de menús se han separado para reutilizarlos con otras carátulas. No se ha añadido todavía otro modelo ni un selector. See [adding an oscilloscope model](docs/oscilloscope-models.md).
 
 Panel regression checks: `node tests/oscilloscope-panel.test.cjs`. Practice reset checks: `node tests/practice-defaults.test.cjs`.
+
+## Reusing generator functionality / Reutilizar el generador
+
+The generator now has shared settings/conversion logic, a controller and common editor/menu/output bindings. The DG822 adapter contains its faceplate mapping and English presentation conventions, including its exact numeric formatting. The main summary reads the common controller. Sine/Square, RMS conversions, output behaviour and practice restoration are unchanged. See [adding a generator model](docs/generator-models.md).
+
+El generador está preparado para otras carátulas sin copiar la lógica de unidades, validación, ondas o salidas. El DG822 mantiene su comportamiento. Panel regression checks: `node tests/generator-panel.test.cjs`.
