@@ -1,95 +1,22 @@
 'use strict';
-// Rigol DS1102E faceplate. Both scope views use the same experiment and renderer.
+// DS1102E adapter: photograph, DOM mapping, window and screen geometry only.
 window.InstrumentLab.DS1102EPanel = {
-  create({ getDisplay, getSettings, onChannel, onMenu, onScale, onTimeScale, onPosition, onAuto, t }) {
+  create({ controller, t }) {
     const $ = id => document.getElementById(id);
     $('ds1102eFaceplate').src = window.InstrumentLabImages.scope;
     const frame = window.InstrumentLab.createInstrumentWindow({
       dialogId: 'ds1102eDialog', handleId: 'ds1102eWindowBar', closeId: 'ds1102eClose',
       triggerSelector: '[data-instrument="ds1102e"]'
     });
-    $('ds1102eAuto').addEventListener('click', onAuto);
-    $('ds1102eMenuToggle').addEventListener('click', onMenu);
-    for (const channel of [1, 2]) {
-      $(`ds1102eCH${channel}`).addEventListener('click', () => onChannel(channel));
-    }
-    function bindScaleKnob(id, onStep, enabled = () => true) {
-      const knob = $(id);
-      let drag = null, rotation = 0, wheel = 0;
-      const angle = event => {
-        const box = knob.getBoundingClientRect();
-        return Math.atan2(event.clientY - box.top - box.height / 2, event.clientX - box.left - box.width / 2) * 180 / Math.PI;
-      };
-      knob.addEventListener('pointerdown', event => {
-        if (event.button !== 0 || !enabled()) return;
-        event.preventDefault(); knob.focus(); knob.setPointerCapture(event.pointerId);
-        drag = { angle: angle(event), remainder: 0 };
-      });
-      knob.addEventListener('pointermove', event => {
-        if (!drag) return;
-        const next = angle(event);
-        const delta = (next - drag.angle + 540) % 360 - 180;
-        drag.angle = next; drag.remainder += delta;
-        rotation += delta; knob.style.setProperty('--rotation', `${rotation}deg`);
-        while (Math.abs(drag.remainder) >= 20) {
-          const clockwise = Math.sign(drag.remainder);
-          drag.remainder -= clockwise * 20;
-          onStep(-clockwise);
-        }
-      });
-      for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) knob.addEventListener(event, () => { drag = null; });
-      knob.addEventListener('keydown', event => {
-        const direction = { ArrowRight: -1, ArrowUp: -1, ArrowLeft: 1, ArrowDown: 1 }[event.key];
-        if (!direction) return;
-        event.preventDefault(); onStep(direction);
-      });
-      knob.addEventListener('wheel', event => {
-        event.preventDefault();
-        wheel += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1);
-        while (Math.abs(wheel) >= 40) { const direction = Math.sign(wheel); wheel -= direction * 40; onStep(direction); }
-      }, { passive: false });
-      return knob;
-    }
-    const knob = bindScaleKnob('ds1102eVerticalScale', onScale, () => getSettings().channels[getSettings().selectedChannel].visible);
-    const positionKnob = bindScaleKnob('ds1102eVerticalPosition', direction => onPosition(-direction), () => getSettings().channels[getSettings().selectedChannel]?.visible);
-    const horizontalKnob = bindScaleKnob('ds1102eHorizontalScale', onTimeScale);
-    function render() {
-      $('ds1102eDisplay').innerHTML = getDisplay();
-      const settings = getSettings();
-      for (const channel of [1, 2]) {
-        const button = $(`ds1102eCH${channel}`);
-        button.setAttribute('aria-pressed', String(settings.channels[channel].visible));
-        button.setAttribute('data-selected', String(settings.selectedChannel === channel));
-        button.setAttribute('aria-label', `CH${channel}: ${settings.channels[channel].visible ? 'visible' : 'hidden'}${settings.selectedChannel === channel ? ', selected' : ''}`);
+    return window.InstrumentLab.createOscilloscopePanel({
+      controller, t, openWindow: () => frame.open(),
+      display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
+      elements: {
+        auto: $('ds1102eAuto'), menuToggle: $('ds1102eMenuToggle'),
+        channelButtons: { 1: $('ds1102eCH1'), 2: $('ds1102eCH2') },
+        scale: $('ds1102eVerticalScale'), timeScale: $('ds1102eHorizontalScale'), position: $('ds1102eVerticalPosition'),
+        screen: $('ds1102eDisplay'), menu: $('ds1102eChannelMenu'), menuTitle: $('ds1102eMenuTitle')
       }
-      const channel = settings.selectedChannel;
-      const value = settings.channels[channel].voltsPerDivision;
-      knob.setAttribute('aria-valuemin', '0');
-      knob.setAttribute('aria-valuemax', '9');
-      knob.setAttribute('aria-valuenow', String(window.InstrumentLab.oscilloscope.verticalScales.indexOf(value)));
-      knob.setAttribute('aria-valuetext', `CH${channel} ${window.InstrumentLab.oscilloscope.formatVerticalScale(value)}`);
-      knob.setAttribute('aria-disabled', String(!settings.channels[channel].visible));
-      knob.setAttribute('aria-label', t('scopeVerticalScale'));
-      knob.title = t('scopeVerticalHelp');
-      horizontalKnob.setAttribute('aria-valuemin', '0');
-      horizontalKnob.setAttribute('aria-valuemax', '9');
-      horizontalKnob.setAttribute('aria-valuenow', String(window.InstrumentLab.oscilloscope.horizontalScales.indexOf(settings.timePerDivision)));
-      horizontalKnob.setAttribute('aria-valuetext', window.InstrumentLab.oscilloscope.formatTimeScale(settings.timePerDivision));
-      horizontalKnob.setAttribute('aria-label', t('scopeHorizontalScale'));
-      horizontalKnob.title = t('scopeHorizontalHelp');
-      positionKnob.setAttribute('aria-valuemin', '-4');
-      positionKnob.setAttribute('aria-valuemax', '4');
-      positionKnob.setAttribute('aria-valuenow', String(settings.channels[channel].positionDivisions));
-      positionKnob.setAttribute('aria-valuetext', `CH${channel} ${settings.channels[channel].positionDivisions.toFixed(1)} div`);
-      positionKnob.setAttribute('aria-disabled', String(!settings.channels[channel].visible));
-      positionKnob.setAttribute('aria-label', t('scopeVerticalPosition'));
-      positionKnob.title = t('scopePositionHelp');
-      const menu = $('ds1102eChannelMenu');
-      menu.hidden = settings.menuChannel === null;
-      $('ds1102eMenuToggle').setAttribute('aria-expanded', String(settings.menuChannel !== null));
-      menu.setAttribute('data-channel', String(settings.menuChannel));
-      $('ds1102eMenuTitle').textContent = settings.menuChannel ? `CH${settings.menuChannel}` : '';
-    }
-    return { render, open() { render(); frame.open(); } };
+    });
   }
 };

@@ -89,7 +89,7 @@ console.log('Output1 gating, independent Output2, DC removal and disabled high-f
 // Instrument and main views share scales/centre time but use 12 and 10 divisions.
 for (const generator of [app.generatorDefaults, { ...app.generatorDefaults, waveform: 'sine' }, { ...app.generatorDefaults, output1Enabled: false }]) {
   const main = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String);
-  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1102e', 12);
+  const instrument = app.oscilloscope.render(rc, params, generator, key => app.translations.en[key], String, 'ds1102e', 12, null, { footerScales: true, cellWidth: 40 });
   const ids = markup => [...markup.matchAll(/id="([^"]+)"/g)].map(match => match[1]);
   assert.ok(ids(main).every(id => !ids(instrument).includes(id)));
   const gridLines = markup => [...markup.match(/stroke="#203038" stroke-width="1">(.*?)<\/g>/s)[1].matchAll(/<path /g)].length;

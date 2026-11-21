@@ -119,3 +119,11 @@ Ground arrows share the same X coordinate. The selected channel is drawn last, s
 Each practice owns `instrumentDefaults` alongside its component defaults. Initial load, Restore defaults and practice selection use the same state factory. RC restores square 1 kHz, 2 Vpp, 0 Vdc, CH1 output ON / CH2 OFF, kHz/Vpp/Vdc display units; scope 200.0us, both channels visible at 500mV with centred grounds, CH1 selected and channel menu closed. The generator returns to its parameter screen. Instrument windows keep their open/closed state and the app language is preserved. / Restaurar valores iniciales repone los componentes y toda la configuración de los instrumentos definida por la práctica activa.
 
 The DS1102E AUTO key restores the active practice defaults for components, generator and oscilloscope, using the same action as Restore defaults. This is the practice reset requested for the simulator. / AUTO restaura los valores por defecto de la práctica activa, igual que Restaurar valores iniciales.
+
+## Reusing oscilloscope functionality / Reutilizar el osciloscopio
+
+The DS1102E adapter now contains only its faceplate, element mapping, window configuration and screen geometry. Shared modules handle the experiment controller, rotary interactions, front-panel bindings and channel-menu presentation. The signal renderer uses presentation options rather than a model-name check. Both instrument and main displays read the same controller; current DS1102E behaviour is preserved.
+
+El DS1102E conserva su aspecto y funcionamiento. Los mandos, las acciones y la gestión común de menús se han separado para reutilizarlos con otras carátulas. No se ha añadido todavía otro modelo ni un selector. See [adding an oscilloscope model](docs/oscilloscope-models.md).
+
+Panel regression checks: `node tests/oscilloscope-panel.test.cjs`. Practice reset checks: `node tests/practice-defaults.test.cjs`.

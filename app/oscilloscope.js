@@ -61,12 +61,12 @@
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
     },
-    render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null) {
+    render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null, presentation = {}) {
       const settings = scopeState || this.createState();
       const scale = channel => settings.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
       const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
-      const instrumentFooter = idPrefix === 'ds1102e';
-      const left = 36, top = 44, width = (instrumentFooter ? 40 : 56.8) * horizontalDivisions, height = 320;
+      const instrumentFooter = presentation.footerScales ?? false;
+      const left = 36, top = 44, width = (presentation.cellWidth ?? 56.8) * horizontalDivisions, height = 320;
       const viewWidth = width + 2 * left;
       const timePerDivision = settings.timePerDivision ?? defaults.timePerDivision;
       const timeScaleLabel = this.formatTimeScale(timePerDivision);

@@ -40,7 +40,7 @@ assert.equal(original.channels[1].visible, true);
 for (const channel of [2, 1]) { state = scope.pressChannel(state, channel); if (state.channels[channel].visible) state = scope.pressChannel(state, channel); }
 assert.equal(state.channels[1].visible, false);
 assert.equal(state.channels[2].visible, false);
-const render = (settings, prefix = 'scope', divisions = 10, frequency = 1000) => scope.render(app.circuits.rc, app.circuits.rc.defaults, { ...app.generatorDefaults, frequency }, key => app.translations.en[key], String, prefix, divisions, settings);
+const render = (settings, prefix = 'scope', divisions = 10, frequency = 1000) => scope.render(app.circuits.rc, app.circuits.rc.defaults, { ...app.generatorDefaults, frequency }, key => app.translations.en[key], String, prefix, divisions, settings, prefix === 'scope' ? {} : { footerScales: true, cellWidth: 40 });
 const traces = svg => [...svg.matchAll(/<path d="[^"]+" stroke="(#[^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(traces(render(original)), ['#f4d35e', '#6ecbff']);
 let hide1 = scope.pressChannel(scope.pressChannel(original, 1), 1);
@@ -190,7 +190,7 @@ for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
   assert.ok(!render(state, prefix, divisions).includes('data-ground-channel='));
   // Dense-frequency bands must shift too, including when the full band is off-screen.
   const smallSignal = { ...app.generatorDefaults, frequency: 25e6, amplitudeVpp: .02 };
-  const denseRender = settings => scope.render(app.circuits.rc, app.circuits.rc.defaults, smallSignal, key => app.translations.en[key], String, prefix, divisions, settings);
+  const denseRender = settings => scope.render(app.circuits.rc, app.circuits.rc.defaults, smallSignal, key => app.translations.en[key], String, prefix, divisions, settings, prefix === 'scope' ? {} : { footerScales: true, cellWidth: 40 });
   const bandTop = svg => Number(svg.match(/<rect x="36" y="([0-9.]+)"[^>]+fill="#f4d35e"/)[1]);
   assert.ok(Math.abs(bandTop(denseRender(raised)) - bandTop(denseRender(original)) + 4) < 1e-9);
   assert.ok(!/NaN|undefined|Infinity/.test(denseRender(lowered2)));

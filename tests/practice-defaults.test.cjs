@@ -9,7 +9,7 @@ const element = id => {
   return elements.get(id);
 };
 const context = vm.createContext({ window: { InstrumentLabImages: { generator: '', scope: '' } }, document: { getElementById: element, documentElement: {}, querySelectorAll: () => [] }, localStorage: { getItem: () => 'es', setItem() {} }, Option: function() {} });
-for (const file of ['circuits.js', 'oscilloscope.js', 'translations.js', 'dg822-panel.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../app', file), 'utf8'), context);
+for (const file of ['circuits.js', 'oscilloscope.js', 'oscilloscope-controller.js', 'translations.js', 'dg822-panel.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../app', file), 'utf8'), context);
 const app = context.window.InstrumentLab;
 const expected = app.createPracticeState('rc');
 assert.equal(expected.generator.frequency, 1000);
@@ -23,12 +23,12 @@ changed.oscilloscope.channels[1].visible = false;
 assert.deepEqual(app.createPracticeState('rc'), expected);
 let generatorPanel, scopePanel, menuResets = 0;
 app.DG822Panel.create = options => { generatorPanel = options; return { render() {}, reset() { menuResets++; } }; };
-app.DS1102EPanel = { create(options) { scopePanel = options; return { render() {} }; } };
+app.DS1102EPanel = { create(options) { scopePanel = options.controller; return { render() {} }; } };
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/main.js'), 'utf8'), context);
 const dirtyInstruments = () => {
   generatorPanel.onChange({ waveform: 'sine', frequency: 42, frequencyUnit: 'Hz', amplitudeVpp: 7, amplitudeUnit: 'Vrms', offset: 1.5, offsetUnit: 'mVdc', output1Enabled: false, output2Enabled: true });
-  scopePanel.onPosition(1); scopePanel.onScale(-1); scopePanel.onTimeScale(1);
-  scopePanel.onChannel(2); scopePanel.onChannel(2);
+  scopePanel.actions.position(1); scopePanel.actions.scale(-1); scopePanel.actions.timeScale(1);
+  scopePanel.actions.channel(2); scopePanel.actions.channel(2);
 };
 dirtyInstruments();
 element('resetCircuit').listeners.click();
@@ -57,13 +57,13 @@ console.log('Initial state, full instrument reset, independent templates, practi
 
 // The physical AUTO key uses the same active-practice restoration as the page button.
 dirtyInstruments();
-scopePanel.onAuto();
+scopePanel.actions.auto();
 assert.deepEqual(generatorPanel.getGenerator(), other.generator);
 assert.deepEqual(scopePanel.getSettings(), other.oscilloscope);
 assert.equal(context.document.documentElement.lang, 'es');
 element('circuit').listeners.change({ target: { value: 'rc' } });
 dirtyInstruments();
-scopePanel.onAuto();
+scopePanel.actions.auto();
 assert.deepEqual(generatorPanel.getGenerator(), expected.generator);
 assert.deepEqual(scopePanel.getSettings(), expected.oscilloscope);
 console.log('AUTO restores the complete active-practice defaults, for RC and a different practice.');
