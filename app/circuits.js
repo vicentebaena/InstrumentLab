@@ -5,6 +5,20 @@ window.InstrumentLab = {
     rc: {
       titleKey: 'rcTitle',
       defaults: { resistance: 1000, capacitance: 100e-9 },
+      instrumentDefaults: {
+        generator: {
+          waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2,
+          output1Enabled: true, output2Enabled: false,
+          frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc'
+        },
+        oscilloscope: {
+          timePerDivision: 200e-6, selectedChannel: 1, menuChannel: null,
+          channels: {
+            1: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 },
+            2: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 }
+          }
+        }
+      },
       parameters: {
         resistance: { labelKey: 'resistance', unit: 'kΩ', scale: 1000, min: 0.001, max: 10000 },
         capacitance: { labelKey: 'capacitance', unit: 'nF', scale: 1e-9, min: 0.001, max: 1000000 }
@@ -87,5 +101,15 @@ window.InstrumentLab = {
       }
     }
   },
-  generatorDefaults: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2, output1Enabled: true, output2Enabled: false }
+  generatorDefaults: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2, output1Enabled: true, output2Enabled: false },
+  createPracticeState(circuitId) {
+    const circuit = this.circuits[circuitId];
+    if (!circuit) throw new RangeError('Unknown practice.');
+    return {
+      circuitId,
+      parameters: { ...circuit.defaults },
+      generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator },
+      oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope)
+    };
+  }
 };

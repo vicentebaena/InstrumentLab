@@ -1,0 +1,56 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const elements = new Map();
+const element = id => {
+  if (!elements.has(id)) elements.set(id, { value: '', listeners: {}, addEventListener(name, callback) { this.listeners[name] = callback; }, replaceChildren() {} });
+  return elements.get(id);
+};
+const context = vm.createContext({ window: { InstrumentLabImages: { generator: '', scope: '' } }, document: { getElementById: element, documentElement: {}, querySelectorAll: () => [] }, localStorage: { getItem: () => 'es', setItem() {} }, Option: function() {} });
+for (const file of ['circuits.js', 'oscilloscope.js', 'translations.js', 'dg822-panel.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../app', file), 'utf8'), context);
+const app = context.window.InstrumentLab;
+const expected = app.createPracticeState('rc');
+assert.equal(expected.generator.frequency, 1000);
+assert.equal(expected.generator.frequencyUnit, 'kHz');
+assert.equal(expected.oscilloscope.channels[1].positionDivisions, 0);
+// Mutating a running practice must never overwrite the templates used by reset.
+const changed = app.createPracticeState('rc');
+changed.parameters.resistance = 5000;
+changed.generator.waveform = 'sine';
+changed.oscilloscope.channels[1].visible = false;
+assert.deepEqual(app.createPracticeState('rc'), expected);
+let generatorPanel, scopePanel, menuResets = 0;
+app.DG822Panel.create = options => { generatorPanel = options; return { render() {}, reset() { menuResets++; } }; };
+app.DS1102EPanel = { create(options) { scopePanel = options; return { render() {} }; } };
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/main.js'), 'utf8'), context);
+const dirtyInstruments = () => {
+  generatorPanel.onChange({ waveform: 'sine', frequency: 42, frequencyUnit: 'Hz', amplitudeVpp: 7, amplitudeUnit: 'Vrms', offset: 1.5, offsetUnit: 'mVdc', output1Enabled: false, output2Enabled: true });
+  scopePanel.onPosition(1); scopePanel.onScale(-1); scopePanel.onTimeScale(1);
+  scopePanel.onChannel(2); scopePanel.onChannel(2);
+};
+dirtyInstruments();
+element('resetCircuit').listeners.click();
+assert.deepEqual(generatorPanel.getGenerator(), expected.generator);
+assert.deepEqual(scopePanel.getSettings(), expected.oscilloscope);
+assert.equal(context.document.documentElement.lang, 'es');
+assert.equal(menuResets, 1);
+// A second synthetic practice proves reset reads active practice defaults, not RC globals.
+app.circuits.other = { ...app.circuits.rc, defaults: { resistance: 2200, capacitance: 47e-9 }, instrumentDefaults: {
+  generator: { waveform: 'sine', frequency: 2000, amplitudeVpp: 4, offset: .2, output1Enabled: false, output2Enabled: true, frequencyUnit: 'Hz' },
+  oscilloscope: { timePerDivision: 1e-3, selectedChannel: 2, channels: { 1: { visible: false }, 2: { voltsPerDivision: 2, positionDivisions: -1 } } }
+} };
+element('circuit').listeners.change({ target: { value: 'other' } });
+const other = app.createPracticeState('other');
+assert.deepEqual(generatorPanel.getGenerator(), other.generator);
+assert.deepEqual(scopePanel.getSettings(), other.oscilloscope);
+assert.ok(element('diagram').innerHTML.includes('R = 2,2 kΩ'));
+dirtyInstruments();
+element('resetCircuit').listeners.click();
+assert.deepEqual(generatorPanel.getGenerator(), other.generator);
+assert.deepEqual(scopePanel.getSettings(), other.oscilloscope);
+assert.equal(context.document.documentElement.lang, 'es');
+assert.equal(app.circuits.other.instrumentDefaults.oscilloscope.channels[2].positionDivisions, -1);
+assert.equal(app.circuits.rc.instrumentDefaults.oscilloscope.channels[1].visible, true);
+console.log('Initial state, full instrument reset, independent templates, practice switching and active-practice defaults passed.');

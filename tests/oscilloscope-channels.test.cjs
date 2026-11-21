@@ -198,3 +198,18 @@ for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
 assert.equal(scope.createState().channels[1].positionDivisions, 0);
 assert.equal(scope.createState().channels[2].positionDivisions, 0);
 console.log('Independent vertical position, hidden-channel guard, bounds, moving ground markers and dense bands passed.');
+
+// Ground arrows share X and the selected channel paints last, even in partial overlaps.
+for (const selectedChannel of [1, 2]) {
+  for (const positionDivisions of [0, 0.1]) {
+    const settings = scope.createState({ selectedChannel, channels: { 2: { positionDivisions } } });
+    for (const [prefix, divisions] of [['scope', 10], ['ds1102e', 12]]) {
+      const svg = render(settings, prefix, divisions);
+      const markers = [...svg.matchAll(/data-ground-channel="([12])"[^>]+translate\(([0-9]+) ([^)]+)\)/g)];
+      assert.equal(markers.length, 2);
+      assert.equal(markers[0][2], markers[1][2]);
+      assert.equal(Number(markers[1][1]), selectedChannel);
+    }
+  }
+}
+console.log('Ground arrows share X and selected-channel stacking wins coincident/partial overlaps.');

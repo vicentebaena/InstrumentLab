@@ -137,6 +137,7 @@ window.InstrumentLab.DG822Panel = {
     }
     return {
       render,
+      reset() { showMenu(false); },
       open() {
         showMenu(false);
         render();

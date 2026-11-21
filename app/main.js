@@ -1,10 +1,10 @@
 'use strict';
 (() => {
-  const { circuits, translations, generatorDefaults } = window.InstrumentLab;
+  const { circuits, translations } = window.InstrumentLab;
   const $ = id => document.getElementById(id);
   let language = 'en';
   try { language = localStorage.getItem('instrumentlab-language') === 'es' ? 'es' : 'en'; } catch {}
-  const state = { circuitId: 'rc', parameters: { ...circuits.rc.defaults }, generator: { ...generatorDefaults }, oscilloscope: window.InstrumentLab.oscilloscope.createState() };
+  const state = window.InstrumentLab.createPracticeState('rc');
   const t = key => translations[language][key];
   const number = value => new Intl.NumberFormat(language, { maximumFractionDigits: 3 }).format(value);
   let editing = null;
@@ -87,17 +87,13 @@
     $('diagram').querySelector(`[data-parameter="${editing}"]`)?.focus();
     editing = null;
   });
-  $('resetCircuit').addEventListener('click', () => {
-    state.parameters = { ...circuits[state.circuitId].defaults };
-    state.generator = { ...generatorDefaults };
-    state.oscilloscope = window.InstrumentLab.oscilloscope.createState();
+  function restorePractice(circuitId = state.circuitId) {
+    Object.assign(state, window.InstrumentLab.createPracticeState(circuitId));
+    dg822Panel.reset();
     render();
-  });
-  $('circuit').addEventListener('change', event => {
-    state.circuitId = event.target.value;
-    state.parameters = { ...circuits[state.circuitId].defaults };
-    render();
-  });
+  }
+  $('resetCircuit').addEventListener('click', () => restorePractice());
+  $('circuit').addEventListener('change', event => restorePractice(event.target.value));
   $('language').addEventListener('change', event => {
     language = event.target.value;
     try { localStorage.setItem('instrumentlab-language', language); } catch {}

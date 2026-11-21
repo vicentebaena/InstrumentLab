@@ -19,11 +19,15 @@
     formatVerticalScale(value) {
       return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
     },
-    createState() {
-      return {
+    createState(overrides = {}) {
+      const state = {
         selectedChannel: 1, menuChannel: null, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
+      return { ...state, ...overrides, channels: {
+        1: { ...state.channels[1], ...overrides.channels?.[1] },
+        2: { ...state.channels[2], ...overrides.channels?.[2] }
+      } };
     },
     stepVerticalPosition(state, direction) {
       const channel = state.selectedChannel;
@@ -109,11 +113,11 @@
           <text x="${position + 56}" y="400" fill="${color}">${value}</text>
         </g>`;
       }
-      // Separate horizontal lanes keep both ground markers visible at the same height.
+      // Draw the selected channel last, so its ground marker wins any overlap.
       const groundMarker = channel => {
         if (!settings.channels[channel].visible) return '';
         const color = channel === 1 ? '#f4d35e' : '#6ecbff';
-        const x = channel === 1 ? 2 : 18, y0 = zeroY(channel);
+        const x = 18, y0 = zeroY(channel);
         return `<g data-ground-channel="${channel}" aria-label="CH${channel} 0 V" transform="translate(${x} ${y0})">
           <path d="M0 -10h9l7 10-7 10H0z" fill="${color}"/>
           <text x="6" y="4" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#030709">${channel}</text>
@@ -132,7 +136,7 @@
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}
         </g>
-        ${groundMarker(1)}${groundMarker(2)}
+        ${(settings.selectedChannel === 1 ? [2, 1] : [1, 2]).map(groundMarker).join('')}
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
         <g font-family="system-ui,sans-serif" font-size="22">
           ${channelScale(1, left)}
