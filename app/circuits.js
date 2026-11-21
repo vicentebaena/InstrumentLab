@@ -95,8 +95,8 @@ window.InstrumentLab = {
           <rect y="-30" width="940" height="510" fill="url(#dots)"/>
           <g fill="none" stroke="#afc4c5" stroke-width="3" stroke-linejoin="round">
             <path d="M190 320H275V205H395 M505 205H710V285 M710 310V400H175V345 M710 400V421 M688 421H732 M695 431H725 M704 441H716"/>
-            <rect x="395" y="189" width="110" height="32" fill="#11272c"/>
-            <path d="M679 285H741 M679 310H741" stroke-width="5"/>
+            <rect x="395" y="189" width="110" height="32" fill="#11272c"><title>${t('resistance')}: ${resistanceLabel}</title></rect>
+            <path d="M679 285H741 M679 310H741" stroke-width="5"><title>${t('capacitance')}: ${capacitanceLabel}</title></path>
           </g>
           <g fill="none" stroke-width="2.5" stroke-dasharray="7 6" stroke-linejoin="round">
             <path d="M325 177V160H562V116" stroke="#f4d35e"/>
@@ -104,8 +104,8 @@ window.InstrumentLab = {
           </g>
           <g stroke-linejoin="round">
             <g fill="#142b31" stroke-width="2.5">
-              <g class="probe-target" data-probe="1" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '1')}"><rect x="311" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="319" y="177" width="12" height="18" rx="3" stroke="#f4d35e"/><text x="307" y="192" text-anchor="end" fill="#f4d35e" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[1] ?? 1}</text></g>
-              <g class="probe-target" data-probe="2" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '2')}"><rect x="641" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="649" y="177" width="12" height="18" rx="3" stroke="#6ecbff"/><text x="637" y="192" text-anchor="end" fill="#6ecbff" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[2] ?? 1}</text></g>
+              <g class="probe-target" data-probe="1" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '1')}"><title>${t('physicalProbe').replace('{channel}', '1')} · X${probes[1] ?? 1}</title><rect x="311" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="319" y="177" width="12" height="18" rx="3" stroke="#f4d35e"/><text x="307" y="192" text-anchor="end" fill="#f4d35e" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[1] ?? 1}</text></g>
+              <g class="probe-target" data-probe="2" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openProbe').replace('{channel}', '2')}"><title>${t('physicalProbe').replace('{channel}', '2')} · X${probes[2] ?? 1}</title><rect x="641" y="169" width="28" height="34" fill="transparent" stroke="none"/><rect class="probe-tip" x="649" y="177" width="12" height="18" rx="3" stroke="#6ecbff"/><text x="637" y="192" text-anchor="end" fill="#6ecbff" stroke="none" font-family="system-ui,sans-serif" font-size="16">X${probes[2] ?? 1}</text></g>
             </g>
             <g fill="none" stroke-width="2.5">
               <path d="M325 195V205" stroke="#f4d35e"/>
@@ -115,15 +115,17 @@ window.InstrumentLab = {
           </g>
           <g><circle cx="325" cy="205" r="6" fill="#f4d35e"/><circle cx="655" cy="205" r="6" fill="#6ecbff"/></g>
           <g class="instrument-target" data-instrument="dg822" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openDg822')}">
+            <title>${t('generator')} · Rigol DG822</title>
             <image href="${window.InstrumentLabImages.generator}" x="35" y="238" width="220" height="110" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="31" y="234" width="228" height="118" rx="6" fill="transparent" stroke="transparent"/>
           </g>
           <g class="instrument-target" data-instrument="ds1102e" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openRigolScope')}">
+            <title>${t('scope')} · Rigol DS1102E</title>
             <image href="${window.InstrumentLabImages.scope}" x="410" y="15" width="230" height="120" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="406" y="11" width="238" height="128" rx="6" fill="transparent" stroke="transparent"/>
           </g>
           <g fill="#eef8f6" text-anchor="middle" font-family="system-ui,sans-serif" font-size="20">
-            <text x="450" y="251" class="editable-value" data-parameter="resistance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editResistance')}: ${resistanceLabel}">R = ${resistanceLabel}</text><text x="810" y="304" class="editable-value" data-parameter="capacitance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editCapacitance')}: ${capacitanceLabel}">C = ${capacitanceLabel}</text>
+            <text x="450" y="251" class="editable-value" data-parameter="resistance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editResistance')}: ${resistanceLabel}"><title>${t('resistance')}: ${resistanceLabel}</title>R = ${resistanceLabel}</text><text x="810" y="304" class="editable-value" data-parameter="capacitance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editCapacitance')}: ${capacitanceLabel}"><title>${t('capacitance')}: ${capacitanceLabel}</title>C = ${capacitanceLabel}</text>
             <text x="145" y="220" fill="#48d6c8">${t('generator')}</text>
             <text x="525" y="-8" fill="#48d6c8">${t('scope')}</text>
           </g>
