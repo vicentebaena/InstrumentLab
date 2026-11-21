@@ -13,6 +13,13 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
   };
   return {
     getSettings,
+    getConnections() {
+      const { circuit } = getExperiment();
+      return Object.fromEntries(Object.keys(getSettings().channels).map(channel => {
+        const wiring = circuit.connections?.[`ch${channel}`];
+        return [channel, Array.isArray(wiring) && wiring.length > 0];
+      }));
+    },
     resetTransient() { clearLevelTimer(); freeRunOffset = 0; },
     getAcquisition() {
       const { circuit, parameters, generator } = getExperiment();

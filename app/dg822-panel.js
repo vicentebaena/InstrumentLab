@@ -31,6 +31,8 @@ window.InstrumentLab.DG822Panel = {
       triggerSelector: '[data-instrument="dg822"]'
     });
     $('dg822Faceplate').src = window.InstrumentLabImages.generator;
+    // RC uses the physical CH1 connection even while its output is disabled.
+    $('dg822ProbeConnector1').src = window.InstrumentLabImages.probeConnector;
     return window.InstrumentLab.createGeneratorPanel({
       controller, presentation: this.presentation(), openWindow: () => frame.open(),
       elements: {

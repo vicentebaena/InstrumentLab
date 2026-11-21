@@ -4,23 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-36">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-36">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-36">
-  <script defer src="assets/instruments/images.js?v=20261121-36"></script>
-  <script defer src="app/circuits.js?v=20261121-36"></script>
-  <script defer src="app/translations.js?v=20261121-36"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-36"></script>
-  <script defer src="app/instrument-window.js?v=20261121-36"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-36"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-36"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-36"></script>
-  <script defer src="app/generator.js?v=20261121-36"></script>
-  <script defer src="app/generator-controller.js?v=20261121-36"></script>
-  <script defer src="app/generator-panel.js?v=20261121-36"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-36"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-36"></script>
-  <script defer src="app/main.js?v=20261121-36"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261121-39">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-39">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-39">
+  <script defer src="assets/instruments/images.js?v=20261121-39"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261121-39"></script>
+  <script defer src="app/circuits.js?v=20261121-39"></script>
+  <script defer src="app/translations.js?v=20261121-39"></script>
+  <script defer src="app/oscilloscope.js?v=20261121-39"></script>
+  <script defer src="app/instrument-window.js?v=20261121-39"></script>
+  <script defer src="app/instrument-controls.js?v=20261121-39"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261121-39"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261121-39"></script>
+  <script defer src="app/generator.js?v=20261121-39"></script>
+  <script defer src="app/generator-controller.js?v=20261121-39"></script>
+  <script defer src="app/generator-panel.js?v=20261121-39"></script>
+  <script defer src="app/dg822-panel.js?v=20261121-39"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261121-39"></script>
+  <script defer src="app/main.js?v=20261121-39"></script>
 </head>
 <body>
 <main class="workspace">
@@ -66,6 +67,7 @@
   <div id="dg822Body" class="dg822-body">
     <div class="dg822-front">
       <img id="dg822Faceplate" width="1983" height="793" alt="" aria-hidden="true" draggable="false">
+      <img id="dg822ProbeConnector1" class="dg822-probe-connector" alt="" aria-hidden="true" draggable="false">
       <button id="dg822Menu" class="dg822-hardware-menu" type="button" aria-label="Menu" aria-controls="dg822WaveMenu" aria-expanded="false">Menu</button>
       <button id="dg822Output1" class="dg822-output-key dg822-output-one" type="button" aria-pressed="true" aria-label="Output1 (CH1): ON">Output1</button>
       <button id="dg822Output2" class="dg822-output-key dg822-output-two" type="button" aria-pressed="false" aria-label="Output2 (CH2): OFF">Output2</button>
@@ -105,6 +107,8 @@
   <div class="ds1102e-body">
     <div class="ds1102e-front">
       <img id="ds1102eFaceplate" width="1774" height="887" alt="" aria-hidden="true" draggable="false">
+      <img id="ds1102eProbeConnector1" class="ds1102e-probe-connector ds1102e-probe-connector-one" alt="" draggable="false" hidden>
+      <img id="ds1102eProbeConnector2" class="ds1102e-probe-connector ds1102e-probe-connector-two" alt="" draggable="false" hidden>
       <span class="ds1102e-spec-label" aria-hidden="true">100MHz 1GSa/s</span>
       <div id="ds1102eSelectionKnob" class="ds1102e-vertical-scale ds1102e-selection-knob" role="button" tabindex="0"></div>
       <div id="ds1102eTriggerLevel" class="ds1102e-vertical-scale ds1102e-trigger-level" role="slider" tabindex="0" aria-orientation="vertical"></div>

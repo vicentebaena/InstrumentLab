@@ -38,6 +38,7 @@ const makePanel = (idPrefix, horizontalDivisions, footerScales, cellWidth) => {
   elements.triggerSlopeButton = new Element(); elements.triggerSlopeMenu = new Element(); elements.triggerSlopeValue = new Element();
   elements.submenuViews.triggerSlope = { button: elements.triggerSlopeButton, menu: elements.triggerSlopeMenu, value: elements.triggerSlopeValue,
     options: { rising: new Element(), falling: new Element() }, labelKey: 'scopeTriggerSlope', renderValue: (element, value) => element.setAttribute('data-slope', value) };
+  elements.probeConnectors = { 1: new Element(), 2: new Element() };
   elements.channelButtons = { 1: new Element(), 2: new Element() };
   let opens = 0;
   const panel = app.createOscilloscopePanel({ elements, controller, t: key => app.translations[language][key], display: { idPrefix, horizontalDivisions, footerScales, cellWidth }, openWindow: () => opens++ });
@@ -300,3 +301,21 @@ controller.actions.auto();
 assert.equal(settings.trigger.slope, 'rising');
 assert.equal(a.elements.triggerSlopeValue.attributes['data-slope'], 'rising');
 console.log('Slope shares rotary highlight/confirm, updates both model views and resets to Rising on AUTO.');
+
+// Physical connection indicators follow practice wiring, not trace visibility or probe gain.
+controller.actions.auto();
+assert.equal(a.elements.probeConnectors[1].hidden, false);
+assert.equal(a.elements.probeConnectors[2].hidden, false);
+a.elements.channelButtons[1].fire('click'); a.elements.channelButtons[1].fire('click');
+assert.equal(a.elements.probeConnectors[1].hidden, false);
+assert.equal(a.elements.probeConnectors[2].hidden, false);
+const originalWiring = app.circuits.rc.connections;
+app.circuits.rc.connections = { ...originalWiring, ch2: [] };
+notify();
+assert.equal(a.elements.probeConnectors[1].hidden, false);
+assert.equal(b.elements.probeConnectors[2].hidden, true);
+assert.equal(a.elements.probeConnectors[1].alt, 'Sonda conectada a CH1');
+app.circuits.rc.connections = originalWiring;
+notify();
+assert.equal(a.elements.probeConnectors[2].hidden, false);
+console.log('Physical probe connectors follow active practice wiring independently of hidden traces.');

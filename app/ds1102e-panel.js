@@ -5,6 +5,7 @@ window.InstrumentLab.DS1102EPanel = {
     const $ = id => document.getElementById(id);
     const slopePaths = { rising: 'M4 24h14V5h17M12 11l6-6 6 6', falling: 'M4 5h14v19h17M12 18l6 6 6-6' };
     $('ds1102eFaceplate').src = window.InstrumentLabImages.scope;
+    for (const channel of [1, 2]) $(`ds1102eProbeConnector${channel}`).src = window.InstrumentLabImages.probeConnector;
     const frame = window.InstrumentLab.createInstrumentWindow({
       dialogId: 'ds1102eDialog', handleId: 'ds1102eWindowBar', closeId: 'ds1102eClose',
       triggerSelector: '[data-instrument="ds1102e"]'
@@ -13,6 +14,7 @@ window.InstrumentLab.DS1102EPanel = {
       controller, t, openWindow: () => frame.open(),
       display: { idPrefix: 'ds1102e', horizontalDivisions: 12, footerScales: true, cellWidth: 40 },
       elements: {
+        probeConnectors: { 1: $('ds1102eProbeConnector1'), 2: $('ds1102eProbeConnector2') },
         triggerLevel: $('ds1102eTriggerLevel'),
         triggerButton: $('ds1102eTriggerMenuKey'), triggerMenu: $('ds1102eTriggerMenu'),
         selectionKnob: $('ds1102eSelectionKnob'),

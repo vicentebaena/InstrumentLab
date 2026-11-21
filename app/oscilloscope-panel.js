@@ -2,7 +2,7 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, submenuViews = {}, submenuIndicator, selectionKnob } = elements;
+  const { auto, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
   menuToggle.addEventListener('click', actions.menu);
@@ -31,6 +31,11 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
   function render() {
     screen.innerHTML = controller.getDisplay(display);
     const settings = getSettings();
+    const connections = controller.getConnections();
+    for (const [channel, connector] of Object.entries(probeConnectors)) {
+      connector.hidden = !connections[channel];
+      connector.alt = t('scopeProbeConnected').replace('{channel}', channel);
+    }
     for (const [channel, button] of Object.entries(channelButtons)) {
       const selected = settings.selectedChannel === Number(channel);
       const visible = settings.channels[channel].visible;

@@ -30,3 +30,5 @@
 .ds1102e-trigger-level{left:88.25%;top:38.7%;width:4.2%;height:8.4%}.ds1102e-trigger-source-key{top:39.6%}
 
 .ds1102e-trigger-slope-key{top:48.4%}.ds1102e-slope-option{flex-direction:row;gap:3px}.ds1102e-screen .ds1102e-slope-option-icon{width:28px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+.ds1102e-front>.ds1102e-probe-connector{position:absolute;top:82.3%;width:14%;height:auto;transform:translate(-30%,-26%);object-fit:contain;pointer-events:none;user-select:none;z-index:1}.ds1102e-probe-connector-one{left:64.8%}.ds1102e-probe-connector-two{left:75.1%}.ds1102e-probe-connector[hidden]{display:none}

@@ -159,3 +159,11 @@ Trigger level is shown as `TRIG LVL= 1.24V` in a blue-bordered badge at the lowe
 Slope offers Rising and Falling through the blue softkey, shared rotary highlight/confirm submenu and main-menu edge icon. Only confirmation changes the trigger. The chosen slope applies to the common time origin of both traces, with analytical sine/square/RC-capacitor crossings and a matching numerical fallback. Practice defaults and AUTO use Rising. `TRIG LVL` text uses the same orange as the level line and T marker. Free-running traces now move at 16 divisions/s, independently of generator frequency and timebase. / Slope permite elegir flanco ascendente o descendente; las letras de TRIG LVL son naranjas y el desplazamiento sin disparo tiene el doble de velocidad.
 
 Free-running speed is defined in screen divisions: **16 divisions per second**. Both displays share one time offset, advanced by elapsed wall-clock time × current time/div × divisions/s. Periodic wrapping bounds the time offset without changing the signals. The main 10-division screen is traversed in 0.625 s, and the 12-division instrument in 0.75 s. A slow frame no longer clips elapsed time to 0.2 s, so processing pauses do not reduce the average programmed speed. / La señal sin disparo se desplaza a 16 divisiones por segundo en ambos canales, conservando su desfase.
+
+## Connected probes / Sondas conectadas
+
+Transparent probe connectors cover the DS1102E BNC inputs wired by the active practice. RC uses CH1 and CH2; EXT TRIG stays empty. These indicate physical connections independently of trace visibility. Original references remain private; the application embeds the derived transparent asset.
+
+Las sondas sobre los BNC indican las conexiones físicas de la práctica activa. En RC aparecen en CH1 y CH2, aunque se oculte una señal; EXT TRIG queda libre. Las referencias originales se conservan fuera del repositorio.
+
+The RC generator faceplate also shows the same connector on CH1 only. It remains connected when Output1 is off. / El generador de la práctica RC muestra el conector en CH1; permanece conectado al apagar Output1.
