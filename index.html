@@ -4,27 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261121-54">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261121-54">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261121-54">
-  <script defer src="assets/instruments/images.js?v=20261121-54"></script>
-  <script defer src="assets/instruments/probe-connector.js?v=20261121-54"></script>
-  <script defer src="assets/instruments/probe-body.js?v=20261121-54"></script>
-  <link rel="stylesheet" href="app/probe-panel.css?v=20261121-54">
-  <script defer src="app/circuits.js?v=20261121-54"></script>
-  <script defer src="app/translations.js?v=20261121-54"></script>
-  <script defer src="app/oscilloscope.js?v=20261121-54"></script>
-  <script defer src="app/instrument-window.js?v=20261121-54"></script>
-  <script defer src="app/instrument-controls.js?v=20261121-54"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261121-54"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261121-54"></script>
-  <script defer src="app/generator.js?v=20261121-54"></script>
-  <script defer src="app/generator-controller.js?v=20261121-54"></script>
-  <script defer src="app/generator-panel.js?v=20261121-54"></script>
-  <script defer src="app/dg822-panel.js?v=20261121-54"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261121-54"></script>
-  <script defer src="app/probe-panel.js?v=20261121-54"></script>
-  <script defer src="app/main.js?v=20261121-54"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261122-61">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261122-61">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261122-61">
+  <script defer src="assets/instruments/images.js?v=20261122-61"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261122-61"></script>
+  <script defer src="assets/instruments/probe-body.js?v=20261122-61"></script>
+  <link rel="stylesheet" href="app/probe-panel.css?v=20261122-61">
+  <script defer src="app/circuits.js?v=20261122-61"></script>
+  <script defer src="app/translations.js?v=20261122-61"></script>
+  <script defer src="app/oscilloscope.js?v=20261122-61"></script>
+  <script defer src="app/instrument-window.js?v=20261122-61"></script>
+  <script defer src="app/instrument-controls.js?v=20261122-61"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261122-61"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261122-61"></script>
+  <script defer src="app/generator.js?v=20261122-61"></script>
+  <script defer src="app/generator-controller.js?v=20261122-61"></script>
+  <script defer src="app/generator-panel.js?v=20261122-61"></script>
+  <script defer src="app/dg822-panel.js?v=20261122-61"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261122-61"></script>
+  <script defer src="app/probe-panel.js?v=20261122-61"></script>
+  <script defer src="app/main.js?v=20261122-61"></script>
 </head>
 <body>
 <main class="workspace">
@@ -136,6 +136,12 @@
       <button id="ds1102eProbeKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-controls="ds1102eProbeSubmenu" aria-expanded="false"></button>
       <button id="ds1102eCouplingKey" class="ds1102e-coupling-key" type="button" aria-controls="ds1102eCouplingSubmenu" aria-expanded="false"></button>
       <span id="ds1102eSubmenuIndicator" class="ds1102e-submenu-indicator" aria-hidden="true" hidden><svg viewBox="0 0 40 40"><path d="M19 8a12 12 0 1 1-10 7"/><path d="M4 21l4-8 8 4"/></svg></span>
+      <button id="ds1102eMeasure" class="ds1102e-measure-key" type="button" aria-label="Measure" aria-controls="ds1102eMeasureMenu" aria-expanded="false" aria-pressed="false">Measure</button>
+      <button id="ds1102eMeasureClearKey" class="ds1102e-coupling-key ds1102e-cursor-a-key" type="button" aria-label="Clear measurements" hidden></button>
+      <button id="ds1102eMeasureAllKey" class="ds1102e-coupling-key ds1102e-cursor-b-key" type="button" aria-label="Display All" aria-pressed="false" hidden></button>
+      <button id="ds1102eMeasureTimeKey" class="ds1102e-coupling-key ds1102e-probe-key" type="button" aria-label="Time" aria-controls="ds1102eMeasureTimeSubmenu" aria-expanded="false" hidden></button>
+      <button id="ds1102eMeasureVoltageKey" class="ds1102e-coupling-key ds1102e-trigger-source-key" type="button" aria-label="Voltage" aria-controls="ds1102eMeasureVoltageSubmenu" aria-expanded="false" hidden></button>
+      <button id="ds1102eMeasureSourceKey" class="ds1102e-coupling-key" type="button" aria-label="Measure source CH1" hidden></button>
       <button id="ds1102eCursors" class="ds1102e-cursors-key" type="button" aria-label="Cursors" aria-pressed="false" aria-expanded="false" aria-controls="ds1102eCursorsMenu">Cursor</button>
       <button id="ds1102eRunStop" class="ds1102e-run-stop" type="button" aria-pressed="false" aria-label="RUN/STOP">RUN/STOP</button>
       <button id="ds1102eAuto" class="ds1102e-auto" type="button" aria-label="AUTO"></button>
@@ -148,6 +154,16 @@
       <div id="ds1102eHorizontalPosition" class="ds1102e-vertical-scale ds1102e-horizontal-position" role="slider" tabindex="0" aria-orientation="horizontal"></div>
       <section id="ds1102eScreen" class="ds1102e-screen">
         <div id="ds1102eDisplay" class="ds1102e-plot"></div>
+        <aside id="ds1102eMeasureMenu" class="ds1102e-channel-menu ds1102e-measure-menu" lang="en" hidden aria-labelledby="ds1102eMeasureTitle">
+          <h3 id="ds1102eMeasureTitle">Measure</h3>
+          <dl>
+            <div class="ds1102e-menu-row"><dt>Source</dt><dd id="ds1102eMeasureSourceValue" class="ds1102e-measure-choice">CH1</dd></div>
+            <div class="ds1102e-menu-row ds1102e-measure-category"><dt>◂ Voltage</dt></div>
+            <div class="ds1102e-menu-row ds1102e-measure-category"><dt>◂ Time</dt></div>
+            <div class="ds1102e-menu-row"><dt class="ds1102e-measure-choice">Clear</dt></div>
+            <div class="ds1102e-menu-row"><dt>Display All</dt><dd id="ds1102eMeasureAllValue" class="ds1102e-measure-choice">OFF</dd></div>
+          </dl>
+        </aside>
         <aside id="ds1102eCursorsMenu" class="ds1102e-channel-menu ds1102e-cursors-menu" lang="en" hidden aria-labelledby="ds1102eCursorsTitle">
           <h3 id="ds1102eCursorsTitle">Cursors</h3>
           <dl>
@@ -180,6 +196,16 @@
           <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>
           <div id="ds1102eTriggerRising" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 24h14V5h17M12 11l6-6 6 6"/></svg><span>Rising</span></div>
           <div id="ds1102eTriggerFalling" class="ds1102e-submenu-option ds1102e-slope-option"><svg class="ds1102e-slope-option-icon" viewBox="0 0 40 28" aria-hidden="true"><path d="M4 5h14v19h17M12 18l6 6 6-6"/></svg><span>Falling</span></div>
+        </div>
+        <div id="ds1102eMeasureTimeSubmenu" class="ds1102e-submenu ds1102e-measurement-submenu ds1102e-time-submenu" role="group" lang="en" hidden>
+          <div class="ds1102e-submenu-heading" aria-hidden="true">↶<span id="ds1102eTimePrevious" class="ds1102e-page-previous" hidden>▴</span></div>
+          <div id="ds1102eTimeOptions"></div>
+          <div id="ds1102eTimeNext" class="ds1102e-page-next" aria-hidden="true">▾</div>
+        </div>
+        <div id="ds1102eMeasureVoltageSubmenu" class="ds1102e-submenu ds1102e-measurement-submenu" role="group" lang="en" hidden>
+          <div class="ds1102e-submenu-heading" aria-hidden="true">↶<span id="ds1102eVoltagePrevious" class="ds1102e-page-previous" hidden>▴</span></div>
+          <div id="ds1102eVoltageOptions"></div>
+          <div id="ds1102eVoltageNext" class="ds1102e-page-next" aria-hidden="true">▾</div>
         </div>
         <div id="ds1102eCursorSourceSubmenu" class="ds1102e-submenu" role="group" lang="en" hidden>
           <div class="ds1102e-submenu-heading" aria-hidden="true">↶</div>

@@ -7,6 +7,8 @@
     horizontalPositionLimit: 5,
     freeRunDivisionsPerSecond: 16,
     submenus: {
+      measureTime: { pageSize: 4, pageStarts: [0, 4, 6, 8], target: 'measure', property: 'time', options: ['Period', 'Freq', 'Rise Time', 'Fall Time', '+Width', '-Width', '+Duty', '-Duty', 'DelayRise', 'DelayFall', 'PhaseRise', 'PhaseFall'] },
+      measureVoltage: { pageSize: 4, target: 'measure', property: 'voltage', options: ['Vmax', 'Vmin', 'Vpp', 'Vtop', 'Vbase', 'Vamp', 'Vavg', 'Vrms', 'Overshoot', 'Preshoot'] },
       coupling: { property: 'coupling', options: ['DC', 'AC', 'GND'] },
       probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] },
       cursorSource: { target: 'cursors', property: 'source', options: [1, 2] },
@@ -44,10 +46,12 @@
     createState(overrides = {}) {
       const state = {
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
+        measurements: [],
+        measure: { source: 1, voltage: 'Vmax', time: 'Period', displayAll: false }, measureEnabled: false, measureMenuOpen: false,
         cursors: { type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
-      return { ...state, ...overrides, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
+      return { ...state, ...overrides, measurements: (overrides.measurements ?? []).map(item => ({ ...item })), measure: { ...state.measure, ...overrides.measure }, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
         1: { ...state.channels[1], ...overrides.channels?.[1] },
         2: { ...state.channels[2], ...overrides.channels?.[2] }
       } };
@@ -144,31 +148,50 @@
         [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
       } };
     },
+    submenuPage(options, selection, pageSize = 4, currentStart = null, pageStarts = null) {
+      const index = Math.max(0, options.indexOf(selection));
+      const starts = pageStarts ?? [...new Set(Array.from({ length: Math.ceil(options.length / pageSize) }, (_, page) => Math.min(page * pageSize, Math.max(0, options.length - pageSize))))];
+      let page = starts.indexOf(currentStart);
+      if (page < 0) page = Math.min(Math.floor(index / pageSize), starts.length - 1);
+      while (page > 0 && index < starts[page]) page--;
+      while (page < starts.length - 1 && index >= starts[page] + pageSize) page++;
+      const start = starts[page] ?? 0;
+      return { start, values: options.slice(start, start + pageSize), previous: page > 0, next: page < starts.length - 1 };
+    },
     submenuActive(state, definition) {
       return definition.target === 'trigger' ? Boolean(state.triggerMenuOpen)
-        : definition.target === 'cursors' ? Boolean(state.cursorsMenuOpen) : state.menuChannel !== null;
+        : definition.target === 'cursors' ? Boolean(state.cursorsMenuOpen)
+        : definition.target === 'measure' ? Boolean(state.measureMenuOpen) : state.menuChannel !== null;
     },
     submenuTarget(state, definition) {
       return definition.target === 'trigger' ? state.trigger
-        : definition.target === 'cursors' ? state.cursors : state.channels[state.menuChannel ?? state.selectedChannel];
+        : definition.target === 'cursors' ? state.cursors
+        : definition.target === 'measure' ? state.measure : state.channels[state.menuChannel ?? state.selectedChannel];
     },
     openSubmenu(state, name) {
       const definition = this.submenus[name];
       if (!definition) throw new RangeError('Unknown oscilloscope submenu.');
       if (!this.submenuActive(state, definition)) return state;
       const target = this.submenuTarget(state, definition);
-      return { ...state, submenu: name, submenuSelection: target[definition.property] };
+      return { ...state, submenu: name, submenuSelection: target[definition.property],
+        submenuPageStart: definition.pageSize ? this.submenuPage(definition.options, target[definition.property], definition.pageSize, null, definition.pageStarts).start : null };
     },
     stepSubmenu(state, direction) {
       const definition = this.submenus[state.submenu];
       if (!definition || !this.submenuActive(state, definition)) return state;
       const index = definition.options.indexOf(state.submenuSelection);
       const next = Math.max(0, Math.min(definition.options.length - 1, index + Math.sign(direction)));
-      return { ...state, submenuSelection: definition.options[next] };
+      return { ...state, submenuSelection: definition.options[next],
+        submenuPageStart: definition.pageSize ? this.submenuPage(definition.options, definition.options[next], definition.pageSize, state.submenuPageStart, definition.pageStarts).start : null };
     },
     confirmSubmenu(state) {
       const definition = this.submenus[state.submenu];
       if (!definition || !this.submenuActive(state, definition) || !definition.options.includes(state.submenuSelection)) return state;
+      if (definition.target === 'measure') {
+        const entry = { channel: state.measure.source, parameter: state.submenuSelection };
+        const measurements = [...state.measurements.filter(item => item.channel !== entry.channel || item.parameter !== entry.parameter), entry].slice(-3);
+        return { ...state, submenu: null, submenuSelection: null, measurements, measure: { ...state.measure, [definition.property]: state.submenuSelection } };
+      }
       if (definition.target === 'cursors') return { ...state, submenu: null, submenuSelection: null, cursors: { ...state.cursors, [definition.property]: state.submenuSelection } };
       if (definition.target === 'trigger') return { ...state, submenu: null, submenuSelection: null, trigger: { ...state.trigger, [definition.property]: state.submenuSelection } };
       const channel = state.menuChannel;
@@ -204,25 +227,142 @@
       const property = `selected${cursor}`;
       return { ...state, cursors: { ...state.cursors, [property]: !state.cursors[property] } };
     },
+    pressMeasure(state) {
+      const enabled = !(state.measureEnabled && state.measureMenuOpen);
+      return { ...this.openMeasureMenu(state), measureEnabled: enabled, measureMenuOpen: enabled };
+    },
+    openMeasureMenu(state) {
+      return { ...state, measureMenuOpen: true, menuChannel: null, triggerMenuOpen: false,
+        cursorsMenuOpen: false, submenu: null, submenuSelection: null };
+    },
+    clearMeasurements(state) {
+      if (!state.measureMenuOpen) return state;
+      return { ...state, measurements: [] };
+    },
+    toggleDisplayAll(state) {
+      if (!state.measureMenuOpen) return state;
+      return { ...state, measure: { ...state.measure, displayAll: !state.measure.displayAll } };
+    },
+    toggleMeasureSource(state) {
+      if (!state.measureMenuOpen) return state;
+      return { ...state, measure: { ...state.measure, source: state.measure.source === 1 ? 2 : 1 } };
+    },
     pressCursors(state) {
       const enabled = !(state.cursorsEnabled && state.cursorsMenuOpen);
-      return { ...state, cursorsEnabled: enabled, cursorsMenuOpen: enabled,
+      return { ...state, cursorsEnabled: enabled, cursorsMenuOpen: enabled, measureMenuOpen: false,
         cursors: enabled ? state.cursors : { ...state.cursors, selectedA: false, selectedB: false },
         menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null };
     },
     openTriggerMenu(state) {
-      return { ...state, triggerMenuOpen: true, cursorsMenuOpen: false, menuChannel: null, submenu: null, submenuSelection: null };
+      return { ...state, triggerMenuOpen: true, measureMenuOpen: false, cursorsMenuOpen: false, menuChannel: null, submenu: null, submenuSelection: null };
     },
     toggleChannelMenu(state) {
-      return { ...state, menuChannel: state.cursorsMenuOpen || state.triggerMenuOpen || state.menuChannel !== null ? null : state.selectedChannel, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null };
+      return { ...state, menuChannel: state.measureMenuOpen || state.cursorsMenuOpen || state.triggerMenuOpen || state.menuChannel !== null ? null : state.selectedChannel, measureMenuOpen: false, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null };
     },
     pressChannel(state, channel) {
       if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
       return {
-        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null,
+        ...state, selectedChannel: channel, menuChannel: hide ? null : channel, measureMenuOpen: false, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null,
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
+    },
+    voltageStatistics(circuit, parameters, generator, settings, probes, start, duration, channel) {
+      if (!settings.channels[channel]?.visible || duration * generator.frequency > 128) return null;
+      const signals = this.createSignals(circuit, parameters, generator, settings, probes);
+      const count = 4096, dt = duration / count;
+      const values = Array.from({ length: count }, (_, i) => signals.sample(start + (i + 0.5) * dt, channel));
+      const min = Math.min(...values), max = Math.max(...values), span = max - min;
+      const scale = settings.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
+      const position = settings.channels[channel].positionDivisions ?? 0;
+      const tolerance = scale * 1e-5;
+      if (![min, max].every(Number.isFinite) || max > (4 - position) * scale + tolerance || min < (-4 - position) * scale - tolerance) return null;
+      const average = values.reduce((sum, value) => sum + value, 0) / count;
+      const rms = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0) / count);
+      const result = { Vmax: max, Vmin: min, Vpp: span, Vavg: average, Vrms: rms };
+      // Only infer top/base where a sustained flat region is visible. The manual
+      // defines these as flat pulse levels, not as arbitrary waveform extrema.
+      if (span > 1e-12) {
+        const high = [], low = [];
+        for (let i = 1; i < count - 1; i++) {
+          const slope = Math.abs(values[i + 1] - values[i - 1]) / (2 * dt);
+          if (slope <= span * generator.frequency * 0.02) {
+            if (values[i] > min + span * 0.75) high.push(values[i]);
+            if (values[i] < min + span * 0.25) low.push(values[i]);
+          }
+        }
+        if (high.length >= count * 0.05 && low.length >= count * 0.05) {
+          const top = high.reduce((a, b) => a + b, 0) / high.length;
+          const base = low.reduce((a, b) => a + b, 0) / low.length;
+          const amplitude = top - base;
+          Object.assign(result, { Vtop: top, Vbase: base, Vamp: amplitude,
+            Overshoot: 100 * (max - top) / amplitude, Preshoot: 100 * (min - base) / amplitude });
+        }
+      }
+      return result;
+    },
+    timeStatistics(circuit, parameters, generator, settings, probes, start, duration, channel, voltage) {
+      if (!voltage || voltage.Vpp <= 1e-12) return null;
+      const signals = this.createSignals(circuit, parameters, generator, settings, probes);
+      const sample = time => signals.sample(time, channel), count = 4096;
+      const levels = [0.1, 0.5, 0.9].map(fraction => voltage.Vmin + voltage.Vpp * fraction);
+      const up = [[], [], []], down = [[], [], []];
+      let previous = sample(start);
+      for (let i = 1; i <= count; i++) {
+        const time = start + duration * i / count, value = sample(time);
+        for (let j = 0; j < levels.length; j++) {
+          const level = levels[j], rising = previous < level && value >= level, falling = previous > level && value <= level;
+          if (!rising && !falling) continue;
+          let a = time - duration / count, b = time;
+          for (let k = 0; k < 35; k++) {
+            const middle = (a + b) / 2;
+            if (rising ? sample(middle) < level : sample(middle) > level) a = middle; else b = middle;
+          }
+          (rising ? up[j] : down[j]).push((a + b) / 2);
+        }
+        previous = value;
+      }
+      const interval = edges => edges.length >= 2 ? edges[1] - edges[0] : undefined;
+      const period = interval(up[1]) ?? interval(down[1]);
+      const between = (first, second) => {
+        for (const a of first) {
+          const b = second.find(time => time >= a - duration * 1e-12);
+          if (b !== undefined) return Math.max(0, b - a) < duration * 1e-10 ? 0 : b - a;
+        }
+      };
+      const positive = between(up[1], down[1]), negative = between(down[1], up[1]);
+      return { Period: period, Freq: period > 0 ? 1 / period : undefined,
+        'Rise Time': between(up[0], up[2]), 'Fall Time': between(down[2], down[0]),
+        '+Width': positive, '-Width': negative,
+        '+Duty': period > 0 && positive !== undefined ? positive / period * 100 : undefined,
+        '-Duty': period > 0 && negative !== undefined ? negative / period * 100 : undefined,
+        rising: up[1], falling: down[1] };
+    },
+    channelDelay(first, second, falling = false, phase = false) {
+      if (!first || !second) return undefined;
+      const edge = falling ? 'falling' : 'rising';
+      if (!first[edge].length || !second[edge].length) return undefined;
+      const origin = first[edge][0];
+      const target = second[edge].reduce((best, time) => Math.abs(time - origin) < Math.abs(best - origin) ? time : best);
+      const delay = target - origin;
+      return phase ? first.Period > 0 ? delay / first.Period * 360 : undefined : delay;
+    },
+    timeMeasurementLabel(name) {
+      return { DelayRise: 'Delay1→2↑', DelayFall: 'Delay1→2↓', PhaseRise: 'Phas1→2↑', PhaseFall: 'Phas1→2↓' }[name] ?? name;
+    },
+    formatTimeMeasurement(value, name) {
+      if (!Number.isFinite(value)) return '*****';
+      if (name.includes('Duty')) return `${value.toFixed(2)}%`;
+      if (name.startsWith('Phase')) return `${value.toFixed(2)}°`;
+      return this.formatCursorValue(value, name === 'Freq');
+    },
+    formatMeasurement(value, percentage = false) {
+      if (!Number.isFinite(value)) return '*****';
+      if (Math.abs(value) < 1e-12) value = 0;
+      if (percentage) return `${value.toFixed(2)}%`;
+      const magnitude = Math.abs(value);
+      const [factor, unit] = magnitude >= 1 ? [1, 'V'] : magnitude >= 1e-3 ? [1e-3, 'mV'] : magnitude > 0 ? [1e-6, 'uV'] : [1, 'V'];
+      return `${(value / factor).toPrecision(3)}${unit}`;
     },
     render(circuit, parameters, generator, t, format, idPrefix = 'scope', horizontalDivisions = 10, scopeState = null, presentation = {}) {
       const settings = scopeState || this.createState();
@@ -329,6 +469,44 @@
           ${cursorReadings.map((reading, index) => `<g><rect x="${cursorReadoutX}" y="${top + 5 + index * 18}" width="${cursorReadoutWidth}" height="18" rx="3" fill="#102744" stroke="#4388ff" stroke-width="1"/><text x="${cursorReadoutX + 5}" y="${top + 19 + index * 18}">${reading}</text></g>`).join('')}
         </g>
       </g>`;
+      const statistics = {}, timing = {};
+      const voltageFor = channel => {
+        if (!(channel in statistics)) statistics[channel] = this.voltageStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel);
+        return statistics[channel];
+      };
+      const timeFor = channel => {
+        if (!(channel in timing)) timing[channel] = this.timeStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel, voltageFor(channel));
+        return timing[channel];
+      };
+      const resultText = (parameter, channel) => {
+        const isTime = this.submenus.measureTime.options.includes(parameter);
+        const crossChannel = parameter.startsWith('Delay') || parameter.startsWith('Phase');
+        const value = crossChannel ? this.channelDelay(timeFor(1), timeFor(2), parameter.endsWith('Fall'), parameter.startsWith('Phase'))
+          : isTime ? timeFor(channel)?.[parameter] : voltageFor(channel)?.[parameter];
+        return isTime ? this.formatTimeMeasurement(value, parameter) : this.formatMeasurement(value, ['Overshoot', 'Preshoot'].includes(parameter));
+      };
+      const measurementRight = presentation.showMenus !== false && (settings.menuChannel !== null || settings.triggerMenuOpen || settings.cursorsMenuOpen || settings.measureMenuOpen)
+        ? Math.min(left + width, viewWidth * (1 - (presentation.menuWidthRatio ?? 0))) : left + width;
+      const measurementSlot = (measurementRight - left) / 3;
+      const measurementMarkup = (settings.measurements ?? []).map((item, index) => {
+        const formatted = resultText(item.parameter, item.channel);
+        const text = `${this.timeMeasurementLabel(item.parameter)}(${item.channel})=${formatted}`;
+        return `<text data-measurement="${item.parameter}" data-measurement-channel="${item.channel}" x="${left + index * measurementSlot + 2}" y="358" fill="${item.channel === 1 ? '#f4d35e' : '#6ecbff'}" textLength="${Math.min(measurementSlot - 6, text.length * 9.6)}" lengthAdjust="spacingAndGlyphs">${text}</text>`;
+      }).join('');
+      const allColumns = [
+        [['Vmax','Vmax'],['Vmin','Vmin'],['Vpp','Vpp'],['Vtop','Vtop'],['Vbase','Vbase'],['Vamp','Vamp']],
+        [['Vavg','Vavg'],['Vrms','Vrms'],['Overshoot','Vovr'],['Preshoot','Vpre'],['Period','Prd'],['Freq','Freq']],
+        [['Rise Time','Rise'],['Fall Time','Fall'],['+Width','+Wid'],['-Width','-Wid'],['+Duty','+Duty'],['-Duty','-Duty']]
+      ];
+      const allChannel = settings.measure.source;
+      const allMarkup = !settings.measure.displayAll ? '' : `<g data-display-all="true" data-source="${allChannel}" font-family="monospace" font-size="16" font-weight="700" fill="${allChannel === 1 ? '#f4d35e' : '#6ecbff'}">
+        ${Array.from({ length:6 }, (_, row) => `<rect x="${left}" y="${top + height - 144 + row * 24}" width="${measurementRight-left}" height="24" rx="3" fill="#203354" fill-opacity=".92" stroke="#8b9dc3" stroke-width="1"/>`).join('')}
+        ${[1,2].map(column=>`<line x1="${left+column*measurementSlot}" x2="${left+column*measurementSlot}" y1="${top+height-144}" y2="${top+height}" stroke="#8b9dc3"/>`).join('')}
+        ${allColumns.map((column,index)=>column.map(([parameter,label],row)=>{
+          const text = `${label}=${resultText(parameter,allChannel)}`;
+          return `<text data-all-measurement="${parameter}" x="${left+index*measurementSlot+3}" y="${top+height-144+row*24+18}" textLength="${Math.min(measurementSlot-6,text.length*9.6)}" lengthAdjust="spacingAndGlyphs">${text}</text>`;
+        }).join('')).join('')}
+      </g>`;
       const grid = [];
       for (let i = 0; i <= horizontalDivisions; i++) grid.push(`<path d="M${left + width * i / horizontalDivisions} ${top}v${height}"/>`);
       for (let i = 0; i <= 8; i++) grid.push(`<path d="M${left} ${top + height * i / 8}h${width}"/>`);
@@ -354,6 +532,8 @@
           <g data-trigger-marker="true" transform="translate(18 ${levelMarkerY})"><path d="M0 -10h9l7 10-7 10H0z"/>
             <text x="6" y="4" text-anchor="middle" fill="#030709" font-size="12" font-weight="700">T</text></g>
         </g>` : ''}
+        <g data-measurement-results="true" font-family="monospace" font-size="16" font-weight="700">${settings.measure.displayAll ? '' : measurementMarkup}</g>
+        ${allMarkup}
         ${dense ? `<text x="${viewWidth / 2}" y="348" fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="21" text-anchor="middle">${t('scopeDense')}</text>` : ''}
         <g font-family="system-ui,sans-serif" font-size="22">
           ${channelScale(1, left)}

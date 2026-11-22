@@ -70,6 +70,10 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
         }
         onChange();
       },
+      measure: () => update('pressMeasure'),
+      measureSource: () => update('toggleMeasureSource'),
+      clearMeasurements: () => update('clearMeasurements'),
+      displayAll: () => update('toggleDisplayAll'),
       cursors: () => update('pressCursors'),
       cursorType: () => update('toggleCursorType'),
       cursorSelection: cursor => update('toggleCursorSelection', cursor),

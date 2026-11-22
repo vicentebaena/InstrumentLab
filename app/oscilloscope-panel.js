@@ -2,9 +2,13 @@
 // Reusable front-panel bindings and channel-menu presentation, independent of DOM IDs/model.
 window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display, t, openWindow }) => {
   const { getSettings, actions } = controller;
-  const { auto, cursorsButton, cursorsMenu, cursorTypeButton, cursorTypeValue, cursorSelections = {}, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, screenRoot, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, triggerMidpoint, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
+  const { auto, measure, cursorsButton, cursorsMenu, cursorTypeButton, cursorTypeValue, cursorSelections = {}, runStop, menuToggle, channelButtons, scale, timeScale, position, horizontalPosition, screen, screenRoot, menu, menuTitle, triggerButton, triggerMenu, triggerLevel, triggerMidpoint, submenuViews = {}, submenuIndicator, selectionKnob, probeConnectors = {} } = elements;
   const scope = window.InstrumentLab.oscilloscope;
   auto.addEventListener('click', actions.auto);
+  measure?.button.addEventListener('click', actions.measure);
+  measure?.sourceButton.addEventListener('click', actions.measureSource);
+  measure?.clearButton?.addEventListener('click', actions.clearMeasurements);
+  measure?.allButton?.addEventListener('click', actions.displayAll);
   cursorsButton?.addEventListener('click', actions.cursors);
   cursorTypeButton?.addEventListener('click', actions.cursorType);
   for (const [cursor, view] of Object.entries(cursorSelections)) view.button.addEventListener('click', () => actions.cursorSelection(cursor));
@@ -71,6 +75,20 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
     if (triggerLevel) slider(triggerLevel, { min: -1e6, max: 1e6,
       value: settings.trigger.level, text: `${settings.trigger.level} V · CH${settings.trigger.source}`,
       label: 'scopeTriggerLevel', help: 'scopeTriggerLevelHelp' });
+    if (measure) {
+      if (measure.clearButton) measure.clearButton.hidden = !settings.measureMenuOpen;
+      if (measure.allButton) {
+        measure.allButton.hidden = !settings.measureMenuOpen;
+        measure.allButton.setAttribute('aria-pressed', String(Boolean(settings.measure.displayAll)));
+      }
+      if (measure.allValue) measure.allValue.textContent = settings.measure.displayAll ? 'ON' : 'OFF';
+      measure.menu.hidden = !settings.measureMenuOpen;
+      measure.sourceButton.hidden = !settings.measureMenuOpen;
+      measure.button.setAttribute('aria-expanded', String(Boolean(settings.measureMenuOpen)));
+      measure.button.setAttribute('aria-pressed', String(Boolean(settings.measureEnabled)));
+      measure.sourceValue.textContent = `CH${settings.measure.source}`;
+      measure.sourceButton.setAttribute('aria-label', `Measure source CH${settings.measure.source}`);
+    }
     if (cursorsButton) {
       cursorsButton.setAttribute('aria-pressed', String(Boolean(settings.cursorsEnabled)));
       cursorsButton.setAttribute('aria-expanded', String(Boolean(settings.cursorsMenuOpen)));
@@ -79,12 +97,12 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
     if (cursorTypeValue) cursorTypeValue.textContent = settings.cursors.type;
     if (cursorsMenu) cursorsMenu.hidden = !settings.cursorsMenuOpen;
     menu.hidden = settings.menuChannel === null;
-    menuToggle.setAttribute('aria-expanded', String(settings.menuChannel !== null || Boolean(settings.triggerMenuOpen) || Boolean(settings.cursorsMenuOpen)));
+    menuToggle.setAttribute('aria-expanded', String(settings.menuChannel !== null || Boolean(settings.triggerMenuOpen) || Boolean(settings.cursorsMenuOpen) || Boolean(settings.measureMenuOpen)));
     if (triggerMenu) triggerMenu.hidden = !settings.triggerMenuOpen;
     if (triggerButton) triggerButton.setAttribute('aria-expanded', String(Boolean(settings.triggerMenuOpen)));
     menu.setAttribute('data-channel', String(settings.menuChannel));
     menuTitle.textContent = settings.menuChannel ? `CH${settings.menuChannel}` : '';
-    const submenuOpen = (settings.menuChannel !== null || settings.triggerMenuOpen || settings.cursorsMenuOpen) && settings.submenu !== null;
+    const submenuOpen = (settings.menuChannel !== null || settings.triggerMenuOpen || settings.cursorsMenuOpen || settings.measureMenuOpen) && settings.submenu !== null;
     const cursorSelectionActive = Boolean(settings.cursorsMenuOpen && settings.cursorsEnabled && (settings.cursors?.selectedA || settings.cursors?.selectedB));
     if (submenuIndicator) submenuIndicator.hidden = !(submenuOpen || cursorSelectionActive);
     for (const [cursor, view] of Object.entries(cursorSelections)) {
@@ -114,7 +132,11 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
         else view.value.textContent = view.formatValue ? view.formatValue(committed) : String(committed);
       }
       const highlighted = open ? settings.submenuSelection : committed;
+      const page = view.pageSize ? scope.submenuPage(definition.options, highlighted, view.pageSize, open ? settings.submenuPageStart : null, definition.pageStarts) : null;
+      if (view.previousPage) view.previousPage.hidden = !page?.previous;
+      if (view.nextPage) view.nextPage.hidden = !page?.next;
       for (const [value, option] of Object.entries(view.options)) {
+        if (page) option.hidden = !page.values.some(item => String(item) === value);
         option.setAttribute('data-selected', String(value === String(highlighted)));
         option.setAttribute('aria-current', String(value === String(highlighted)));
       }
@@ -125,7 +147,7 @@ window.InstrumentLab.createOscilloscopePanel = ({ elements, controller, display,
   function renderScreen(target, { idPrefix = 'scopePreview', showMenus = true, showCursors = true } = {}) {
     render();
     if (!screenRoot || !showMenus) {
-      const trace = controller.getDisplay({ ...display, idPrefix, showCursors });
+      const trace = controller.getDisplay({ ...display, idPrefix, showCursors, showMenus });
       target.innerHTML = screenRoot ? `<section class="${screenRoot.className || ''}">${trace}</section>` : trace;
       return;
     }
