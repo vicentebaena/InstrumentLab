@@ -69,3 +69,21 @@ assert.equal(state.cursors.positionA,1/3);assert.equal(state.cursors.positionB,2
 state=scope.toggleCursorType(state);assert.deepEqual([state.cursors.positionYA,state.cursors.positionYB],yPositions);
 state.channels[state.cursors.source].visible=false;assert.ok(!draw().includes('data-cursors="Y"'));
 console.log('Y cursors: horizontal geometry, source voltage scale/ground, three readings, movement, priority and separate X/Y positions passed.');
+
+for(const type of ['X','Y']) {
+ state=scope.createState({cursorsEnabled:true,cursorsMenuOpen:true,cursors:{type,selectedA:true,selectedB:true}});
+ const coordinates=()=>[state.cursors.positionA,state.cursors.positionB,state.cursors.positionYA,state.cursors.positionYB];
+ const before=coordinates();
+ state=scope.openMeasureMenu(state);
+ assert.equal(scope.canMoveCursors(state),false);
+ state=scope.stepSelection(state,1);assert.deepEqual(coordinates(),before);
+ state=scope.pressCursors(state);assert.equal(scope.canMoveCursors(state),true);
+ state=scope.stepSelection(state,1);assert.notDeepEqual(coordinates(),before);
+ const resumed=coordinates();
+ state=scope.toggleChannelMenu(state);
+ assert.equal(scope.canStepSelection(state),false);
+ state=scope.stepSelection(state,-1);assert.deepEqual(coordinates(),resumed);
+ state=scope.openTriggerMenu(state);state=scope.openSubmenu(state,'triggerSource');
+ state=scope.stepSelection(state,1);assert.equal(state.submenuSelection,2);assert.deepEqual(coordinates(),resumed);
+}
+console.log('Cursor movement requires its visible menu in X and Y; other submenus retain knob control.');

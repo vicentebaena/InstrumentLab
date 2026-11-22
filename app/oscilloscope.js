@@ -200,7 +200,7 @@
       } };
     },
     canMoveCursors(state) {
-      return Boolean(state.cursorsEnabled && state.channels[state.cursors.source]?.visible && (state.cursors.selectedA || state.cursors.selectedB));
+      return Boolean(state.cursorsEnabled && state.cursorsMenuOpen && state.channels[state.cursors.source]?.visible && (state.cursors.selectedA || state.cursors.selectedB));
     },
     canStepSelection(state) {
       const definition = this.submenus[state.submenu];
