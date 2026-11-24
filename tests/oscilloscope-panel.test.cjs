@@ -565,3 +565,21 @@ assert.equal(settings.measure.displayAll,false);
 assert.ok(!a.elements.screen.innerHTML.includes('data-all-measurement='));
 a.elements.auto.fire('click');assert.equal(settings.measure.displayAll,false);
 console.log('Clear preserves Display All; 18-cell table follows source/colour, invalid signals, toggle and reset.');
+
+// Repeating a blue submenu key cycles draft choices and wraps, without committing.
+a.elements.auto.fire('click');
+a.elements.channelButtons[1].fire('click');
+a.elements.couplingButton.fire('click');
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenuSelection, 'AC');
+assert.equal(settings.channels[1].coupling, 'DC');
+assert.equal(b.elements.couplingOptions.AC.attributes['data-selected'], 'true');
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenuSelection, 'GND');
+a.elements.couplingButton.fire('click');
+assert.equal(settings.submenuSelection, 'DC');
+a.elements.couplingButton.fire('click');
+a.elements.selectionKnob.fire('click');
+assert.equal(settings.channels[1].coupling, 'AC');
+assert.equal(settings.submenu, null);
+console.log('Repeated blue-key presses cycle and wrap submenu drafts; grey knob still confirms.');

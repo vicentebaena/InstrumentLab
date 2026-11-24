@@ -172,15 +172,19 @@
       const definition = this.submenus[name];
       if (!definition) throw new RangeError('Unknown oscilloscope submenu.');
       if (!this.submenuActive(state, definition)) return state;
+      // Repeating the owning blue key advances the draft and wraps; the knob clamps.
+      if (state.submenu === name) return this.stepSubmenu(state, 1, true);
       const target = this.submenuTarget(state, definition);
       return { ...state, submenu: name, submenuSelection: target[definition.property],
         submenuPageStart: definition.pageSize ? this.submenuPage(definition.options, target[definition.property], definition.pageSize, null, definition.pageStarts).start : null };
     },
-    stepSubmenu(state, direction) {
+    stepSubmenu(state, direction, wrap = false) {
       const definition = this.submenus[state.submenu];
       if (!definition || !this.submenuActive(state, definition)) return state;
       const index = definition.options.indexOf(state.submenuSelection);
-      const next = Math.max(0, Math.min(definition.options.length - 1, index + Math.sign(direction)));
+      const offset = index + Math.sign(direction);
+      const next = wrap ? (offset + definition.options.length) % definition.options.length
+        : Math.max(0, Math.min(definition.options.length - 1, offset));
       return { ...state, submenuSelection: definition.options[next],
         submenuPageStart: definition.pageSize ? this.submenuPage(definition.options, definition.options[next], definition.pageSize, state.submenuPageStart, definition.pageStarts).start : null };
     },
