@@ -3,7 +3,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const context=vm.createContext({window:{}});
 for(const file of ['circuits.js','oscilloscope.js','oscilloscope-controller.js','translations.js'])vm.runInContext(fs.readFileSync('app/'+file,'utf8'),context);
 const app=context.window.InstrumentLab,scope=app.oscilloscope;
-let practice=app.createPracticeState('rc');
+// Use a centred, zero-offset signal for the analytical measurement fixtures.
+const createMeasurementPractice=()=>{
+ const practice=app.createPracticeState('rc');
+ practice.generator.offset=0;
+ practice.oscilloscope.channels[1].positionDivisions=0;
+ practice.oscilloscope.channels[2].positionDivisions=0;
+ return practice;
+};
+let practice=createMeasurementPractice();
 const stats=(start=0,duration=.001,channel=1)=>scope.voltageStatistics(app.circuits.rc,practice.parameters,practice.generator,practice.oscilloscope,practice.probes,start,duration,channel);
 const close=(a,b,tolerance=1e-5)=>assert.ok(Math.abs(a-b)<tolerance,`${a} != ${b}`);
 let result=stats();
@@ -17,13 +25,13 @@ practice.oscilloscope.channels[1].coupling='AC';result=stats();close(result.Vavg
 practice.oscilloscope.channels[1].visible=false;assert.equal(stats(),null);
 practice.oscilloscope.channels[1].visible=true;practice.oscilloscope.channels[1].voltsPerDivision=.1;assert.equal(stats(),null);
 practice.oscilloscope.channels[1].voltsPerDivision=.5;practice.oscilloscope.channels[1].positionDivisions=3;assert.equal(stats(),null);
-practice=app.createPracticeState('rc');
+practice=createMeasurementPractice();
 let state=practice.oscilloscope;
 const choose=(name,channel=1)=>{state=scope.openMeasureMenu(state);state.measure.source=channel;state=scope.openSubmenu(state,'measureVoltage');state.submenuSelection=name;state=scope.confirmSubmenu(state);practice.oscilloscope=state;};
 choose('Vpp');choose('Vavg',2);choose('Vrms');choose('Vmax',2);
 assert.equal(state.measurements.map(item=>item.parameter).join(','),'Vavg,Vrms,Vmax');
 choose('Vavg',2);assert.equal(state.measurements.length,3);assert.equal(state.measurements[2].parameter,'Vavg');
-const controller=app.createOscilloscopeController({getSettings:()=>practice.oscilloscope,setSettings:s=>{practice.oscilloscope=s;},getExperiment:()=>({circuit:app.circuits.rc,parameters:practice.parameters,generator:practice.generator,probes:practice.probes}),t:k=>app.translations.en[k],format:String,onChange(){},onAuto(){practice=app.createPracticeState('rc');}});
+const controller=app.createOscilloscopeController({getSettings:()=>practice.oscilloscope,setSettings:s=>{practice.oscilloscope=s;},getExperiment:()=>({circuit:app.circuits.rc,parameters:practice.parameters,generator:practice.generator,probes:practice.probes}),t:k=>app.translations.en[k],format:String,onChange(){},onAuto(){practice=createMeasurementPractice();}});
 const display=()=>controller.getDisplay({horizontalDivisions:12,cellWidth:40});
 let svg=display();assert.equal((svg.match(/data-measurement-channel=/g)||[]).length,3);assert.ok(svg.includes('fill="#6ecbff"'));assert.ok(svg.includes('fill="#f4d35e"'));
 controller.actions.runStop();const stopped=display();practice.generator.offset=100;assert.equal(display(),stopped);

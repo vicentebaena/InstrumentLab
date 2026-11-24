@@ -9,7 +9,7 @@ The application supports English and Spanish. It starts in Spanish and remembers
 ## What you can do
 
 - Explore an RC low-pass filter and change its resistance and capacitance.
-- Configure a Rigol DG822 function generator: sine or square wave, frequency, amplitude, DC offset and output enable.
+- Configure either Rigol DG822 channel using the LCD channel selector: independent sine or square wave, frequency, amplitude, DC offset and output enable. Both channel tabs show the waveform and fixed HighZ load.
 - Practise with a Rigol DS1102E oscilloscope: channel visibility, scales, position, coupling, probe compensation, trigger, RUN/STOP, X/Y cursors and automatic measurements.
 - Switch each physical probe between X1 and X10 independently of the oscilloscope's probe setting.
 
@@ -23,7 +23,7 @@ Open the [online lab](https://vicentebaena.github.io/InstrumentLab/) in a modern
 4. Observe the signals on the main page. Open the oscilloscope for its menus, cursors and measurement controls. Turn knobs by dragging, using the mouse wheel or focusing them and using the arrow keys.
 5. Use **Restore defaults** or the oscilloscope's **AUTO** button to restore the active practice's initial configuration.
 
-The RC practice starts with **R = 1 kΩ**, **C = 100 nF** and a **1 kHz, 2 Vpp square wave with zero DC offset**. Generator CH1 drives the input; oscilloscope CH1 measures the input and CH2 measures the capacitor voltage. Both probes share the circuit ground.
+The RC practice starts with **R = 1 kΩ**, **C = 100 nF** and a **1 kHz, 2 Vpp square wave with a +1 V DC offset**. Generator CH1 drives the input; oscilloscope CH1 measures the input and CH2 measures the capacitor voltage. Both probes share the circuit ground. Both oscilloscope ground references start two divisions below the screen centre.
 
 ## Run locally
 

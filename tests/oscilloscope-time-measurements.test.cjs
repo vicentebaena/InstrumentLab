@@ -2,7 +2,15 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const c={window:{}};
 for(const f of ['circuits.js','oscilloscope.js','translations.js'])vm.runInNewContext(fs.readFileSync('app/'+f,'utf8'),c);
 const app=c.window.InstrumentLab,scope=app.oscilloscope,circuit=app.circuits.rc;
-let practice=app.createPracticeState('rc');
+// Use a centred, zero-offset signal for the analytical measurement fixtures.
+const createMeasurementPractice=()=>{
+ const practice=app.createPracticeState('rc');
+ practice.generator.offset=0;
+ practice.oscilloscope.channels[1].positionDivisions=0;
+ practice.oscilloscope.channels[2].positionDivisions=0;
+ return practice;
+};
+let practice=createMeasurementPractice();
 const close=(a,b,tolerance=1e-8)=>assert.ok(Math.abs(a-b)<tolerance,`${a} != ${b}`);
 const stats=(channel=1,duration=.003)=>{const v=scope.voltageStatistics(circuit,practice.parameters,practice.generator,practice.oscilloscope,practice.probes,-.00025,duration,channel);return scope.timeStatistics(circuit,practice.parameters,practice.generator,practice.oscilloscope,practice.probes,-.00025,duration,channel,v);};
 let first=stats();close(first.Period,.001);close(first.Freq,1000);close(first['+Width'],.0005);close(first['-Width'],.0005);close(first['+Duty'],50);close(first['-Duty'],50);close(first['Rise Time'],0);close(first['Fall Time'],0);
@@ -12,7 +20,7 @@ practice.generator.waveform='sine';first=stats();close(first['Rise Time'],2*Math
 second=stats(2);const sineLag=Math.atan(2*Math.PI*1000*.0001)/(2*Math.PI*1000);close(scope.channelDelay(first,second),sineLag,1e-8);
 practice.oscilloscope.channels[2].visible=false;assert.equal(stats(2),null);assert.equal(scope.channelDelay(first,stats(2)),undefined);
 practice.oscilloscope.channels[2].visible=true;practice.oscilloscope.channels[1].voltsPerDivision=.1;assert.equal(stats(),null);
-practice=app.createPracticeState('rc');assert.equal(stats(1,.0001)?.Freq,undefined);
+practice=createMeasurementPractice();assert.equal(stats(1,.0001)?.Freq,undefined);
 practice.generator.output1Enabled=false;assert.equal(stats(),null);
 assert.equal(scope.formatTimeMeasurement(.001,'Period'),'1.00ms');assert.equal(scope.formatTimeMeasurement(1000,'Freq'),'1.00kHz');assert.equal(scope.formatTimeMeasurement(undefined,'Freq'),'*****');
 let state=scope.openMeasureMenu(scope.createState());state=scope.openSubmenu(state,'measureTime');

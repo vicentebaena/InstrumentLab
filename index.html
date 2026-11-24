@@ -4,27 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>InstrumentLab · RC</title>
-  <link rel="stylesheet" href="app/styles.css?v=20261122-62">
-  <link rel="stylesheet" href="app/dg822-panel.css?v=20261122-62">
-  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261122-62">
-  <script defer src="assets/instruments/images.js?v=20261122-62"></script>
-  <script defer src="assets/instruments/probe-connector.js?v=20261122-62"></script>
-  <script defer src="assets/instruments/probe-body.js?v=20261122-62"></script>
-  <link rel="stylesheet" href="app/probe-panel.css?v=20261122-62">
-  <script defer src="app/circuits.js?v=20261122-62"></script>
-  <script defer src="app/translations.js?v=20261122-62"></script>
-  <script defer src="app/oscilloscope.js?v=20261122-62"></script>
-  <script defer src="app/instrument-window.js?v=20261122-62"></script>
-  <script defer src="app/instrument-controls.js?v=20261122-62"></script>
-  <script defer src="app/oscilloscope-controller.js?v=20261122-62"></script>
-  <script defer src="app/oscilloscope-panel.js?v=20261122-62"></script>
-  <script defer src="app/generator.js?v=20261122-62"></script>
-  <script defer src="app/generator-controller.js?v=20261122-62"></script>
-  <script defer src="app/generator-panel.js?v=20261122-62"></script>
-  <script defer src="app/dg822-panel.js?v=20261122-62"></script>
-  <script defer src="app/ds1102e-panel.js?v=20261122-62"></script>
-  <script defer src="app/probe-panel.js?v=20261122-62"></script>
-  <script defer src="app/main.js?v=20261122-62"></script>
+  <link rel="stylesheet" href="app/styles.css?v=20261124-70">
+  <link rel="stylesheet" href="app/dg822-panel.css?v=20261124-70">
+  <link rel="stylesheet" href="app/ds1102e-panel.css?v=20261124-70">
+  <script defer src="assets/instruments/images.js?v=20261124-70"></script>
+  <script defer src="assets/instruments/probe-connector.js?v=20261124-70"></script>
+  <script defer src="assets/instruments/probe-body.js?v=20261124-70"></script>
+  <link rel="stylesheet" href="app/probe-panel.css?v=20261124-70">
+  <script defer src="app/circuits.js?v=20261124-70"></script>
+  <script defer src="app/translations.js?v=20261124-70"></script>
+  <script defer src="app/oscilloscope.js?v=20261124-70"></script>
+  <script defer src="app/instrument-window.js?v=20261124-70"></script>
+  <script defer src="app/instrument-controls.js?v=20261124-70"></script>
+  <script defer src="app/oscilloscope-controller.js?v=20261124-70"></script>
+  <script defer src="app/oscilloscope-panel.js?v=20261124-70"></script>
+  <script defer src="app/generator.js?v=20261124-70"></script>
+  <script defer src="app/generator-controller.js?v=20261124-70"></script>
+  <script defer src="app/generator-panel.js?v=20261124-70"></script>
+  <script defer src="app/dg822-panel.js?v=20261124-70"></script>
+  <script defer src="app/ds1102e-panel.js?v=20261124-70"></script>
+  <script defer src="app/probe-panel.js?v=20261124-70"></script>
+  <script defer src="app/main.js?v=20261124-70"></script>
 </head>
 <body>
 <main class="workspace">
@@ -84,33 +84,53 @@
       <button id="dg822Menu" class="dg822-hardware-menu" type="button" aria-label="Menu" aria-controls="dg822WaveMenu" aria-expanded="false">Menu</button>
       <button id="dg822Output1" class="dg822-output-key dg822-output-one" type="button" aria-pressed="true" aria-label="Output1 (CH1): ON">Output1</button>
       <button id="dg822Output2" class="dg822-output-key dg822-output-two" type="button" aria-pressed="false" aria-label="Output2 (CH2): OFF">Output2</button>
-      <section class="dg822-screen" lang="en" aria-label="Rigol DG822 CH1">
+      <section class="dg822-screen" lang="en" aria-label="Rigol DG822">
         <div class="dg822-lcd-header"><strong>RIGOL</strong><span>Continuous</span></div>
         <div id="dg822Parameters" class="dg822-lcd-content">
           <dl class="dg822-readings">
-            <div><dt>Freq</dt><dd><button id="dg822Frequency" type="button" class="dg822-reading-button" aria-label="Edit Freq" aria-haspopup="dialog"></button></dd></div>
-            <div><dt>Ampl</dt><dd><button id="dg822Amplitude" type="button" class="dg822-reading-button" aria-label="Edit Ampl" aria-haspopup="dialog"></button></dd></div>
-            <div><dt>Offset</dt><dd><button id="dg822Offset" type="button" class="dg822-reading-button" aria-label="Edit Offset" aria-haspopup="dialog"></button></dd></div>
+            <div><dt>Freq</dt><dd><button id="dg822Frequency" type="button" class="dg822-reading-button" aria-label="Edit Freq" aria-controls="dg822Editor"></button></dd></div>
+            <div><dt>Ampl</dt><dd><button id="dg822Amplitude" type="button" class="dg822-reading-button" aria-label="Edit Ampl" aria-controls="dg822Editor"></button></dd></div>
+            <div><dt>Offset</dt><dd><button id="dg822Offset" type="button" class="dg822-reading-button" aria-label="Edit Offset" aria-controls="dg822Editor"></button></dd></div>
             <div><dt>Phase</dt><dd id="dg822Phase"></dd></div>
           </dl>
           <div class="dg822-preview" aria-hidden="true"><svg viewBox="0 0 120 100"><path d="M0 50H120" stroke="#173c70" fill="none"/><path id="dg822PreviewTrace" d="M2 76H20V24H58V76H96V24H118" fill="none" stroke="#4388ff" stroke-width="3"/></svg></div>
         </div>
         <div id="dg822WaveMenu" class="dg822-wave-menu" hidden><nav class="dg822-mode-list" aria-label="Waveform mode"><span class="selected">Continuous</span><span>Modulation</span><span>Sweep</span><span>Burst</span><span>Advanced</span></nav><div class="dg822-wave-grid" role="group" aria-label="Waveform"><button type="button" class="dg822-wave-tile" id="dg822SelectSine" aria-pressed="false"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 20C10 2 14 2 22 20S34 38 42 20S54 2 62 20"/></svg><span>Sine</span></button><button type="button" class="dg822-wave-tile" id="dg822SelectSquare" aria-pressed="false"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 34H12V6H32V34H52V6H62"/></svg><span>Square</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 34L18 6L34 34L50 6L62 28"/></svg><span>Ramp</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 34H18V6H25V34H48V6H55V34H62"/></svg><span>Pulse</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 28L7 10L12 30L18 19L24 7L28 29L34 17L39 25L46 8L50 31L56 13L62 26"/></svg><span>Noise</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 21L5 5L8 32L12 9L16 27L20 13L24 23L28 16L32 22L36 12L40 29L44 8L48 33L52 7L56 30L60 14"/></svg><span>Dualtone</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 34Q5 2 9 34H14Q18 9 22 34H28Q32 17 36 34H42Q46 24 50 34H62"/></svg><span>Harm</span></button><button type="button" class="dg822-wave-tile" disabled title="Not available yet"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 25Q9 0 18 20T34 25Q42 2 48 20T62 18"/></svg><span>Arb</span></button></div></div>
-        <div id="dg822Channel" class="dg822-lcd-channel">CH1 · Square</div>
+        <div id="dg822Editor" class="dg822-editor" hidden>
+          <form id="dg822EditForm" class="dg822-keypad-form" aria-labelledby="dg822EditTitle" novalidate>
+            <div class="dg822-keypad-header">
+              <label id="dg822EditTitle" for="dg822EditValue"></label>
+              <input id="dg822EditValue" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="dg822EditError" required>
+              <select id="dg822EditUnit" aria-label="Unit"></select>
+            </div>
+            <div class="dg822-keypad" role="group" aria-label="Numeric keypad">
+              <button type="button" data-edit-key="1">1</button>
+              <button type="button" data-edit-key="2">2</button>
+              <button type="button" data-edit-key="3">3</button>
+              <button type="button" data-edit-key="sign" aria-label="Change sign">+/-</button>
+              <button type="button" data-edit-key="backspace" aria-label="Backspace">←</button>
+              <button type="button" data-edit-key="4">4</button>
+              <button type="button" data-edit-key="5">5</button>
+              <button type="button" data-edit-key="6">6</button>
+              <button type="button" data-edit-key=".">.</button>
+              <button id="dg822EditCancel" type="button">Exit</button>
+              <button type="button" data-edit-key="7">7</button>
+              <button type="button" data-edit-key="8">8</button>
+              <button type="button" data-edit-key="9">9</button>
+              <button type="button" data-edit-key="0">0</button>
+              <button type="submit">OK</button>
+            </div>
+            <p id="dg822EditError" class="dg822-edit-error" role="alert"></p>
+            <p id="dg822RmsNote" hidden></p>
+          </form>
+        </div>
+        <div class="dg822-lcd-channels" role="group" aria-label="Channel to configure">
+          <button id="dg822Channel1" class="dg822-channel-tab" type="button" aria-pressed="true" aria-label="Configure CH1: Square, HighZ"><span class="dg822-channel-number">1</span><span class="dg822-channel-details"><span id="dg822Channel1Wave">Square</span><span>HighZ</span></span></button>
+          <button id="dg822Channel2" class="dg822-channel-tab" type="button" aria-pressed="false" aria-label="Configure CH2: Square, HighZ"><span class="dg822-channel-number">2</span><span class="dg822-channel-details"><span id="dg822Channel2Wave">Square</span><span>HighZ</span></span></button>
+        </div>
       </section>
     </div>
   </div>
-</dialog>
-<dialog id="dg822EditDialog" class="dg822-editor" lang="en" aria-labelledby="dg822EditTitle">
-  <form id="dg822EditForm">
-    <h2 id="dg822EditTitle"></h2>
-    <div class="dg822-edit-fields">
-      <label class="component-field" for="dg822EditValue"><span>Value</span><span class="input-unit"><input id="dg822EditValue" type="number" step="any" required></span></label>
-      <label class="component-field" for="dg822EditUnit"><span>Unit</span><select id="dg822EditUnit"></select></label>
-    </div>
-    <p id="dg822RmsNote" class="subtle" hidden>Vrms refers to the AC component of the square wave; the DC offset is separate.</p>
-    <div class="dialog-actions"><button id="dg822EditCancel" type="button">Cancel</button><button type="submit" class="primary">Apply</button></div>
-  </form>
 </dialog>
 <dialog id="ds1102eDialog" class="ds1102e-dialog" aria-labelledby="ds1102eTitle">
   <header id="ds1102eWindowBar" class="ds1102e-window-bar">

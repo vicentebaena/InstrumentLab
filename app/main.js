@@ -48,7 +48,7 @@
     document.documentElement.lang = language;
     $('language').value = language;
     for (const [parameter, id] of [['frequency', 'generatorFrequency'], ['amplitude', 'generatorAmplitude'], ['offset', 'generatorOffset']]) {
-      const reading = generatorController.reading(parameter);
+      const reading = generatorController.reading(parameter, 1);
       $(id).textContent = `${number(reading.value)} ${reading.unit}`;
     }
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });

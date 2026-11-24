@@ -6,6 +6,18 @@ window.InstrumentLab.generator = {
     amplitude: { property: 'amplitudeVpp', unitProperty: 'amplitudeUnit', defaultUnit: 'Vpp', units: { Vpp: 1, mVpp: 1e-3, Vrms: 2, mVrms: 2e-3 } },
     offset: { property: 'offset', unitProperty: 'offsetUnit', defaultUnit: 'Vdc', units: { Vdc: 1, mVdc: 1e-3 } }
   },
+  // CH1 stays at the root because it is the fixed circuit source; CH2 is independent.
+  channelSettings(generator, channel = generator.selectedChannel || 1) {
+    if (![1, 2].includes(channel)) throw new RangeError('Unknown generator channel.');
+    return channel === 1 ? generator : generator.channel2 || window.InstrumentLab.generatorDefaults.channel2;
+  },
+  selectChannel(channel) {
+    if (![1, 2].includes(channel)) throw new RangeError('Unknown generator channel.');
+    return { selectedChannel: channel };
+  },
+  channelChange(generator, change) {
+    return (generator.selectedChannel || 1) === 1 ? change : { channel2: { ...this.channelSettings(generator, 2), ...change } };
+  },
   amplitudeScale(unit, waveform = 'square') {
     const rmsFactor = waveform === 'sine' ? 2 * Math.SQRT2 : 2;
     return { Vpp: 1, mVpp: 1e-3, Vrms: rmsFactor, mVrms: rmsFactor * 1e-3 }[unit];

@@ -12,7 +12,7 @@ const close = (a, b, eps = 1e-10) => assert.ok(Math.abs(a - b) <= eps, `${a} != 
 const analyze = (settings, generator) => scope.analyzeTrigger(circuit, parameters, generator, settings);
 const render = (settings, generator, divisions = 10, cellWidth = 56.8) => scope.render(circuit, parameters, generator, key => app.translations.en[key], String, 'test', divisions, settings, { cellWidth });
 const traces = svg => Array.from(svg.matchAll(/<path d="([^"]+)" stroke="(#[^"]+)"/g), m => m[1]);
-const initial = app.createPracticeState('rc').oscilloscope;
+const initial = scope.createState();
 assert.equal(initial.trigger.source, 1); assert.equal(initial.trigger.level, 0);
 for (const waveform of ['square', 'sine']) for (const source of [1, 2]) {
   const generator = { ...app.generatorDefaults, waveform, offset: .2 };

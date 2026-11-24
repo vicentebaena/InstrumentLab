@@ -8,7 +8,7 @@ window.InstrumentLab = {
       instrumentDefaults: {
         probes: { 1: 1, 2: 1 },
         generator: {
-          waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2,
+          waveform: 'square', frequency: 1000, offset: 1, amplitudeVpp: 2,
           output1Enabled: true, output2Enabled: false,
           frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc'
         },
@@ -16,8 +16,8 @@ window.InstrumentLab = {
           trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
           timePerDivision: 200e-6, horizontalPositionDivisions: 0, selectedChannel: 1, menuChannel: null,
           channels: {
-            1: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 },
-            2: { visible: true, voltsPerDivision: 0.5, positionDivisions: 0, coupling: 'DC', probe: 1 }
+            1: { visible: true, voltsPerDivision: 0.5, positionDivisions: -2, coupling: 'DC', probe: 1 },
+            2: { visible: true, voltsPerDivision: 0.5, positionDivisions: -2, coupling: 'DC', probe: 1 }
           }
         }
       },
@@ -138,7 +138,11 @@ window.InstrumentLab = {
       }
     }
   },
-  generatorDefaults: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2, output1Enabled: true, output2Enabled: false },
+  generatorDefaults: {
+    waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2,
+    output1Enabled: true, output2Enabled: false, selectedChannel: 1,
+    channel2: { waveform: 'square', frequency: 1000, offset: 0, amplitudeVpp: 2, frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc' }
+  },
   createPracticeState(circuitId) {
     const circuit = this.circuits[circuitId];
     if (!circuit) throw new RangeError('Unknown practice.');
@@ -146,7 +150,8 @@ window.InstrumentLab = {
       circuitId,
       parameters: { ...circuit.defaults },
       probes: { 1: 1, 2: 1, ...circuit.instrumentDefaults?.probes },
-      generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator },
+      generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator,
+        channel2: { ...this.generatorDefaults.channel2, ...circuit.instrumentDefaults?.generator?.channel2 } },
       oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope)
     };
   }
