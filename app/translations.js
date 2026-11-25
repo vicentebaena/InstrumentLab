@@ -1,6 +1,8 @@
 'use strict';
 window.InstrumentLab.translations = {
   en: {
+    scopeCursorMoveHelp: 'Turn, use the mouse wheel or arrow keys to move the selected cursor or pair along the chosen axis.',
+    scopeCursorSelectVertical: 'Select: vertical cursors', scopeCursorSelectHorizontal: 'Select: horizontal cursors',
     scopeSubmenuSelectHelp: 'Turn, use the mouse wheel or arrow keys to highlight an option. Press the knob or Enter to confirm.',
     scopeCouplingSelectHelp: 'Turn, use the mouse wheel or arrow keys to highlight a coupling option. Press the knob or Enter to confirm.',
     scopeChannelReadings: 'Channel coupling and voltage scales',
@@ -38,6 +40,8 @@ window.InstrumentLab.translations = {
     bench: 'Virtual electronics bench', intro: 'Explore circuits. Practise your instruments.', language: 'Language', experiment: 'Experiment', choose: 'Choose a circuit', fixed: 'Predefined connections · Two measurement channels', circuit: 'Circuit diagram', passive: 'Passive circuit', rcTitle: 'RC low-pass filter', description: 'The generator drives the input. CH1 measures the input voltage; CH2 measures the voltage across the capacitor.', inputChannel: 'CH1 · Input voltage', outputChannel: 'CH2 · Capacitor voltage', ground: 'Ground clips · Common circuit ground', components: 'Circuit parameters', values: 'Component values', resistance: 'Resistance · R', capacitance: 'Capacitance · C', reset: 'Restore defaults', generator: 'Function generator', settings: 'Programmed settings', waveform: 'Waveform', square: 'Square wave', frequency: 'Frequency', offset: 'DC offset', connection: 'Connected to', circuitInput: 'Circuit input', panelsLater: 'Instrument displays and control panels will be added in a later step.', timeConstant: 'Time constant', cutoff: 'Cutoff frequency', observe: 'With a square-wave input, the capacitor charges and discharges through the resistor. R and C determine how quickly its voltage changes.', footer: 'Fixed circuits · Shared instruments · A bench for every course', input: 'Input', capacitor: 'Capacitor', scope: 'Oscilloscope', fixedDiagram: 'Probe tips: CH1 input / CH2 capacitor · Both ground clips: common ground', diagramDescription: 'Function generator connected to a series resistor. A capacitor connects the output to ground. Oscilloscope CH1 measures the input and CH2 the capacitor, both relative to common ground. Each probe has a coloured measurement tip and a separate grey ground lead ending in the common-ground symbol.', invalid: 'Enter positive values within the allowed ranges.'
   },
   es: {
+    scopeCursorMoveHelp: 'Gira, usa la rueda o las flechas para mover el cursor o la pareja seleccionada en el eje elegido.',
+    scopeCursorSelectVertical: 'Select: cursores verticales', scopeCursorSelectHorizontal: 'Select: cursores horizontales',
     scopeSubmenuSelectHelp: 'Gira, usa la rueda o las flechas para resaltar una opción. Pulsa el mando o Intro para confirmar.',
     scopeCouplingSelectHelp: 'Gira, usa la rueda o las flechas para resaltar una opción de acoplamiento. Pulsa el mando o Intro para confirmar.',
     scopeChannelReadings: 'Acoplamiento y escalas de tensión de los canales',

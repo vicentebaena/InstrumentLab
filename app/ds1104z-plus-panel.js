@@ -49,9 +49,16 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     const scope = window.InstrumentLab.oscilloscope;
     const buttons = Object.fromEntries([1, 2, 3, 4].map(channel => [channel, $(`ds1104zplusCH${channel}`)]));
     for (const [channel, button] of Object.entries(buttons)) {
-      button.style.setProperty('--channel-color', this.colors[channel]);
       button.addEventListener('click', () => controller.actions.channel(Number(channel)));
     }
+    const cursorsKey = $('ds1104zplusCursorsKey');
+    const cursorSelectKey = $('ds1104zplusCursorSelectKey');
+    const cursorSourceKey = $('ds1104zplusCursorSourceKey');
+    const cursorKeys = Object.fromEntries(['A','B','AB'].map(group => [group, $(`ds1104zplusCursor${group}Key`)]));
+    cursorsKey.addEventListener('click', controller.actions.cursors);
+    cursorSelectKey.addEventListener('click', controller.actions.cursorType);
+    cursorSourceKey.addEventListener('click', () => controller.actions.submenu('cursorSourcePlus'));
+    for (const [group, key] of Object.entries(cursorKeys)) key.addEventListener('click', () => controller.actions.cursorGroup(group));
     const triggerMenuKey = $('ds1104zplusTriggerMenuKey');
     const triggerLevelKnob = $('ds1104zplusTriggerLevelKnob');
     const triggerSourceKey = $('ds1104zplusTriggerSourceKey');
@@ -87,12 +94,13 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     const couplingOpen = settings => settings.menuChannel !== null && settings.submenu === 'coupling';
     const probeOpen = settings => settings.menuChannel !== null && settings.submenu === 'probePlus';
     const triggerSelectionOpen = settings => settings.triggerMenuOpen && ['triggerSourcePlus', 'triggerSlopePlus'].includes(settings.submenu);
-    const selectionOpen = settings => couplingOpen(settings) || probeOpen(settings) || triggerSelectionOpen(settings);
+    const selectionOpen = settings => couplingOpen(settings) || probeOpen(settings) || triggerSelectionOpen(settings) || (settings.cursorsMenuOpen && settings.submenu === 'cursorSourcePlus');
+    const knobActive = settings => selectionOpen(settings) || scope.canMoveCursors(settings, true);
     couplingKey.addEventListener('click', () => controller.actions.submenu('coupling'));
     probeKey.addEventListener('click', () => controller.actions.submenu('probePlus'));
     window.InstrumentLab.bindRotaryControl(selectionKnob, {
-      onStep: controller.actions.selectionStep, onPress: controller.actions.submenuConfirm,
-      enabled: () => selectionOpen(controller.getSettings()), clockwiseStep: 1,
+      onStep: direction => controller.actions.selectionStep(direction, { allowHiddenCursors: true }), onPress: controller.actions.submenuConfirm,
+      enabled: () => knobActive(controller.getSettings()), clockwiseStep: 1,
       keyDirections: { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
     });
     const couplingSubmenu = settings => !couplingOpen(settings) ? ''
@@ -113,13 +121,23 @@ window.InstrumentLab.DS1104ZPlusPanel = {
       const source = settings.submenu === 'triggerSourcePlus';
       return `<aside class="ds1104zplus-coupling-submenu" aria-label="${source ? 'Source' : 'Slope'}"><span class="ds1104zplus-submenu-arrow" aria-hidden="true">↻</span>${scope.submenus[settings.submenu].options.map(value => `<div data-trigger-option="${value}" data-selected="${settings.submenuSelection === value}" aria-current="${settings.submenuSelection === value}">${source ? `CH${value}` : slopeIcon(value)}</div>`).join('')}</aside>`;
     };
-    const screenMarkup = ({ idPrefix = 'ds1104zplus', showMenus = true } = {}) => {
+    const cursorMenu = settings => {
+      if (!settings.cursorsMenuOpen) return '';
+      const c = settings.cursors, values = scope.cursorReadings(settings, this.geometry.columns);
+      const group = c.selectedA && c.selectedB ? 'AB' : c.selectedA ? 'A' : c.selectedB ? 'B' : null;
+      const axis = c.type === 'Y' ? 'Y' : 'X';
+      const value = cursor => axis === 'X' ? scope.formatCursorValue(values[`${cursor}X`]) : scope.formatMeasurement(values[`${cursor}Y`]);
+      const selectIcon = `<svg class="ds1104zplus-cursor-axis-icon" viewBox="0 0 42 24" role="img" aria-label="${axis === 'X' ? 'Vertical cursors' : 'Horizontal cursors'}">${axis === 'X' ? '<path d="M14 2V22"/><path d="M28 2V22" stroke-dasharray="3 2"/>' : '<path d="M2 7H40"/><path d="M2 17H40" stroke-dasharray="3 2"/>'}</svg>`;
+      return `<aside class="ds1104zplus-channel-menu ds1104zplus-cursor-menu" aria-label="Cursor"><span class="ds1104zplus-menu-channel">Cursor</span><dl>${[['Mode','Manual',null],['Select',selectIcon,null],['Source',`CH${c.source}`,null],['CursorA',value('A'),'A'],['CursorB',value('B'),'B'],['CursorAB','↻','AB']].map(([label, text, entry]) => `<div><dt>${label}</dt><dd${entry ? ` data-cursor-selection="${entry}" data-selected="${group === entry}"` : ''}>${text}</dd></div>`).join('')}</dl></aside>`;
+    };
+    const cursorSourceSubmenu = settings => !settings.cursorsMenuOpen || settings.submenu !== 'cursorSourcePlus' ? '' : `<aside class="ds1104zplus-coupling-submenu" aria-label="Cursor source"><span class="ds1104zplus-submenu-arrow" aria-hidden="true">↻</span>${scope.submenus.cursorSourcePlus.options.map(value => `<div data-cursor-source-option="${value}" data-selected="${settings.submenuSelection === value}">CH${value}</div>`).join('')}</aside>`;
+    const screenMarkup = ({ idPrefix = 'ds1104zplus', showMenus = true, showCursors = true } = {}) => {
       const settings = controller.getSettings();
       const g = this.geometry;
-      const traces = controller.getDisplay({ idPrefix, horizontalDivisions: g.columns, cellWidth: g.cell, traceLayerOnly: true, persistentTriggerMarker: true,
+      const traces = controller.getDisplay({ idPrefix, horizontalDivisions: g.columns, cellWidth: g.cell, traceLayerOnly: true, persistentTriggerMarker: true, cursorAxes: 'both', showCursors,
         channelNumbers: [1, 2, 3, 4], channelColors: this.colors,
         plotGeometry: { left: g.left, top: g.top, width: g.columns * g.cell, height: g.rows * g.cell, viewWidth: g.width, viewHeight: g.height } });
-      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) : '');
+      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) + cursorMenu(settings) + cursorSourceSubmenu(settings) : '');
     };
     const renderScreen = (target, options = {}) => {
       render();
@@ -131,6 +149,18 @@ window.InstrumentLab.DS1104ZPlusPanel = {
         const visible = settings.channels[channel].visible;
         button.setAttribute('aria-pressed', String(visible));
         button.setAttribute('aria-label', `CH${channel}: ${visible ? 'ON' : 'OFF'}`);
+      }
+      cursorsKey.setAttribute('aria-expanded', String(Boolean(settings.cursorsMenuOpen)));
+      cursorSelectKey.hidden = !settings.cursorsMenuOpen;
+      cursorSelectKey.setAttribute('aria-label', t(settings.cursors.type === 'X' ? 'scopeCursorSelectVertical' : 'scopeCursorSelectHorizontal'));
+      cursorSourceKey.hidden = !settings.cursorsMenuOpen;
+      cursorSourceKey.setAttribute('aria-label', t('scopeCursorSource'));
+      cursorSourceKey.setAttribute('aria-expanded', String(settings.submenu === 'cursorSourcePlus'));
+      for (const [group, key] of Object.entries(cursorKeys)) {
+        key.hidden = !settings.cursorsMenuOpen;
+        const selected = group === 'AB' ? settings.cursors.selectedA && settings.cursors.selectedB
+          : settings.cursors[`selected${group}`] && !settings.cursors[`selected${group === 'A' ? 'B' : 'A'}`];
+        key.setAttribute('aria-pressed', String(Boolean(selected)));
       }
       triggerMenuKey.setAttribute('aria-expanded', String(Boolean(settings.triggerMenuOpen)));
       for (const [key, submenu, label] of [[triggerSourceKey, 'triggerSourcePlus', 'scopeTriggerSource'], [triggerSlopeKey, 'triggerSlopePlus', 'scopeTriggerSlope']]) {
@@ -170,9 +200,9 @@ window.InstrumentLab.DS1104ZPlusPanel = {
       probeKey.setAttribute('aria-label', t('scopeProbe'));
       probeKey.setAttribute('aria-expanded', String(probeOpen(settings)));
       selectionKnob.setAttribute('aria-label', t('scopeMenuSelect'));
-      selectionKnob.setAttribute('aria-disabled', String(!selectionOpen(settings)));
-      selectionKnob.title = t('scopeSubmenuSelectHelp');
-      selectionIndicator.setAttribute('data-active', String(selectionOpen(settings)));
+      selectionKnob.setAttribute('aria-disabled', String(!knobActive(settings)));
+      selectionKnob.title = t(selectionOpen(settings) || !settings.cursorsMenuOpen ? 'scopeSubmenuSelectHelp' : 'scopeCursorMoveHelp');
+      selectionIndicator.setAttribute('data-active', String(knobActive(settings)));
       $('ds1104zplusScreen').innerHTML = screenMarkup();
     };
     return { render, renderScreen, open() { render(); frame.open(); } };

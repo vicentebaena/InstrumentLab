@@ -17,7 +17,7 @@
 .ds1104zplus-traces{position:absolute;inset:0;pointer-events:none}
 .ds1104zplus-channel-key{position:absolute;left:67.8%;width:3.85%;height:4.45%;padding:0;border:1px solid #8d969e;border-radius:6px;background:linear-gradient(#e1e6e9,#bbc6ce);color:#424e57;font:500 12px/1 Arial,sans-serif;clip-path:polygon(12% 0,88% 0,100% 50%,88% 100%,12% 100%,0 50%)}
 .ds1104zplus-channel-one{top:32.2%}.ds1104zplus-channel-two{top:38.6%}.ds1104zplus-channel-three{top:45.2%}.ds1104zplus-channel-four{top:51.8%}
-.ds1104zplus-channel-key[aria-pressed="true"]{background:var(--channel-color);color:#14212a;box-shadow:inset 0 0 5px #fff8}
+.ds1104zplus-channel-key[aria-pressed="true"]{background:linear-gradient(#fff7b3,#f4d35e);color:#3c3100;border-color:#d6b72c;box-shadow:inset 0 0 5px #fff8,0 0 6px #f4d35e88}
 .ds1104zplus-channel-key:hover{filter:brightness(1.12)}
 .ds1104zplus-channel-key:focus-visible{outline:2px solid #fff;outline-offset:-3px}
 .ds1104zplus-channel-menu{position:absolute;left:88%;top:8.333%;width:11.3%;height:83.333%;font:400 13px/1.2 Arial,sans-serif;color:#99d3ff;pointer-events:none}
@@ -29,7 +29,7 @@
 .ds1104zplus-menu-channel{position:absolute;right:calc(100% + 3px);top:5px;color:#a8dcff;writing-mode:vertical-rl;font-size:11px;font-weight:700}
 
 .ds1104zplus-front [hidden]{display:none!important}
-.ds1104zplus-coupling-key,.ds1104zplus-probe-key,.ds1104zplus-invert-key,.ds1104zplus-trigger-source-key,.ds1104zplus-trigger-slope-key{position:absolute;left:61.15%;top:17.95%;width:4.5%;height:5.6%;padding:0;border:2px solid transparent;border-radius:7px;background:transparent;color:transparent}
+.ds1104zplus-coupling-key,.ds1104zplus-probe-key,.ds1104zplus-invert-key,.ds1104zplus-trigger-source-key,.ds1104zplus-trigger-slope-key,.ds1104zplus-cursor-select-key,.ds1104zplus-cursor-source-key,.ds1104zplus-cursor-a-key,.ds1104zplus-cursor-b-key,.ds1104zplus-cursor-ab-key{position:absolute;left:61.15%;top:17.95%;width:4.5%;height:5.6%;padding:0;border:2px solid transparent;border-radius:7px;background:transparent;color:transparent}
 .ds1104zplus-coupling-key:hover,.ds1104zplus-probe-key:hover,.ds1104zplus-invert-key:hover{background:#78bdff22;border-color:#79baff}
 .ds1104zplus-coupling-key:focus-visible,.ds1104zplus-probe-key:focus-visible,.ds1104zplus-invert-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
 .ds1104zplus-selection-knob{position:absolute;left:68.8%;top:18.6%;width:4.3%;height:8%;padding:0;border:2px solid transparent;border-radius:50%;background:transparent;touch-action:none;cursor:grab}
@@ -74,3 +74,10 @@
 .ds1104zplus-trigger-level-knob:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
 .ds1104zplus-trigger-menu dl{grid-template-rows:repeat(6,minmax(0,1fr))}
 .ds1104zplus-slope-icon{width:30px!important;height:19px!important;display:inline-block!important;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+
+.ds1104zplus-cursors-key{position:absolute;left:76.25%;top:23.5%;width:5%;height:4.8%;border:2px solid transparent;border-radius:4px;background:transparent;color:transparent;padding:0}
+.ds1104zplus-cursor-select-key{top:25.15%}.ds1104zplus-cursor-source-key{top:32.35%}.ds1104zplus-cursor-a-key{top:39.6%}.ds1104zplus-cursor-b-key{top:46.8%}.ds1104zplus-cursor-ab-key{top:54%}
+.ds1104zplus-cursors-key:hover,.ds1104zplus-cursor-select-key:hover,.ds1104zplus-cursor-source-key:hover,.ds1104zplus-cursor-a-key:hover,.ds1104zplus-cursor-b-key:hover,.ds1104zplus-cursor-ab-key:hover{background:#78bdff22;border-color:#79baff}
+.ds1104zplus-cursors-key:focus-visible,.ds1104zplus-cursor-select-key:focus-visible,.ds1104zplus-cursor-source-key:focus-visible,.ds1104zplus-cursor-a-key:focus-visible,.ds1104zplus-cursor-b-key:focus-visible,.ds1104zplus-cursor-ab-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-cursor-menu dd[data-selected="true"]{border:2px solid #9edbff;box-shadow:0 0 3px #5badff}
+.ds1104zplus-cursor-axis-icon{width:30px!important;height:19px!important;display:inline-block!important;fill:none;stroke:currentColor;stroke-width:2}

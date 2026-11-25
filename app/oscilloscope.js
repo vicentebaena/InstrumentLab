@@ -12,6 +12,7 @@
       coupling: { property: 'coupling', options: ['DC', 'AC', 'GND'] },
       probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] },
       probePlus: { property: 'probe', options: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000] },
+      cursorSourcePlus: { target: 'cursors', property: 'source', options: [1, 2, 3, 4] },
       cursorSource: { target: 'cursors', property: 'source', options: [1, 2] },
       triggerSourcePlus: { target: 'trigger', property: 'source', options: [1, 2, 3, 4] },
       triggerSlopePlus: { target: 'trigger', property: 'slope', options: ['rising', 'falling', 'either'] },
@@ -221,17 +222,17 @@
         [channel]: { ...state.channels[channel], [definition.property]: state.submenuSelection }
       } };
     },
-    canMoveCursors(state) {
-      return Boolean(state.cursorsEnabled && state.cursorsMenuOpen && state.channels[state.cursors.source]?.visible && (state.cursors.selectedA || state.cursors.selectedB));
+    canMoveCursors(state, allowHidden = false) {
+      return Boolean(state.cursorsEnabled && state.cursorsMenuOpen && (allowHidden || state.channels[state.cursors.source]?.visible) && (state.cursors.selectedA || state.cursors.selectedB));
     },
     canStepSelection(state) {
       const definition = this.submenus[state.submenu];
       return state.submenu !== null ? Boolean(definition && this.submenuActive(state, definition)) : this.canMoveCursors(state);
     },
-    stepSelection(state, direction) {
+    stepSelection(state, direction, { allowHiddenCursors = false } = {}) {
       // An open submenu always owns the knob, even at the end of its list.
       if (state.submenu !== null) return this.stepSubmenu(state, direction);
-      if (!this.canMoveCursors(state)) return state;
+      if (!this.canMoveCursors(state, allowHiddenCursors)) return state;
       const keys = ['A', 'B'].filter(cursor => state.cursors[`selected${cursor}`]).map(cursor => `position${state.cursors.type === 'Y' ? 'Y' : ''}${cursor}`);
       const delta = Math.max(-Math.min(...keys.map(key => state.cursors[key])),
         Math.min(1 - Math.max(...keys.map(key => state.cursors[key])), Math.sign(direction) * (state.cursors.type === 'Y' ? -1 : 1) / 120));
@@ -243,6 +244,30 @@
       if (!state.cursorsMenuOpen) return state;
       return { ...state, submenu: null, submenuSelection: null,
         cursors: { ...state.cursors, type: state.cursors.type === 'Y' ? 'X' : 'Y' } };
+    },
+    selectCursorGroup(state, group) {
+      if (!['A', 'B', 'AB'].includes(group) || !state.cursorsMenuOpen || !state.cursorsEnabled) return state;
+      return { ...state, submenu: null, submenuSelection: null, cursors: { ...state.cursors,
+        selectedA: group !== 'B', selectedB: group !== 'A' } };
+    },
+    cursorReadings(state, horizontalDivisions = 12) {
+      const cursors = state.cursors, channel = state.channels[cursors.source];
+      const x = position => ((position - .5) * horizontalDivisions - state.horizontalPositionDivisions) * state.timePerDivision;
+      const y = position => (4 - channel.positionDivisions - position * 8) * channel.voltsPerDivision;
+      const AX = x(cursors.positionA), BX = x(cursors.positionB), AY = y(cursors.positionYA), BY = y(cursors.positionYB);
+      return { AX, AY, BX, BY, deltaX: BX - AX, deltaY: AY - BY, inverseDeltaX: 1 / Math.abs(BX - AX) };
+    },
+    renderManualCursors(state, { left, top, width, height }, horizontalDivisions) {
+      const c = state.cursors, readings = this.cursorReadings(state, horizontalDivisions);
+      const rows = [['AX', this.formatCursorValue(readings.AX)], ['AY', this.formatMeasurement(readings.AY)],
+        ['BX', this.formatCursorValue(readings.BX)], ['BY', this.formatMeasurement(readings.BY)],
+        ['BX-AX', this.formatCursorValue(readings.deltaX)], ['AY-BY', this.formatMeasurement(readings.deltaY)],
+        ['1/|dX|', this.formatCursorValue(readings.inverseDeltaX, true)]];
+      return `<g data-cursors="XY" data-cursor-source="${c.source}" fill="none" stroke="#9cdfff" stroke-width="1.5">
+        ${['A','B'].map(cursor => `<line data-cursor="X${cursor}" x1="${left + width * c[`position${cursor}`]}" x2="${left + width * c[`position${cursor}`]}" y1="${top}" y2="${top + height}"${cursor === 'B' ? ' stroke-dasharray="6 4"' : ''}/><line data-cursor="Y${cursor}" x1="${left}" x2="${left + width}" y1="${top + height * c[`positionY${cursor}`]}" y2="${top + height * c[`positionY${cursor}`]}"${cursor === 'B' ? ' stroke-dasharray="6 4"' : ''}/>`).join('')}
+        <g data-cursor-readings="true" transform="translate(${left + 6} ${top + 6})" font-family="Arial,sans-serif" font-size="13" font-weight="700" stroke="none" fill="#a8dcff"><rect width="164" height="114" rx="2" fill="#102744" fill-opacity=".94"/>
+          ${rows.map(([label,value], index) => `<text data-cursor-reading="${label}" x="5" y="${15 + index * 16}">${label}: ${value}</text>`).join('')}
+        </g></g>`;
     },
     toggleCursorSelection(state, cursor) {
       if (!['A', 'B'].includes(cursor) || !state.cursorsMenuOpen || !state.cursorsEnabled) return state;
@@ -470,6 +495,8 @@
         </g>`;
       };
       const timeZeroMarker = `<path data-time-zero="true" d="M${timeZeroX - 6} ${top - 20}h12v11l-6 8-6-8z" fill="#ff9e3d"/><text data-time-zero-label="true" x="${timeZeroX}" y="${top - 10}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#030709">T</text>`;
+      const manualCursors = presentation.cursorAxes === 'both' && presentation.showCursors !== false && settings.cursorsEnabled
+        ? this.renderManualCursors(settings, { left, top, width, height }, horizontalDivisions) : '';
       if (presentation.traceLayerOnly) {
         const clip = `${idPrefix}TraceClip`;
         const levelOverlay = !presentation.persistentTriggerMarker ? '' : `<g data-trigger-level="${settings.trigger.level}" fill="#ff9e3d">
@@ -478,7 +505,7 @@
           ${settings.trigger.showLevel ? `<text data-trigger-readout="true" x="${left + 4}" y="${top + height - 8}" font-family="Arial,sans-serif" font-size="15">${triggerLabel}</text>` : ''}
         </g>`;
         const order = [...channelNumbers.filter(channel => channel !== settings.selectedChannel), settings.selectedChannel].filter(channel => channelNumbers.includes(channel));
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${presentation.plotGeometry?.viewHeight ?? 420}" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="${clip}"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs><g fill="none" clip-path="url(#${clip})" stroke-width="2" stroke-linejoin="round">${traces}</g>${order.map(groundMarker).join('')}${timeZeroMarker}${levelOverlay}</svg>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${presentation.plotGeometry?.viewHeight ?? 420}" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="${clip}"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs><g fill="none" clip-path="url(#${clip})" stroke-width="2" stroke-linejoin="round">${traces}</g>${order.map(groundMarker).join('')}${timeZeroMarker}${manualCursors}${levelOverlay}</svg>`;
       }
       const cursorSource = settings.cursors?.source ?? 1;
       const showCursors = presentation.showCursors !== false && settings.cursorsEnabled && settings.channels[cursorSource]?.visible;
