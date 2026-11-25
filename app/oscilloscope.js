@@ -19,6 +19,8 @@
       triggerSource: { target: 'trigger', property: 'source', options: [1, 2] },
       triggerSlope: { target: 'trigger', property: 'slope', options: ['rising', 'falling'] }
     },
+    timeMeasurementsPlus: ['Period', 'Freq', 'Rise Time', 'Fall Time', '+Width', '-Width', '+Duty', '-Duty', '+Pulses', '-Pulses', '+Edges', '-Edges', 'tVmax', 'tVmin', '+Rate', '-Rate', 'DelayRise', 'DelayFall', 'PhaseRise', 'PhaseFall'],
+    voltageMeasurementsPlus: ['Vmax', 'Vmin', 'Vpp', 'Vtop', 'Vbase', 'Vamp', 'Vupper', 'Vmid', 'Vlower', 'Vavg', 'Vrms', 'Overshoot', 'Preshoot', 'Variance', 'Area', 'Per.Area'],
     verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
     verticalScalesPlus: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
     horizontalScalesPlus: [5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5, 10, 20, 50],
@@ -52,6 +54,7 @@
     createState(overrides = {}, channelCount = 2) {
       const state = {
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
+        oneKey: { kind: 'voltage', page: 0, measurements: [] },
         measurements: [],
         measure: { source: 1, voltage: 'Vmax', time: 'Period', displayAll: false }, measureEnabled: false, measureMenuOpen: false,
         cursors: { type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
@@ -60,7 +63,7 @@
       for (let channel = 3; channel <= channelCount; channel++) {
         state.channels[channel] = { ...state.channels[1], visible: false };
       }
-      return { ...state, ...overrides, measurements: (overrides.measurements ?? []).map(item => ({ ...item })), measure: { ...state.measure, ...overrides.measure }, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: Object.fromEntries(Object.entries(state.channels).map(([channel, defaults]) =>
+      return { ...state, ...overrides, oneKey: { kind: overrides.oneKey?.kind ?? 'voltage', page: overrides.oneKey?.page ?? 0, measurements: (overrides.oneKey?.measurements ?? []).map(item => ({ ...item })) }, measurements: (overrides.measurements ?? []).map(item => ({ ...item })), measure: { ...state.measure, ...overrides.measure }, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: Object.fromEntries(Object.entries(state.channels).map(([channel, defaults]) =>
         [channel, { ...defaults, ...overrides.channels?.[channel] }])) };
     },
     hideTriggerLevel(state) {
@@ -314,6 +317,23 @@
         channels: { ...state.channels, [channel]: { ...state.channels[channel], visible: !hide } }
       };
     },
+    oneKeyParameters(state) {
+      return state.oneKey.kind === 'time' ? this.timeMeasurementsPlus : this.voltageMeasurementsPlus;
+    },
+    toggleOneKeyType(state) {
+      return { ...state, oneKey: { ...state.oneKey, kind: state.oneKey.kind === 'time' ? 'voltage' : 'time', page: 0 } };
+    },
+    stepOneKeyPage(state, direction) {
+      const page = Math.max(0, Math.min(Math.ceil(this.oneKeyParameters(state).length / 6) - 1, state.oneKey.page + Math.sign(direction)));
+      return page === state.oneKey.page ? state : { ...state, oneKey: { ...state.oneKey, page } };
+    },
+    addOneKeyMeasurement(state, slot) {
+      const parameter = Number.isInteger(slot) && slot >= 0 && slot < 6 ? this.oneKeyParameters(state)[state.oneKey.page * 6 + slot] : null;
+      if (!parameter) return state;
+      const channel = state.selectedChannel;
+      const measurements = [...state.oneKey.measurements.filter(item => item.channel !== channel || item.parameter !== parameter), { channel, parameter }].slice(-5);
+      return { ...state, oneKey: { ...state.oneKey, measurements } };
+    },
     voltageStatistics(circuit, parameters, generator, settings, probes, start, duration, channel) {
       if (!settings.channels[channel]?.visible || duration * generator.frequency > 128) return null;
       const signals = this.createSignals(circuit, parameters, generator, settings, probes);
@@ -326,7 +346,7 @@
       if (![min, max].every(Number.isFinite) || max > (4 - position) * scale + tolerance || min < (-4 - position) * scale - tolerance) return null;
       const average = values.reduce((sum, value) => sum + value, 0) / count;
       const rms = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0) / count);
-      const result = { Vmax: max, Vmin: min, Vpp: span, Vavg: average, Vrms: rms };
+      const result = { Vmax: max, Vmin: min, tVmax: start + (values.indexOf(max) + .5) * dt, tVmin: start + (values.indexOf(min) + .5) * dt, Vpp: span, Vavg: average, Vrms: rms, Variance: values.reduce((sum, value) => sum + (value - average) ** 2, 0) / count };
       // Only infer top/base where a sustained flat region is visible. The manual
       // defines these as flat pulse levels, not as arbitrary waveform extrema.
       if (span > 1e-12) {
@@ -342,10 +362,16 @@
           const top = high.reduce((a, b) => a + b, 0) / high.length;
           const base = low.reduce((a, b) => a + b, 0) / low.length;
           const amplitude = top - base;
-          Object.assign(result, { Vtop: top, Vbase: base, Vamp: amplitude,
+          Object.assign(result, { Vtop: top, Vbase: base, Vamp: amplitude, Vupper: base + .9 * amplitude, Vmid: base + .5 * amplitude, Vlower: base + .1 * amplitude,
             Overshoot: 100 * (max - top) / amplitude, Preshoot: 100 * (min - base) / amplitude });
         }
       }
+      result.Area = average * duration;
+      const period = 1 / generator.frequency;
+      if (duration < period * (1 - 1e-10)) result['Per.Area'] = 0;
+      else if (channel > 2) result['Per.Area'] = 0;
+      else if (circuit.mean) result['Per.Area'] = signals.transform(circuit.mean(parameters, generator)[channel === 1 ? 'input' : 'output'], channel) * period;
+      else result['Per.Area'] = Array.from({length:count}, (_,i) => signals.sample(start + (i + .5) * period / count, channel)).reduce((sum,value) => sum + value, 0) / count * period;
       return result;
     },
     timeStatistics(circuit, parameters, generator, settings, probes, start, duration, channel, voltage) {
@@ -354,7 +380,8 @@
       const sample = time => signals.sample(time, channel), count = 4096;
       const levels = [0.1, 0.5, 0.9].map(fraction => voltage.Vmin + voltage.Vpp * fraction);
       const up = [[], [], []], down = [[], [], []];
-      let previous = sample(start);
+      let previous = sample(start), positiveCount = 0, negativeCount = 0;
+      let positiveArmed = previous <= levels[0], negativeArmed = previous >= levels[2];
       for (let i = 1; i <= count; i++) {
         const time = start + duration * i / count, value = sample(time);
         for (let j = 0; j < levels.length; j++) {
@@ -367,6 +394,10 @@
           }
           (rising ? up[j] : down[j]).push((a + b) / 2);
         }
+        if (value <= levels[0]) positiveArmed = true;
+        if (value >= levels[2]) negativeArmed = true;
+        if (positiveArmed && value >= levels[2]) { positiveCount++; positiveArmed = false; }
+        if (negativeArmed && value <= levels[0]) { negativeCount++; negativeArmed = false; }
         previous = value;
       }
       const interval = edges => edges.length >= 2 ? edges[1] - edges[0] : undefined;
@@ -378,8 +409,12 @@
         }
       };
       const positive = between(up[1], down[1]), negative = between(down[1], up[1]);
-      return { Period: period, Freq: period > 0 ? 1 / period : undefined,
-        'Rise Time': between(up[0], up[2]), 'Fall Time': between(down[2], down[0]),
+      const rise = between(up[0], up[2]), fall = between(down[2], down[0]);
+      return { tVmax: voltage.tVmax - (start + duration / 2 + (settings.horizontalPositionDivisions ?? 0) * settings.timePerDivision),
+        tVmin: voltage.tVmin - (start + duration / 2 + (settings.horizontalPositionDivisions ?? 0) * settings.timePerDivision), Period: period, Freq: period > 0 ? 1 / period : undefined,
+        'Rise Time': rise, 'Fall Time': fall,
+        '+Pulses': positiveCount, '-Pulses': negativeCount, '+Edges': positiveCount, '-Edges': negativeCount,
+        '+Rate': rise > 0 ? .8 * voltage.Vpp / rise : undefined, '-Rate': fall > 0 ? -.8 * voltage.Vpp / fall : undefined,
         '+Width': positive, '-Width': negative,
         '+Duty': period > 0 && positive !== undefined ? positive / period * 100 : undefined,
         '-Duty': period > 0 && negative !== undefined ? negative / period * 100 : undefined,
@@ -399,9 +434,25 @@
     },
     formatTimeMeasurement(value, name) {
       if (!Number.isFinite(value)) return '*****';
+      if (['+Pulses','-Pulses','+Edges','-Edges'].includes(name)) return String(Math.round(value));
+      if (name === '+Rate' || name === '-Rate') {
+        const [factor,unit] = Math.abs(value) >= 1e9 ? [1e9,'GV/s'] : Math.abs(value) >= 1e6 ? [1e6,'MV/s'] : Math.abs(value) >= 1e3 ? [1e3,'kV/s'] : [1,'V/s'];
+        return `${(value/factor).toPrecision(3)}${unit}`;
+      }
       if (name.includes('Duty')) return `${value.toFixed(2)}%`;
       if (name.startsWith('Phase')) return `${value.toFixed(2)}°`;
       return this.formatCursorValue(value, name === 'Freq');
+    },
+    formatVoltageMeasurement(value, parameter) {
+      if (parameter === 'Area' || parameter === 'Per.Area') {
+        if (!Number.isFinite(value)) return '*****';
+        const magnitude = Math.abs(value), [factor,unit] = magnitude >= 1 || value === 0 ? [1,'Vs'] : magnitude >= 1e-3 ? [1e-3,'mVs'] : magnitude >= 1e-6 ? [1e-6,'uVs'] : [1e-9,'nVs'];
+        return `${(value / factor).toPrecision(3)}${unit}`;
+      }
+      if (parameter !== 'Variance') return this.formatMeasurement(value, ['Overshoot','Preshoot'].includes(parameter));
+      if (!Number.isFinite(value)) return '*****';
+      const [factor, unit] = Math.abs(value) >= 1 || value === 0 ? [1, 'V²'] : Math.abs(value) >= 1e-6 ? [1e-6, 'mV²'] : [1e-12, 'uV²'];
+      return `${(value / factor).toPrecision(3)}${unit}`;
     },
     formatMeasurement(value, percentage = false) {
       if (!Number.isFinite(value)) return '*****';
@@ -499,13 +550,34 @@
         ? this.renderManualCursors(settings, { left, top, width, height }, horizontalDivisions) : '';
       if (presentation.traceLayerOnly) {
         const clip = `${idPrefix}TraceClip`;
+        const oneKeyStatistics = {};
+        const oneKeyTime = channel => {
+          if (!(channel in oneKeyStatistics)) oneKeyStatistics[channel] = { voltage: channel > 2 || generator.output1Enabled === false ? null
+            : this.voltageStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel) };
+          const statistics = oneKeyStatistics[channel];
+          if (!('time' in statistics)) statistics.time = this.timeStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel, statistics.voltage);
+          return statistics.time;
+        };
+        const oneKeyReadings = !presentation.oneKeyMeasurements ? '' : `<g data-one-key-results="true" font-family="Arial,sans-serif" font-size="13" font-weight="700">${settings.oneKey.measurements.map((item, index) => {
+          const temporal = this.timeMeasurementsPlus.includes(item.parameter), cross = item.parameter.startsWith('Delay') || item.parameter.startsWith('Phase');
+          let value;
+          if (cross) value = this.formatTimeMeasurement(this.channelDelay(oneKeyTime(1), oneKeyTime(2), item.parameter.endsWith('Fall'), item.parameter.startsWith('Phase')), item.parameter);
+          else if (temporal) value = this.formatTimeMeasurement(oneKeyTime(item.channel)?.[item.parameter], item.parameter);
+          else {
+            if (!(item.channel in oneKeyStatistics)) oneKeyStatistics[item.channel] = { voltage: item.channel > 2 || generator.output1Enabled === false ? null
+              : this.voltageStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, item.channel) };
+            value = this.formatVoltageMeasurement(oneKeyStatistics[item.channel].voltage?.[item.parameter], item.parameter);
+          }
+          const text = `${this.timeMeasurementLabel(item.parameter)}=${value}`, slot = width / 5;
+          return `<text data-one-key-parameter="${item.parameter}" data-one-key-channel="${item.channel}" x="${left + index * slot + 2}" y="${top + height + 17}" fill="${channelColor(item.channel)}" textLength="${Math.min(slot - 5, text.length * 7)}" lengthAdjust="spacingAndGlyphs">${text}</text>`;
+        }).join('')}</g>`;
         const levelOverlay = !presentation.persistentTriggerMarker ? '' : `<g data-trigger-level="${settings.trigger.level}" fill="#ff9e3d">
           ${settings.trigger.showLevel && levelY >= top && levelY <= top + height ? `<line data-trigger-level-line="true" x1="${left}" x2="${left + width}" y1="${levelY}" y2="${levelY}" stroke="#ff9e3d" stroke-width="1.5" stroke-dasharray="6 4"/>` : ''}
           <g data-trigger-marker="true" transform="translate(${left + width + 20} ${levelMarkerY})"><path d="M0 -7h-10l-8 7 8 7H0Z"/><text x="-7" y="4" text-anchor="middle" fill="#030709" font-family="Arial,sans-serif" font-size="11" font-weight="700">T</text></g>
           ${settings.trigger.showLevel ? `<text data-trigger-readout="true" x="${left + 4}" y="${top + height - 8}" font-family="Arial,sans-serif" font-size="15">${triggerLabel}</text>` : ''}
         </g>`;
         const order = [...channelNumbers.filter(channel => channel !== settings.selectedChannel), settings.selectedChannel].filter(channel => channelNumbers.includes(channel));
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${presentation.plotGeometry?.viewHeight ?? 420}" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="${clip}"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs><g fill="none" clip-path="url(#${clip})" stroke-width="2" stroke-linejoin="round">${traces}</g>${order.map(groundMarker).join('')}${timeZeroMarker}${manualCursors}${levelOverlay}</svg>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${presentation.plotGeometry?.viewHeight ?? 420}" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="${clip}"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs><g fill="none" clip-path="url(#${clip})" stroke-width="2" stroke-linejoin="round">${traces}</g>${order.map(groundMarker).join('')}${timeZeroMarker}${manualCursors}${levelOverlay}${oneKeyReadings}</svg>`;
       }
       const cursorSource = settings.cursors?.source ?? 1;
       const showCursors = presentation.showCursors !== false && settings.cursorsEnabled && settings.channels[cursorSource]?.visible;

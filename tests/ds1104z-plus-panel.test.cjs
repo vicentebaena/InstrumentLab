@@ -42,7 +42,7 @@ const markup = element('ds1104zplusScreen').innerHTML;
 assert.equal((markup.match(/data-grid-column=/g) || []).length, 13);
 assert.equal((markup.match(/data-grid-row=/g) || []).length, 9);
 assert.ok(markup.includes('fill="#000"'));
-assert.ok(!/data-measurement|<button|tabindex=/.test(markup));
+assert.ok(!/data-measurement=|<button|tabindex=/.test(markup));
 assert.ok(markup.includes('data-trace-channel="1"'));
 assert.ok(markup.includes('data-trace-channel="2"'));
 assert.ok(!markup.includes('data-trace-channel="3"'));
@@ -602,3 +602,76 @@ assert.equal(app.oscilloscope.cursorReadings(measured,12).inverseDeltaX,Infinity
 assert.equal(practice.oscilloscope.cursorsEnabled,false);
 controller.actions.auto();panel.render();
 console.log('Plus cursors: all four solid/dashed lines, seven live coordinates, exclusive A/B/AB, paired clamping, both axes, four sources, hidden menus/channels, preview suppression and reset.');
+
+// Permanent left measurement menu pages six at a time, independently of the right menu.
+controller.actions.auto();panel.render();
+const menuParameters = () => Array.from(display().matchAll(/data-voltage-measurement="([^"]+)"/g),match=>match[1]);
+const pageUp = element('ds1104zplusMeasurementPageUp'), pageDown = element('ds1104zplusMeasurementPageDown');
+assert.deepEqual(menuParameters(),['Vmax','Vmin','Vpp','Vtop','Vbase','Vamp']);
+assert.equal(pageUp.disabled,true);assert.equal(pageDown.disabled,false);
+pageDown.click();assert.deepEqual(menuParameters(),['Vupper','Vmid','Vlower','Vavg','Vrms','Overshoot']);
+pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Variance','Area','Per.Area']);
+assert.equal(pageDown.disabled,true);assert.equal(element('ds1104zplusMeasurement5Key').disabled,true);
+pageDown.click();assert.equal(controller.getSettings().oneKey.page,2);
+pageUp.click();pageUp.click();pageUp.click();assert.equal(controller.getSettings().oneKey.page,0);
+for(const channel of [1,2,3,4]) {
+  element(`ds1104zplusCH${channel}`).click();
+  assert.ok(display().includes(`style="color:${adapter.colors[channel]}" aria-label="Vertical measurements"`));
+  element('ds1104zplusMeasurement1Key').click();
+  assert.ok(display().includes(`data-one-key-parameter="Vmax" data-one-key-channel="${channel}"`));
+}
+triggerMenuKey.click();assert.deepEqual(menuParameters(),['Vmax','Vmin','Vpp','Vtop','Vbase','Vamp']);
+cursorsKey.click();assert.equal(menuParameters().length,6);
+panel.renderScreen(preview,{showMenus:false,showCursors:false});
+assert.ok(preview.innerHTML.includes('data-one-key-parameter="Vmax"'));
+assert.ok(!preview.innerHTML.includes('ds1104zplus-voltage-menu'));
+controller.actions.auto();panel.render();
+assert.equal(controller.getSettings().oneKey.page,0);assert.equal(controller.getSettings().oneKey.measurements.length,0);
+console.log('Permanent voltage menu: sixteen items, 6/6/4 pages, arrow bounds, selected-channel colours, one-key readings, menu independence and reset.');
+
+// Left MENU alternates vertical/time menus; page dots replace numeric fractions.
+controller.actions.auto();panel.render();
+const oneKeyMenu = element('ds1104zplusOneKeyMenuKey');
+assert.equal(controller.getSettings().oneKey.kind,'voltage');
+assert.equal((display().match(/data-measurement-group=/g)||[]).length,3);
+assert.ok(!/\b[1234]\/[234]\b/.test(display()));
+pageDown.click();assert.ok(display().includes('data-measurement-group="1" data-active="true"'));
+oneKeyMenu.click();
+assert.equal(controller.getSettings().oneKey.kind,'time');assert.equal(controller.getSettings().oneKey.page,0);
+const timeParameters = () => Array.from(display().matchAll(/data-time-measurement="([^"]+)"/g),match=>match[1]);
+assert.deepEqual(timeParameters(),['Period','Freq','Rise Time','Fall Time','+Width','-Width']);
+assert.ok(display().includes('<header>Horizontal</header>'));
+assert.equal(pageUp.disabled,true);assert.equal(pageDown.disabled,false);
+element('ds1104zplusMeasurement1Key').click();
+assert.equal(controller.getSettings().oneKey.measurements[0].parameter,'Period');
+assert.ok(display().includes('Period=1.00ms'));
+pageDown.click();assert.deepEqual(timeParameters(),['+Duty','-Duty','+Pulses','-Pulses','+Edges','-Edges']);
+assert.equal(pageDown.disabled,false);assert.equal(element('ds1104zplusMeasurement5Key').disabled,false);
+assert.ok(display().includes('data-measurement-group="1" data-active="true"'));
+oneKeyMenu.click();assert.equal(controller.getSettings().oneKey.kind,'voltage');assert.equal(menuParameters().length,6);
+assert.equal(controller.getSettings().oneKey.measurements[0].parameter,'Period','changing menu family retains readings');
+oneKeyMenu.click();assert.equal(timeParameters().length,6);
+controller.actions.auto();panel.render();assert.equal(controller.getSettings().oneKey.kind,'voltage');
+console.log('Left MENU switches voltage/time without losing readings; temporal group selection, family-specific dot indicator, no numeric fractions and reset.');
+
+controller.actions.oneKeyType();panel.render();
+pageDown.click();pageDown.click();
+assert.deepEqual(timeParameters(),['tVmax','tVmin','+Rate','-Rate','DelayRise','DelayFall']);
+assert.ok(display().includes('data-measurement-group="2" data-active="true"'));
+pageDown.click();assert.deepEqual(timeParameters(),['PhaseRise','PhaseFall']);
+assert.ok(display().includes('data-measurement-group="3" data-active="true"'));
+assert.equal(pageDown.disabled,true);assert.equal(element('ds1104zplusMeasurement3Key').disabled,true);
+controller.actions.auto();panel.render();
+console.log('Four horizontal pages match the supplied icons: 6/6/6/2, with the fourth dot active on Phase.');
+
+controller.actions.auto();panel.render();
+assert.equal((display().match(/data-measurement-group=/g)||[]).length,3);
+pageDown.click();assert.deepEqual(menuParameters(),['Vupper','Vmid','Vlower','Vavg','Vrms','Overshoot']);
+pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Variance','Area','Per.Area']);
+element('ds1104zplusMeasurement3Key').click();element('ds1104zplusMeasurement4Key').click();
+assert.ok(display().includes('data-one-key-parameter="Area"'));
+assert.ok(display().includes('data-one-key-parameter="Per.Area"'));
+assert.equal(element('ds1104zplusMeasurement5Key').disabled,true);
+assert.ok(display().includes('data-measurement-group="2" data-active="true"'));
+controller.actions.oneKeyType();panel.render();assert.equal((display().match(/data-measurement-group=/g)||[]).length,4);
+controller.actions.auto();panel.render();

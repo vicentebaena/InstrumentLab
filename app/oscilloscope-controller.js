@@ -70,6 +70,9 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
         }
         onChange();
       },
+      oneKeyType: () => update('toggleOneKeyType'),
+      oneKeyPage: direction => update('stepOneKeyPage', direction),
+      oneKeyMeasurement: slot => update('addOneKeyMeasurement', slot),
       measure: () => update('pressMeasure'),
       measureSource: () => update('toggleMeasureSource'),
       clearMeasurements: () => update('clearMeasurements'),

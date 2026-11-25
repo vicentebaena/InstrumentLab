@@ -81,3 +81,27 @@
 .ds1104zplus-cursors-key:focus-visible,.ds1104zplus-cursor-select-key:focus-visible,.ds1104zplus-cursor-source-key:focus-visible,.ds1104zplus-cursor-a-key:focus-visible,.ds1104zplus-cursor-b-key:focus-visible,.ds1104zplus-cursor-ab-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
 .ds1104zplus-cursor-menu dd[data-selected="true"]{border:2px solid #9edbff;box-shadow:0 0 3px #5badff}
 .ds1104zplus-cursor-axis-icon{width:30px!important;height:19px!important;display:inline-block!important;fill:none;stroke:currentColor;stroke-width:2}
+
+.ds1104zplus-voltage-menu{position:absolute;left:.5%;top:6.667%;width:7.1%;height:80%;pointer-events:none;font:400 11px/1.1 Arial,sans-serif;text-align:center}
+.ds1104zplus-voltage-menu header{height:15px;color:#c0c7ca;font-size:11px}
+.ds1104zplus-voltage-entries{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(6,minmax(0,1fr));height:calc(100% - 15px)}
+.ds1104zplus-voltage-entries>div{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;white-space:nowrap}
+.ds1104zplus-voltage-icon{display:block;width:33px;min-width:33px;height:27px;flex-shrink:0;transform:translateX(4px);background:linear-gradient(#242c31,#080d10);border:1px solid #58636b;border-radius:2px}
+.ds1104zplus-voltage-icon svg{width:100%;height:100%}
+.ds1104zplus-measure-page-dots{position:absolute;left:0;top:37%;width:6px!important;height:calc(var(--group-count)*6.5px)!important;fill:#b7c5cc}
+.ds1104zplus-voltage-entries>div{padding-left:4px}
+.ds1104zplus-measurement-key{position:absolute;left:1.25%;width:4.7%;height:5.6%;padding:0;border:2px solid transparent;border-radius:6px;background:transparent;color:transparent}
+.ds1104zplus-measurement-1{top:17.95%}.ds1104zplus-measurement-2{top:25.15%}.ds1104zplus-measurement-3{top:32.35%}.ds1104zplus-measurement-4{top:39.6%}.ds1104zplus-measurement-5{top:46.8%}.ds1104zplus-measurement-6{top:54%}
+.ds1104zplus-measurement-page-up,.ds1104zplus-measurement-page-down{position:absolute;left:1.2%;width:4.5%;height:5.6%;padding:0;border:2px solid transparent;border-radius:5px;background:transparent;color:transparent}
+.ds1104zplus-measurement-page-up{top:62%}.ds1104zplus-measurement-page-down{top:67.2%}
+.ds1104zplus-measurement-key:not(:disabled):hover,.ds1104zplus-measurement-page-up:not(:disabled):hover,.ds1104zplus-measurement-page-down:not(:disabled):hover{background:#78bdff22;border-color:#79baff}
+.ds1104zplus-measurement-key:focus-visible,.ds1104zplus-measurement-page-up:focus-visible,.ds1104zplus-measurement-page-down:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+
+.ds1104zplus-one-key-menu-key{position:absolute;left:1.25%;top:10.15%;width:4.7%;height:5.6%;padding:0;border:2px solid transparent;border-radius:5px;background:transparent;color:transparent}
+.ds1104zplus-one-key-menu-key:hover{background:#78bdff22;border-color:#79baff}
+.ds1104zplus-one-key-menu-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+
+.ds1104zplus-voltage-entries>div[data-time-measurement="Rise Time"]>span:last-child,.ds1104zplus-voltage-entries>div[data-time-measurement="Fall Time"]>span:last-child{align-self:flex-start;margin-left:-4px}
+
+.ds1104zplus-voltage-entries>div[data-label-lines="2"]>span:last-child{font-size:9px;line-height:9px}
+.ds1104zplus-voltage-entries>div[data-label-lines="2"]>.ds1104zplus-voltage-icon{height:22px}

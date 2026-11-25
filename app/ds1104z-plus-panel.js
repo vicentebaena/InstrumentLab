@@ -39,6 +39,38 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" preserveAspectRatio="none" role="group" aria-label="${label}">${readings}</svg>`;
   },
 
+  renderMeasurementMenu(settings) {
+    const scope = window.InstrumentLab.oscilloscope, color = this.colors[settings.selectedChannel];
+    const temporal = settings.oneKey.kind === 'time';
+    const groupCount = Math.ceil(scope.oneKeyParameters(settings).length / 6);
+    const entries = scope.oneKeyParameters(settings).slice(settings.oneKey.page * 6, settings.oneKey.page * 6 + 6);
+    const icon = parameter => {
+      if (temporal) {
+        if (parameter.startsWith('Phase')) return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M2 20C7 0 12 0 17 20S27 40 32 20S42 0 47 20M2 27C7 7 12 7 17 27S27 47 32 27S42 7 47 27" fill="none" stroke="#eef8ff"/><path d="M12 6H22m-3-3 3 3-3 3M15 3l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+        if (parameter.startsWith('Delay')) {
+          const falling = parameter.endsWith('Fall');
+          return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${falling ? 'M3 7H17V20H44M3 17H29V31H44' : 'M3 20H17V7H44M3 31H29V17H44'}" fill="none" stroke="#eef8ff" stroke-width="1.5"/><path d="M17 35H29m-3-3 3 3-3 3M20 32l-3 3 3 3" fill="none" stroke="currentColor"/></svg>`;
+        }
+        if (parameter.includes('Pulses') || parameter.includes('Edges')) {
+          const negative = parameter.startsWith('-');
+          return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${negative ? 'M2 7H7V23H14V7H22V23H29V7H37V23H44V7H47' : 'M2 23H7V7H14V23H22V7H29V23H37V7H44V23H47'}" fill="none" stroke="#eef8ff" stroke-width="1.4"/><text x="5" y="36" fill="currentColor" font-family="Arial,sans-serif" font-size="9">1   2   n</text>${parameter.includes('Edges') ? '<path d="M7 4V26M22 4V26M37 4V26" stroke="currentColor" stroke-dasharray="2 2"/>' : ''}</svg>`;
+        }
+        if (parameter === 'tVmax' || parameter === 'tVmin') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M3 25H15L19 7H28L32 25H45" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M4 33H${parameter === 'tVmax' ? 19 : 10}m-3-3 3 3-3 3M7 30l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+        const edge = ['Rise Time','Fall Time','+Rate','-Rate'].includes(parameter);
+        const signal = edge ? (['Rise Time','+Rate'].includes(parameter) ? 'M4 31H12L33 7H44' : 'M4 7H12L33 31H44') : 'M3 30H10V8H22V30H34V8H45';
+        const ends = parameter === '-Width' || parameter === '-Duty' ? [22,34] : parameter === 'Period' || parameter === 'Freq' ? [10,34] : [10,22];
+        return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${signal}" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M${ends[0]} 34H${ends[1]}m-3-3 3 3-3 3M${ends[0]+3} 31l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"/>${edge ? '<path d="M5 12H43M5 26H43" stroke="currentColor" stroke-dasharray="2 2"/>' : ''}</svg>`;
+      }
+      if (parameter === 'Vavg' || parameter === 'Vrms') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M13 19C18 1 23 1 28 19S38 37 43 19" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M5 31V${parameter === 'Vavg' ? 19 : 14}m-3 3 3-3 3 3M2 28l3 3 3-3M5 ${parameter === 'Vavg' ? 19 : 14}H45" fill="none" stroke="currentColor" stroke-dasharray="2 1"/><text x="39" y="8" fill="#eef8ff" font-size="8">n</text></svg>`;
+      if (parameter === 'Overshoot' || parameter === 'Preshoot') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${parameter === 'Overshoot' ? 'M3 29H15V12L18 5L21 12H33V29H45' : 'M3 11H15V26L18 33L21 26H33V11H45'}" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="${parameter === 'Overshoot' ? 'M5 5V12M2 5H22M2 12H35' : 'M5 26V33M2 26H35M2 33H22'}" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+      if (parameter === 'Area' || parameter === 'Per.Area') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M6 30H14V10H31V30H43Z" fill="currentColor" fill-opacity=".35"/><path d="M3 30H14V10H31V30H45" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M3 31H45" stroke="currentColor"/>${parameter === 'Per.Area' ? '<path d="M8 3H38M8 1V6M38 1V6" stroke="currentColor"/><text x="19" y="23" fill="currentColor" font-size="9">T</text>' : ''}</svg>`;
+      const levels = { Vmax: 7, Vmin: 31, Vpp: 7, Vtop: 10, Vbase: 28, Vamp: 10, Vupper: 12, Vmid: 19, Vlower: 26, Vavg: 19, Vrms: 15, Overshoot: 5, Preshoot: 33, Variance: 19 };
+      const y = levels[parameter];
+      return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M13 30H20V10H34V30H44" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M6 ${y}H45" stroke="currentColor" stroke-dasharray="2 2"/><path d="M8 31V${y}m-3 3 3-3 3 3M5 28l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/>${['Vpp','Vamp'].includes(parameter) ? '<path d="M39 10V30m-3-3 3 3 3-3M36 13l3-3 3 3" fill="none" stroke="currentColor"/>' : ''}</svg>`;
+    };
+    const caption = parameter => ({ DelayRise: 'Delay↗<br>1→2', DelayFall: 'Delay↘<br>1→2', PhaseRise: 'Phase↗<br>1→2', PhaseFall: 'Phase↘<br>1→2' }[parameter] ?? parameter);
+    return `<aside class="ds1104zplus-voltage-menu" style="color:${color}" aria-label="${temporal ? 'Horizontal' : 'Vertical'} measurements"><header>${temporal ? 'Horizontal' : 'Vertical'}</header><div class="ds1104zplus-voltage-entries">${Array.from({length:6}, (_,slot) => entries[slot] ? `<div data-${temporal ? 'time' : 'voltage'}-measurement="${entries[slot]}" data-label-lines="${/^(Delay|Phase)/.test(entries[slot]) ? 2 : 1}"><span class="ds1104zplus-voltage-icon">${icon(entries[slot])}</span><span>${caption(entries[slot])}</span></div>` : '<div aria-hidden="true"></div>').join('')}</div><svg class="ds1104zplus-measure-page-dots" style="--group-count:${groupCount}" viewBox="0 0 8 ${groupCount * 8}" aria-hidden="true">${Array.from({length:groupCount}, (_,index) => `<circle data-measurement-group="${index}" data-active="${settings.oneKey.page === index}" cx="4" cy="${4 + index * 8}" r="${settings.oneKey.page === index ? 2.7 : 1.4}"/>`).join('')}</svg></aside>`;
+  },
   create({ controller, t }) {
     const $ = id => document.getElementById(id);
     const frame = window.InstrumentLab.createInstrumentWindow({
@@ -51,6 +83,13 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     for (const [channel, button] of Object.entries(buttons)) {
       button.addEventListener('click', () => controller.actions.channel(Number(channel)));
     }
+    $('ds1104zplusOneKeyMenuKey').addEventListener('click', controller.actions.oneKeyType);
+    const measurementKeys = Array.from({length:6}, (_,slot) => $(`ds1104zplusMeasurement${slot + 1}Key`));
+    measurementKeys.forEach((key,slot) => key.addEventListener('click', () => controller.actions.oneKeyMeasurement(slot)));
+    const measurementPageUp = $('ds1104zplusMeasurementPageUp');
+    const measurementPageDown = $('ds1104zplusMeasurementPageDown');
+    measurementPageUp.addEventListener('click', () => controller.actions.oneKeyPage(-1));
+    measurementPageDown.addEventListener('click', () => controller.actions.oneKeyPage(1));
     const cursorsKey = $('ds1104zplusCursorsKey');
     const cursorSelectKey = $('ds1104zplusCursorSelectKey');
     const cursorSourceKey = $('ds1104zplusCursorSourceKey');
@@ -134,10 +173,10 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     const screenMarkup = ({ idPrefix = 'ds1104zplus', showMenus = true, showCursors = true } = {}) => {
       const settings = controller.getSettings();
       const g = this.geometry;
-      const traces = controller.getDisplay({ idPrefix, horizontalDivisions: g.columns, cellWidth: g.cell, traceLayerOnly: true, persistentTriggerMarker: true, cursorAxes: 'both', showCursors,
+      const traces = controller.getDisplay({ idPrefix, horizontalDivisions: g.columns, cellWidth: g.cell, traceLayerOnly: true, persistentTriggerMarker: true, cursorAxes: 'both', showCursors, oneKeyMeasurements: true,
         channelNumbers: [1, 2, 3, 4], channelColors: this.colors,
         plotGeometry: { left: g.left, top: g.top, width: g.columns * g.cell, height: g.rows * g.cell, viewWidth: g.width, viewHeight: g.height } });
-      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) + cursorMenu(settings) + cursorSourceSubmenu(settings) : '');
+      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? this.renderMeasurementMenu(settings) + menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) + cursorMenu(settings) + cursorSourceSubmenu(settings) : '');
     };
     const renderScreen = (target, options = {}) => {
       render();
@@ -150,6 +189,15 @@ window.InstrumentLab.DS1104ZPlusPanel = {
         button.setAttribute('aria-pressed', String(visible));
         button.setAttribute('aria-label', `CH${channel}: ${visible ? 'ON' : 'OFF'}`);
       }
+      measurementKeys.forEach((key, slot) => {
+        const parameter = scope.oneKeyParameters(settings)[settings.oneKey.page * 6 + slot];
+        key.disabled = !parameter;
+        key.setAttribute('aria-label', parameter ? `${parameter} · CH${settings.selectedChannel}` : '—');
+      });
+      measurementPageUp.setAttribute('aria-label', 'Previous measurement group');
+      measurementPageDown.setAttribute('aria-label', 'Next measurement group');
+      measurementPageUp.disabled = settings.oneKey.page === 0;
+      measurementPageDown.disabled = settings.oneKey.page === Math.ceil(scope.oneKeyParameters(settings).length / 6) - 1;
       cursorsKey.setAttribute('aria-expanded', String(Boolean(settings.cursorsMenuOpen)));
       cursorSelectKey.hidden = !settings.cursorsMenuOpen;
       cursorSelectKey.setAttribute('aria-label', t(settings.cursors.type === 'X' ? 'scopeCursorSelectVertical' : 'scopeCursorSelectHorizontal'));
