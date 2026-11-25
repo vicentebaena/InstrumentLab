@@ -48,7 +48,7 @@ assert.equal(practice.oscilloscope.acquisitionRunning, true);
 assert.notDeepEqual(display(), initial, 'resume uses the current live generator and circuit');
 // Stop an unlocked acquisition without losing the displayed phase.
 controller.actions.auto();
-for (let i = 0; i < 50; i++) controller.actions.triggerLevel(1);
+for (let i = 0; i < 70; i++) controller.actions.triggerLevel(1);
 assert.equal(controller.needsAnimation(), true);
 controller.advance(.023);
 const moving = display();

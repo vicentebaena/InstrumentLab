@@ -10,6 +10,7 @@ The application supports English and Spanish. It starts in Spanish and remembers
 
 - Explore an RC low-pass filter and change its resistance and capacitance.
 - Configure either Rigol DG822 channel using the LCD channel selector: independent sine or square wave, frequency, amplitude, DC offset and output enable. Both channel tabs show the waveform and fixed HighZ load.
+- Choose the oscilloscope model beside the circuit diagram. The DS1104Z Plus provides a 12 × 8 screen, four channel keys, a channel menu and per-channel coupling/voltage-scale readings. CH1/CH2 show the RC signals; unconnected CH3/CH4 show zero-voltage lines when enabled. Its Coupling (DC/AC/GND) and Probe (0.01X–1000X) submenus use the blue keys and multifunction knob; Invert toggles channel polarity, and the vertical scale knob provides 1–2–5 steps from 1 mV/div to 10 V/div. The horizontal scale knob covers 5 ns/div–50 s/div in 1–2–5 steps, with a live reading above the grid. Vertical and horizontal position knobs move the selected channel and the common time axis; an orange trigger arrow marks temporal zero above the grid. The trigger menu supports CH1–CH4 sources, rising/falling/either edge and level adjustment; its right-hand level arrow stays visible while the level line disappears after three seconds. Trigger type, sweep and settings remain display-only. Other submenus and physical controls are not implemented.
 - Practise with a Rigol DS1102E oscilloscope: channel visibility, scales, position, coupling, probe compensation, trigger, RUN/STOP, X/Y cursors and automatic measurements.
 - Switch each physical probe between X1 and X10 independently of the oscilloscope's probe setting.
 
@@ -23,7 +24,7 @@ Open the [online lab](https://vicentebaena.github.io/InstrumentLab/) in a modern
 4. Observe the signals on the main page. Open the oscilloscope for its menus, cursors and measurement controls. Turn knobs by dragging, using the mouse wheel or focusing them and using the arrow keys.
 5. Use **Restore defaults** or the oscilloscope's **AUTO** button to restore the active practice's initial configuration.
 
-The RC practice starts with **R = 1 kΩ**, **C = 100 nF** and a **1 kHz, 2 Vpp square wave with a +1 V DC offset**. Generator CH1 drives the input; oscilloscope CH1 measures the input and CH2 measures the capacitor voltage. Both probes share the circuit ground. Both oscilloscope ground references start two divisions below the screen centre.
+The RC practice starts with **R = 1 kΩ**, **C = 100 nF** and a **1 kHz, 3 Vpp square wave with a +1.5 V DC offset**. Generator CH1 drives the input; oscilloscope CH1 measures the input and CH2 measures the capacitor voltage. Both probes share the circuit ground. CH1/CH2 ground references start three divisions below the screen centre on both models. The Plus model’s unconnected CH3/CH4 start at the grid centre.
 
 ## Run locally
 

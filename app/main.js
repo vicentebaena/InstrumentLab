@@ -17,16 +17,30 @@
     t, format: number, onChange: render, onAuto: () => restorePractice()
   });
   const rigolScopePanel = window.InstrumentLab.DS1102EPanel.create({ controller: scopeController, t });
+  const plusScopeController = window.InstrumentLab.createOscilloscopeController({
+    getSettings: () => state.oscilloscopePlus,
+    setSettings: settings => { state.oscilloscopePlus = settings; },
+    getExperiment: () => ({ circuit: circuits[state.circuitId], parameters: state.parameters, generator: state.generator, probes: state.probes }),
+    t, format: number, onChange: render, onAuto: () => restorePractice()
+  });
+  const ds1104zPlusPanel = window.InstrumentLab.DS1104ZPlusPanel.create({ controller: plusScopeController, t });
+  let selectedScopeModel = 'ds1102e';
+  const scopeModels = {
+    ds1102e: { id: 'ds1102e', name: 'Rigol DS1102E', image: window.InstrumentLabImages.scope, labelKey: 'openRigolScope', dialogId: 'ds1102eDialog', panel: rigolScopePanel },
+    ds1104zplus: { id: 'ds1104zplus', name: 'Rigol DS1104Z Plus', image: window.InstrumentLabImages.ds1104zplusPhoto, labelKey: 'openDs1104zPlus', dialogId: 'ds1104zplusDialog', panel: ds1104zPlusPanel }
+  };
+  const selectedScope = () => scopeModels[selectedScopeModel];
+  const activeScopeController = () => selectedScopeModel === 'ds1102e' ? scopeController : plusScopeController;
   const probePanel = window.InstrumentLab.createProbePanel({
     getProbes: () => state.probes, t,
     onToggle: channel => { state.probes[channel] = state.probes[channel] === 10 ? 1 : 10; render(); }
   });
   let animationFrame = null, animationTime = null;
   function renderScopes() {
-    rigolScopePanel.renderScreen($('scopeDisplay'), { idPrefix: 'mainScope', showMenus: false, showCursors: false });
+    selectedScope().panel.renderScreen($('scopeDisplay'), { idPrefix: 'mainScope', showMenus: false, showCursors: false });
   }
   function syncAnimation() {
-    if (!scopeController.needsAnimation()) {
+    if (!activeScopeController().needsAnimation()) {
       if (animationFrame !== null) window.cancelAnimationFrame?.(animationFrame);
       animationFrame = null; animationTime = null;
     } else if (animationFrame === null && window.requestAnimationFrame) {
@@ -35,10 +49,10 @@
   }
   function animate(now) {
     animationFrame = null;
-    if (!scopeController.needsAnimation()) { animationTime = null; return; }
+    if (!activeScopeController().needsAnimation()) { animationTime = null; return; }
     if (animationTime === null) animationTime = now;
     if (now - animationTime >= 50) {
-      scopeController.advance((now - animationTime) / 1000);
+      activeScopeController().advance((now - animationTime) / 1000);
       animationTime = now;
       renderScopes();
     }
@@ -47,6 +61,7 @@
   function render() {
     document.documentElement.lang = language;
     $('language').value = language;
+    $('scopeModel').value = selectedScopeModel;
     for (const [parameter, id] of [['frequency', 'generatorFrequency'], ['amplitude', 'generatorAmplitude'], ['offset', 'generatorOffset']]) {
       const reading = generatorController.reading(parameter, 1);
       $(id).textContent = `${number(reading.value)} ${reading.unit}`;
@@ -60,7 +75,7 @@
     const circuit = circuits[state.circuitId];
     $('circuit').replaceChildren(...Object.entries(circuits).map(([id, item]) => new Option(t(item.titleKey), id, false, id === state.circuitId)));
     $('circuitTitle').textContent = t(circuit.titleKey);
-    $('diagram').innerHTML = circuit.diagram({ probes: state.probes, resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
+    $('diagram').innerHTML = circuit.diagram({ scopeModel: { ...selectedScope(), openLabel: t(selectedScope().labelKey) }, probes: state.probes, resistanceLabel: `${number(state.parameters.resistance / 1000)} kΩ`, capacitanceLabel: `${number(state.parameters.capacitance * 1e9)} nF` }, t);
     renderScopes();
     syncAnimation();
     const { tau, cutoff } = circuit.characteristics(state.parameters);
@@ -85,7 +100,7 @@
     const probe = event.target.closest('[data-probe]');
     if (probe) { probePanel.open(Number(probe.dataset.probe)); return; }
     if (event.target.closest('[data-instrument="dg822"]')) { dg822Panel.open(); return; }
-    if (event.target.closest('[data-instrument="ds1102e"]')) { rigolScopePanel.open(); return; }
+    if (event.target.closest('[data-instrument="ds1102e"], [data-instrument="ds1104zplus"]')) { selectedScope().panel.open(); return; }
     const target = event.target.closest('[data-parameter]');
     if (target) openEditor(target.dataset.parameter);
   });
@@ -95,8 +110,8 @@
     if (event.target.closest('[data-instrument="dg822"]') && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault(); dg822Panel.open(); return;
     }
-    if (event.target.closest('[data-instrument="ds1102e"]') && (event.key === 'Enter' || event.key === ' ')) {
-      event.preventDefault(); rigolScopePanel.open(); return;
+    if (event.target.closest('[data-instrument="ds1102e"], [data-instrument="ds1104zplus"]') && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault(); selectedScope().panel.open(); return;
     }
     const target = event.target.closest('[data-parameter]');
     if (target && (event.key === 'Enter' || event.key === ' ')) {
@@ -119,12 +134,22 @@
   });
   function restorePractice(circuitId = state.circuitId) {
     scopeController.resetTransient();
+    plusScopeController.resetTransient();
     Object.assign(state, window.InstrumentLab.createPracticeState(circuitId));
     dg822Panel.reset();
     render();
   }
   $('resetCircuit').addEventListener('click', () => restorePractice());
   $('circuit').addEventListener('change', event => restorePractice(event.target.value));
+  $('scopeModel').addEventListener('change', event => {
+    if (!Object.hasOwn(scopeModels, event.target.value)) return;
+    if (event.target.value !== selectedScopeModel) {
+      const previousWindow = $(selectedScope().dialogId);
+      if (previousWindow.open) previousWindow.close();
+    }
+    selectedScopeModel = event.target.value;
+    render();
+  });
   $('language').addEventListener('change', event => {
     language = event.target.value;
     try { localStorage.setItem('instrumentlab-language', language); } catch {}

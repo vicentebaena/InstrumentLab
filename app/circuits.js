@@ -8,7 +8,7 @@ window.InstrumentLab = {
       instrumentDefaults: {
         probes: { 1: 1, 2: 1 },
         generator: {
-          waveform: 'square', frequency: 1000, offset: 1, amplitudeVpp: 2,
+          waveform: 'square', frequency: 1000, offset: 1.5, amplitudeVpp: 3,
           output1Enabled: true, output2Enabled: false,
           frequencyUnit: 'kHz', amplitudeUnit: 'Vpp', offsetUnit: 'Vdc'
         },
@@ -16,8 +16,10 @@ window.InstrumentLab = {
           trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
           timePerDivision: 200e-6, horizontalPositionDivisions: 0, selectedChannel: 1, menuChannel: null,
           channels: {
-            1: { visible: true, voltsPerDivision: 0.5, positionDivisions: -2, coupling: 'DC', probe: 1 },
-            2: { visible: true, voltsPerDivision: 0.5, positionDivisions: -2, coupling: 'DC', probe: 1 }
+            1: { visible: true, voltsPerDivision: 0.5, positionDivisions: -3, coupling: 'DC', probe: 1 },
+            2: { visible: true, voltsPerDivision: 0.5, positionDivisions: -3, coupling: 'DC', probe: 1 },
+            3: { visible: false, positionDivisions: 0 },
+            4: { visible: false, positionDivisions: 0 }
           }
         }
       },
@@ -88,11 +90,12 @@ window.InstrumentLab = {
           output: offset + (high ? -peak + change : peak - change)
         };
       },
-      diagram({ resistanceLabel, capacitanceLabel, probes = {} }, t) {
-        return `<svg viewBox="0 -30 940 510" role="group" aria-labelledby="diagramTitle diagramDescription">
+      diagram({ resistanceLabel, capacitanceLabel, probes = {}, scopeModel = null }, t) {
+        scopeModel ||= { id: 'ds1102e', name: 'Rigol DS1102E', image: window.InstrumentLabImages.scope, openLabel: t('openRigolScope') };
+        return `<svg viewBox="0 -75 940 555" role="group" aria-labelledby="diagramTitle diagramDescription">
           <title id="diagramTitle">${t('rcTitle')}</title><desc id="diagramDescription">${t('diagramDescription')}</desc>
           <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#21363b"/></pattern></defs>
-          <rect y="-30" width="940" height="510" fill="url(#dots)"/>
+          <rect y="-75" width="940" height="555" fill="url(#dots)"/>
           <g fill="none" stroke="#afc4c5" stroke-width="3" stroke-linejoin="round">
             <path d="M190 320H275V205H395 M505 205H710V285 M710 310V400H175V345 M710 400V421 M688 421H732 M695 431H725 M704 441H716"/>
             <rect x="395" y="189" width="110" height="32" fill="#11272c"><title>${t('resistance')}: ${resistanceLabel}</title></rect>
@@ -119,15 +122,15 @@ window.InstrumentLab = {
             <image href="${window.InstrumentLabImages.generator}" x="35" y="238" width="220" height="110" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="31" y="234" width="228" height="118" rx="6" fill="transparent" stroke="transparent"/>
           </g>
-          <g class="instrument-target" data-instrument="ds1102e" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('openRigolScope')}">
-            <title>${t('scope')} · Rigol DS1102E</title>
-            <image href="${window.InstrumentLabImages.scope}" x="410" y="15" width="230" height="120" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
+          <g class="instrument-target" data-instrument="${scopeModel.id}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${scopeModel.openLabel}">
+            <title>${t('scope')} · ${scopeModel.name}</title>
+            <image href="${scopeModel.image}" x="410" y="15" width="230" height="120" preserveAspectRatio="xMidYMid meet" aria-hidden="true"/>
             <rect class="instrument-focus" x="406" y="11" width="238" height="128" rx="6" fill="transparent" stroke="transparent"/>
           </g>
           <g fill="#eef8f6" text-anchor="middle" font-family="system-ui,sans-serif" font-size="20">
             <text x="450" y="251" class="editable-value" data-parameter="resistance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editResistance')}: ${resistanceLabel}"><title>${t('resistance')}: ${resistanceLabel}</title>R = ${resistanceLabel}</text><text x="810" y="304" class="editable-value" data-parameter="capacitance" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${t('editCapacitance')}: ${capacitanceLabel}"><title>${t('capacitance')}: ${capacitanceLabel}</title>C = ${capacitanceLabel}</text>
             <text x="145" y="220" fill="#48d6c8">${t('generator')}</text>
-            <text x="525" y="-8" fill="#48d6c8">${t('scope')}</text>
+            <text id="scopeModelLabel" x="525" y="-52" fill="#48d6c8">${t('scope')}</text>
           </g>
           <g font-family="system-ui,sans-serif" font-size="17">
             <text x="305" y="145" text-anchor="end" fill="#f4d35e">CH1 · ${t('input')}</text>
@@ -152,7 +155,8 @@ window.InstrumentLab = {
       probes: { 1: 1, 2: 1, ...circuit.instrumentDefaults?.probes },
       generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator,
         channel2: { ...this.generatorDefaults.channel2, ...circuit.instrumentDefaults?.generator?.channel2 } },
-      oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope)
+      oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope),
+      oscilloscopePlus: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope, 4)
     };
   }
 };

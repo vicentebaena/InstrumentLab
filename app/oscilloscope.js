@@ -11,26 +11,31 @@
       measureVoltage: { pageSize: 4, target: 'measure', property: 'voltage', options: ['Vmax', 'Vmin', 'Vpp', 'Vtop', 'Vbase', 'Vamp', 'Vavg', 'Vrms', 'Overshoot', 'Preshoot'] },
       coupling: { property: 'coupling', options: ['DC', 'AC', 'GND'] },
       probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] },
+      probePlus: { property: 'probe', options: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000] },
       cursorSource: { target: 'cursors', property: 'source', options: [1, 2] },
+      triggerSourcePlus: { target: 'trigger', property: 'source', options: [1, 2, 3, 4] },
+      triggerSlopePlus: { target: 'trigger', property: 'slope', options: ['rising', 'falling', 'either'] },
       triggerSource: { target: 'trigger', property: 'source', options: [1, 2] },
       triggerSlope: { target: 'trigger', property: 'slope', options: ['rising', 'falling'] }
     },
     verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+    verticalScalesPlus: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+    horizontalScalesPlus: [5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5, 10, 20, 50],
     horizontalScales: [10e-6, 20e-6, 50e-6, 100e-6, 200e-6, 500e-6, 1e-3, 2e-3, 5e-3, 10e-3],
     formatTimeScale(value) {
       const labels = ['10.00us', '20.00us', '50.00us', '100.0us', '200.0us', '500.0us', '1.000ms', '2.000ms', '5.000ms', '10.00ms'];
-      return labels[this.horizontalScales.indexOf(value)];
+      return labels[this.horizontalScales.indexOf(value)] ?? this.formatCursorValue(value);
     },
     stepHorizontalPosition(state, direction) {
       const current = state.horizontalPositionDivisions ?? 0;
       const next = Math.max(-this.horizontalPositionLimit, Math.min(this.horizontalPositionLimit, Math.round((current + Math.sign(direction) * 0.1) * 10) / 10));
       return next === current ? state : { ...state, horizontalPositionDivisions: next };
     },
-    stepHorizontalScale(state, direction) {
-      const index = this.horizontalScales.indexOf(state.timePerDivision ?? defaults.timePerDivision);
-      const next = Math.max(0, Math.min(this.horizontalScales.length - 1, index + Math.sign(direction)));
+    stepHorizontalScale(state, direction, scales = this.horizontalScales) {
+      const index = scales.indexOf(state.timePerDivision ?? defaults.timePerDivision);
+      const next = Math.max(0, Math.min(scales.length - 1, index + Math.sign(direction)));
       if (index === next) return state;
-      return { ...state, timePerDivision: this.horizontalScales[next] };
+      return { ...state, timePerDivision: scales[next] };
     },
     formatCursorValue(value, frequency = false) {
       if (!Number.isFinite(value)) return frequency ? '∞Hz' : '∞s';
@@ -43,18 +48,19 @@
     formatVerticalScale(value) {
       return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
     },
-    createState(overrides = {}) {
+    createState(overrides = {}, channelCount = 2) {
       const state = {
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
         measurements: [],
         measure: { source: 1, voltage: 'Vmax', time: 'Period', displayAll: false }, measureEnabled: false, measureMenuOpen: false,
         cursors: { type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
-        channels: { 1: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
+        channels: { 1: { visible: true, coupling: 'DC', probe: 1, inverted: false, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, inverted: false, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
-      return { ...state, ...overrides, measurements: (overrides.measurements ?? []).map(item => ({ ...item })), measure: { ...state.measure, ...overrides.measure }, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: {
-        1: { ...state.channels[1], ...overrides.channels?.[1] },
-        2: { ...state.channels[2], ...overrides.channels?.[2] }
-      } };
+      for (let channel = 3; channel <= channelCount; channel++) {
+        state.channels[channel] = { ...state.channels[1], visible: false };
+      }
+      return { ...state, ...overrides, measurements: (overrides.measurements ?? []).map(item => ({ ...item })), measure: { ...state.measure, ...overrides.measure }, cursors: { ...state.cursors, ...overrides.cursors }, trigger: { ...state.trigger, ...overrides.trigger }, channels: Object.fromEntries(Object.entries(state.channels).map(([channel, defaults]) =>
+        [channel, { ...defaults, ...overrides.channels?.[channel] }])) };
     },
     hideTriggerLevel(state) {
       return { ...state, trigger: { ...state.trigger, showLevel: false } };
@@ -80,15 +86,15 @@
         }
       }
       const key = channel => channel === 1 ? 'input' : 'output';
-      const gain = channel => (settings.channels[channel].probe ?? 1) / (probes[channel] ?? 1);
+      const gain = channel => (settings.channels[channel].inverted ? -1 : 1) * (settings.channels[channel].probe ?? 1) / (probes[channel] ?? 1);
       const transform = (voltage, channel) => settings.channels[channel].coupling === 'GND' ? 0
-        : (voltage - (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0)) * gain(channel);
-      const toRaw = (level, channel) => level / gain(channel) + (settings.channels[channel].coupling === 'AC' ? mean[key(channel)] : 0);
+        : (voltage - (settings.channels[channel].coupling === 'AC' ? (mean[key(channel)] ?? 0) : 0)) * gain(channel);
+      const toRaw = (level, channel) => level / gain(channel) + (settings.channels[channel].coupling === 'AC' ? (mean[key(channel)] ?? 0) : 0);
       return {
         transform, toRaw,
-        sample: (time, channel) => transform(circuit.sample(time, parameters, generator)[key(channel)], channel),
+        sample: (time, channel) => channel > 2 ? 0 : transform(circuit.sample(time, parameters, generator)[key(channel)], channel),
         range(channel) {
-          if (settings.channels[channel].coupling === 'GND') return [0, 0];
+          if (channel > 2 || settings.channels[channel].coupling === 'GND') return [0, 0];
           let bounds = circuit.range?.(parameters, generator)?.[key(channel)];
           if (!bounds) {
             bounds = [Infinity, -Infinity];
@@ -97,17 +103,22 @@
               bounds[0] = Math.min(bounds[0], value); bounds[1] = Math.max(bounds[1], value);
             }
           }
-          return bounds.map(value => transform(value, channel));
+          return bounds.map(value => transform(value, channel)).sort((a, b) => a - b);
         }
       };
     },
     analyzeTrigger(circuit, parameters, generator, settings, signals = this.createSignals(circuit, parameters, generator, settings)) {
       const { source, level, slope = 'rising' } = settings.trigger || { source: 1, level: 0 };
+      if (slope === 'either') {
+        const results = ['rising', 'falling'].map(edge => this.analyzeTrigger(circuit, parameters, generator,
+          { ...settings, trigger: { ...settings.trigger, slope: edge } }, signals));
+        return results.filter(result => result.locked).sort((a, b) => a.time - b.time)[0] ?? results[0];
+      }
       const range = signals.range(source), amplitude = range[1] - range[0];
       const tolerance = Math.max(Math.abs(range[0]), Math.abs(range[1]), amplitude) * 1e-12;
       if (!(amplitude > 0) || level < range[0] - tolerance || level > range[1] + tolerance) return { locked: false, time: 0, range };
       if (circuit.triggerCrossing) {
-        const time = circuit.triggerCrossing(parameters, generator, source, signals.toRaw(level, source), slope);
+        const time = circuit.triggerCrossing(parameters, generator, source, signals.toRaw(level, source), settings.channels[source].inverted ? (slope === 'rising' ? 'falling' : 'rising') : slope);
         return { locked: Number.isFinite(time), time: Number.isFinite(time) ? time : 0, range };
       }
       const period = 1 / generator.frequency;
@@ -137,15 +148,22 @@
         [channel]: { ...state.channels[channel], positionDivisions: next }
       } };
     },
-    stepVerticalScale(state, direction) {
+    toggleInvert(state) {
+      const channel = state.menuChannel;
+      if (channel === null || !state.channels[channel]?.visible) return state;
+      return { ...state, submenu: null, submenuSelection: null, channels: { ...state.channels,
+        [channel]: { ...state.channels[channel], inverted: !state.channels[channel].inverted }
+      } };
+    },
+    stepVerticalScale(state, direction, scales = this.verticalScales) {
       const channel = state.selectedChannel;
       if (!state.channels[channel].visible) return state;
       const value = state.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
-      const index = this.verticalScales.indexOf(value);
-      const next = Math.max(0, Math.min(this.verticalScales.length - 1, index + Math.sign(direction)));
+      const index = scales.indexOf(value);
+      const next = Math.max(0, Math.min(scales.length - 1, index + Math.sign(direction)));
       if (next === index) return state;
       return { ...state, channels: { ...state.channels,
-        [channel]: { ...state.channels[channel], voltsPerDivision: this.verticalScales[next] }
+        [channel]: { ...state.channels[channel], voltsPerDivision: scales[next] }
       } };
     },
     submenuPage(options, selection, pageSize = 4, currentStart = null, pageStarts = null) {
@@ -264,7 +282,7 @@
       return { ...state, menuChannel: state.measureMenuOpen || state.cursorsMenuOpen || state.triggerMenuOpen || state.menuChannel !== null ? null : state.selectedChannel, measureMenuOpen: false, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null };
     },
     pressChannel(state, channel) {
-      if (![1, 2].includes(channel)) throw new RangeError('Unknown oscilloscope channel.');
+      if (!Number.isInteger(channel) || !Object.hasOwn(state.channels, channel)) throw new RangeError('Unknown oscilloscope channel.');
       const hide = state.menuChannel === channel && state.selectedChannel === channel && state.channels[channel].visible;
       return {
         ...state, selectedChannel: channel, menuChannel: hide ? null : channel, measureMenuOpen: false, cursorsMenuOpen: false, triggerMenuOpen: false, submenu: null, submenuSelection: null,
@@ -373,8 +391,12 @@
       const scale = channel => settings.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
       const show1 = settings.channels[1].visible, show2 = settings.channels[2].visible;
       const instrumentFooter = presentation.footerScales ?? false;
-      const left = 36, top = 44, width = (presentation.cellWidth ?? 56.8) * horizontalDivisions, height = 320;
-      const viewWidth = width + 2 * left;
+      const left = presentation.plotGeometry?.left ?? 36, top = presentation.plotGeometry?.top ?? 44;
+      const width = presentation.plotGeometry?.width ?? (presentation.cellWidth ?? 56.8) * horizontalDivisions;
+      const height = presentation.plotGeometry?.height ?? 320;
+      const viewWidth = presentation.plotGeometry?.viewWidth ?? width + 2 * left;
+      const channelNumbers = presentation.channelNumbers ?? [1, 2];
+      const channelColor = channel => presentation.channelColors?.[channel] ?? (channel === 1 ? '#f4d35e' : '#6ecbff');
       const timePerDivision = settings.timePerDivision ?? defaults.timePerDivision;
       const timeScaleLabel = this.formatTimeScale(timePerDivision);
       const timeLabel = instrumentFooter ? `Time ${timeScaleLabel}` : `H ${timeScaleLabel}/div`;
@@ -409,21 +431,23 @@
       const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key], key === 'input' ? 1 : 2).toFixed(3)}`).join(' ');
       // At unresolved frequencies show the actual range, not a false aliased trace.
       function band(peak, color, channel) {
-        const upper = Math.max(top, Math.min(top + height, y(generator.offset + peak, channel)));
-        const lower = Math.max(top, Math.min(top + height, y(generator.offset - peak, channel)));
-        if (y(generator.offset + peak, channel) > top + height || y(generator.offset - peak, channel) < top) return '';
-        return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3"/>`;
+        const bounds = [y(generator.offset + peak, channel), y(generator.offset - peak, channel)].sort((a, b) => a - b);
+        const upper = Math.max(top, Math.min(top + height, bounds[0]));
+        const lower = Math.max(top, Math.min(top + height, bounds[1]));
+        if (bounds[0] > top + height || bounds[1] < top) return '';
+        return `<rect x="${left}" y="${upper}" width="${width}" height="${Math.max(1, lower - upper)}" fill="${color}" fill-opacity="0.3" data-trace-channel="${channel}"/>`;
       }
       const channelTrace = channel => {
         if (!settings.channels[channel].visible) return '';
-        const color = channel === 1 ? '#f4d35e' : '#6ecbff';
-        if (settings.channels[channel].coupling === 'GND') return `<path d="M${left} ${zeroY(channel)}H${left + width}" stroke="${color}"/>`;
-        if (!dense) return `<path d="${trace(channel === 1 ? 'input' : 'output')}" stroke="${color}"/>`;
+        const color = channelColor(channel);
+        // The RC practice wires only CH1/CH2. Extra, unconnected channels stay at 0 V.
+        if (channel > 2 || settings.channels[channel].coupling === 'GND') return `<path d="M${left} ${zeroY(channel)}H${left + width}" stroke="${color}" data-trace-channel="${channel}"/>`;
+        if (!dense) return `<path d="${trace(channel === 1 ? 'input' : 'output')}" stroke="${color}" data-trace-channel="${channel}"/>`;
         const peak = generator.amplitudeVpp / 2 * (channel === 1 ? 1 : generator.waveform === 'sine'
           ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau)));
         return band(peak, color, channel);
       };
-      const traces = channelTrace(1) + channelTrace(2);
+      const traces = channelNumbers.map(channelTrace).join('');
       const channelScale = (channel, position) => {
         const visible = settings.channels[channel].visible;
         const color = visible ? (channel === 1 ? '#f4d35e' : '#6ecbff') : '#526066';
@@ -438,13 +462,24 @@
       // Draw the selected channel last, so its ground marker wins any overlap.
       const groundMarker = channel => {
         if (!settings.channels[channel].visible) return '';
-        const color = channel === 1 ? '#f4d35e' : '#6ecbff';
-        const x = 18, y0 = zeroY(channel);
+        const color = channelColor(channel);
+        const x = left - 18, y0 = zeroY(channel);
         return `<g data-ground-channel="${channel}" aria-label="CH${channel} 0 V" transform="translate(${x} ${y0})">
           <path d="M0 -10h9l7 10-7 10H0z" fill="${color}"/>
           <text x="6" y="4" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#030709">${channel}</text>
         </g>`;
       };
+      const timeZeroMarker = `<path data-time-zero="true" d="M${timeZeroX - 6} ${top - 20}h12v11l-6 8-6-8z" fill="#ff9e3d"/><text data-time-zero-label="true" x="${timeZeroX}" y="${top - 10}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#030709">T</text>`;
+      if (presentation.traceLayerOnly) {
+        const clip = `${idPrefix}TraceClip`;
+        const levelOverlay = !presentation.persistentTriggerMarker ? '' : `<g data-trigger-level="${settings.trigger.level}" fill="#ff9e3d">
+          ${settings.trigger.showLevel && levelY >= top && levelY <= top + height ? `<line data-trigger-level-line="true" x1="${left}" x2="${left + width}" y1="${levelY}" y2="${levelY}" stroke="#ff9e3d" stroke-width="1.5" stroke-dasharray="6 4"/>` : ''}
+          <g data-trigger-marker="true" transform="translate(${left + width + 20} ${levelMarkerY})"><path d="M0 -7h-10l-8 7 8 7H0Z"/><text x="-7" y="4" text-anchor="middle" fill="#030709" font-family="Arial,sans-serif" font-size="11" font-weight="700">T</text></g>
+          ${settings.trigger.showLevel ? `<text data-trigger-readout="true" x="${left + 4}" y="${top + height - 8}" font-family="Arial,sans-serif" font-size="15">${triggerLabel}</text>` : ''}
+        </g>`;
+        const order = [...channelNumbers.filter(channel => channel !== settings.selectedChannel), settings.selectedChannel].filter(channel => channelNumbers.includes(channel));
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${presentation.plotGeometry?.viewHeight ?? 420}" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="${clip}"><rect x="${left}" y="${top}" width="${width}" height="${height}"/></clipPath></defs><g fill="none" clip-path="url(#${clip})" stroke-width="2" stroke-linejoin="round">${traces}</g>${order.map(groundMarker).join('')}${timeZeroMarker}${levelOverlay}</svg>`;
+      }
       const cursorSource = settings.cursors?.source ?? 1;
       const showCursors = presentation.showCursors !== false && settings.cursorsEnabled && settings.channels[cursorSource]?.visible;
       const cursorType = settings.cursors?.type === 'Y' ? 'Y' : 'X';
@@ -521,8 +556,7 @@
         <g fill="#a7bbb7" font-family="system-ui,sans-serif" font-size="22">${instrumentFooter ? '' : `<text x="36" y="29">${timeLabel}</text>`}<text x="${left + width}" y="29" text-anchor="end">${format(Number((duration * 1000).toPrecision(12)))} ms</text></g>
         <g fill="none" stroke="#203038" stroke-width="1">${grid.join('')}</g>
         <path d="M${left} ${top + height / 2}h${width} M${timeZeroX} ${top}v${height}" fill="none" stroke="#40525b" stroke-dasharray="3 5"/>
-        <path data-time-zero="true" d="M${timeZeroX - 6} 24h12v11l-6 8-6-8z" fill="#ff9e3d"/>
-        <text data-time-zero-label="true" x="${timeZeroX}" y="34" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#030709">T</text>
+        ${timeZeroMarker}
 
         <g fill="none" clip-path="url(#${idPrefix}TraceClip)" stroke-width="2.4" stroke-linejoin="round">
           ${traces}

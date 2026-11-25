@@ -6,6 +6,7 @@ const app=c.window.InstrumentLab,scope=app.oscilloscope,circuit=app.circuits.rc;
 const createMeasurementPractice=()=>{
  const practice=app.createPracticeState('rc');
  practice.generator.offset=0;
+ practice.generator.amplitudeVpp=2;
  practice.oscilloscope.channels[1].positionDivisions=0;
  practice.oscilloscope.channels[2].positionDivisions=0;
  return practice;

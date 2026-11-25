@@ -1,0 +1,76 @@
+/* DS1104Z Plus: channel keys, Coupling and Probe submenus; other controls remain deferred. */
+.ds1104zplus-dialog{position:fixed;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1180px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);margin:0;padding:0;overflow:hidden;z-index:20;background:#e3e5e1;border:1px solid #7e9295;border-radius:12px;box-shadow:0 24px 100px #000b}
+.ds1104zplus-dialog:not([open]){display:none}
+.ds1104zplus-body{overflow:auto;max-height:calc(100dvh - 100px);padding:14px 10px 10px;background:linear-gradient(#e8ebe7,#c9ceca)}
+.ds1104zplus-front{position:relative;min-width:1000px;aspect-ratio:1738/905}
+.ds1104zplus-front>img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+.ds1104zplus-screen{position:absolute;left:7.94%;top:12.486%;width:50.518%;height:54.586%;background:#000;overflow:hidden;border-radius:2px;pointer-events:none}
+.ds1104zplus-screen svg,.ds1104zplus-screen-preview svg{display:block;width:100%;height:100%}
+.ds1104zplus-screen-preview{position:relative;aspect-ratio:800/480;background:#000}
+.scope-diagram-stage{position:relative;margin-top:24px;container-type:inline-size}
+.scope-diagram-stage .diagram-wrap{margin-top:0}
+.scope-model-control{position:absolute;left:calc(max(100cqw + 12px,660px)*.55851 - 6px);top:calc(max(100cqw + 12px,660px)*.045);transform:translateX(-50%);z-index:1;width:190px;max-width:40%;font-size:.8rem;color:var(--muted);text-align:center}
+.scope-model-control select{max-width:100%;padding:6px 25px 6px 8px;background-position:right 8px center;background-size:9px}
+@media(min-width:1400px){.scope-diagram-stage{margin-top:45px}}
+
+.ds1104zplus-screen-header,.ds1104zplus-channel-footer{position:absolute;inset:0;pointer-events:none}
+.ds1104zplus-traces{position:absolute;inset:0;pointer-events:none}
+.ds1104zplus-channel-key{position:absolute;left:67.8%;width:3.85%;height:4.45%;padding:0;border:1px solid #8d969e;border-radius:6px;background:linear-gradient(#e1e6e9,#bbc6ce);color:#424e57;font:500 12px/1 Arial,sans-serif;clip-path:polygon(12% 0,88% 0,100% 50%,88% 100%,12% 100%,0 50%)}
+.ds1104zplus-channel-one{top:32.2%}.ds1104zplus-channel-two{top:38.6%}.ds1104zplus-channel-three{top:45.2%}.ds1104zplus-channel-four{top:51.8%}
+.ds1104zplus-channel-key[aria-pressed="true"]{background:var(--channel-color);color:#14212a;box-shadow:inset 0 0 5px #fff8}
+.ds1104zplus-channel-key:hover{filter:brightness(1.12)}
+.ds1104zplus-channel-key:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+.ds1104zplus-channel-menu{position:absolute;left:88%;top:8.333%;width:11.3%;height:83.333%;font:400 13px/1.2 Arial,sans-serif;color:#99d3ff;pointer-events:none}
+.ds1104zplus-channel-menu dl{display:grid;grid-template-rows:repeat(6,minmax(0,1fr));height:100%;margin:0}
+.ds1104zplus-channel-menu dl>div{display:flex;flex-direction:column;justify-content:space-between;gap:0;padding:1px 0 3px;border:0;font:inherit}
+.ds1104zplus-channel-menu dt{position:relative;background:#142237;color:#a8dcff;border-top:1px solid #70b2e3;text-align:center;font:inherit;white-space:nowrap}
+.ds1104zplus-channel-menu dd{position:relative;display:flex;align-items:center;justify-content:center;flex:1;margin:0;border:1px solid #487da2;border-radius:2px;color:#a8dcff;font:inherit}
+.ds1104zplus-channel-menu dd.has-arrow::before{content:'◀';position:absolute;left:3px;color:#25cfff;font-size:9px}
+.ds1104zplus-menu-channel{position:absolute;right:calc(100% + 3px);top:5px;color:#a8dcff;writing-mode:vertical-rl;font-size:11px;font-weight:700}
+
+.ds1104zplus-front [hidden]{display:none!important}
+.ds1104zplus-coupling-key,.ds1104zplus-probe-key,.ds1104zplus-invert-key,.ds1104zplus-trigger-source-key,.ds1104zplus-trigger-slope-key{position:absolute;left:61.15%;top:17.95%;width:4.5%;height:5.6%;padding:0;border:2px solid transparent;border-radius:7px;background:transparent;color:transparent}
+.ds1104zplus-coupling-key:hover,.ds1104zplus-probe-key:hover,.ds1104zplus-invert-key:hover{background:#78bdff22;border-color:#79baff}
+.ds1104zplus-coupling-key:focus-visible,.ds1104zplus-probe-key:focus-visible,.ds1104zplus-invert-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-selection-knob{position:absolute;left:68.8%;top:18.6%;width:4.3%;height:8%;padding:0;border:2px solid transparent;border-radius:50%;background:transparent;touch-action:none;cursor:grab}
+.ds1104zplus-selection-knob:hover{border-color:#6aa5d577;background:#fff1}
+.ds1104zplus-selection-knob:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-selection-knob[aria-disabled="true"]{cursor:default}
+.ds1104zplus-selection-indicator{position:absolute;left:67.75%;top:14.6%;width:2.05%;height:3.5%;padding:2px;border-radius:50%;background:#e3e2df;fill:none;stroke:#5b625d;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.ds1104zplus-selection-indicator[data-active="true"]{stroke:#26382b;background:#e4edc2;box-shadow:0 0 5px 3px #d9fa52aa;filter:none}
+.ds1104zplus-coupling-submenu{position:absolute;left:72%;top:8.333%;width:14%;padding:1px 2px 3px;border:1px solid #5799df;border-radius:2px;background:#0c2039;color:#b8dcff;font:400 13px/1.3 Arial,sans-serif;pointer-events:none}
+.ds1104zplus-submenu-arrow{display:block;height:14px;line-height:14px;text-align:left;color:#9cd5ff;font-size:17px}
+.ds1104zplus-coupling-submenu>div{padding:1px 5px;text-align:center;border:1px solid transparent;line-height:1.25}
+.ds1104zplus-coupling-submenu>div[data-selected="true"]{background:#b6e1ff;color:#09203a;border-color:#7fc5ff}
+
+.ds1104zplus-probe-key{top:32.35%}
+.ds1104zplus-probe-submenu{height:83.333%;display:flex;flex-direction:column;font-size:11.5px}
+.ds1104zplus-probe-submenu .ds1104zplus-submenu-arrow{flex:0 0 14px}
+.ds1104zplus-probe-submenu>div{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+
+.ds1104zplus-invert-key{top:39.6%}
+.ds1104zplus-scale-knob,.ds1104zplus-time-scale-knob{position:absolute;left:76.525%;top:60.994%;width:6.5%;height:12.486%;transform:translate(-50%,-50%);border:2px solid transparent;border-radius:50%;background:transparent;touch-action:none;cursor:grab}
+.ds1104zplus-scale-knob:hover,.ds1104zplus-time-scale-knob:hover{border-color:#6aa5d577;background:#fff1}
+.ds1104zplus-scale-knob:focus-visible,.ds1104zplus-time-scale-knob:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-scale-knob[aria-disabled="true"]{cursor:default}
+
+.ds1104zplus-time-scale-knob{left:87.4%;top:61.215%}
+
+.ds1104zplus-position-knob,.ds1104zplus-horizontal-position-knob{position:absolute;left:76.64%;top:37.24%;width:4.5%;height:8.642%;transform:translate(-50%,-50%);border:2px solid transparent;border-radius:50%;background:transparent;touch-action:none;cursor:grab}
+.ds1104zplus-horizontal-position-knob{left:87.74%}
+.ds1104zplus-position-knob:hover,.ds1104zplus-horizontal-position-knob:hover{border-color:#6aa5d577;background:#fff1}
+.ds1104zplus-position-knob:focus-visible,.ds1104zplus-horizontal-position-knob:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-position-knob[aria-disabled="true"]{cursor:default}
+
+.ds1104zplus-trigger-source-key{top:25.15%}
+.ds1104zplus-trigger-slope-key{top:32.35%}
+.ds1104zplus-trigger-source-key:hover,.ds1104zplus-trigger-slope-key:hover{background:#78bdff22;border-color:#79baff}
+.ds1104zplus-trigger-source-key:focus-visible,.ds1104zplus-trigger-slope-key:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-trigger-menu-key{position:absolute;left:93.25%;top:55.1%;width:4.4%;height:5%;padding:0;border:2px solid transparent;border-radius:4px;background:transparent;color:transparent}
+.ds1104zplus-trigger-menu-key:hover{border-color:#79baff;background:#78bdff22}
+.ds1104zplus-trigger-menu-key:focus-visible{outline:2px solid #f4d35e}
+.ds1104zplus-trigger-level-knob{position:absolute;left:96.1%;top:48.5%;width:4.5%;height:8.642%;transform:translate(-50%,-50%);border:2px solid transparent;border-radius:50%;background:transparent;touch-action:none;cursor:grab}
+.ds1104zplus-trigger-level-knob:hover{border-color:#6aa5d577;background:#fff1}
+.ds1104zplus-trigger-level-knob:focus-visible{outline:2px solid #f4d35e;outline-offset:2px}
+.ds1104zplus-trigger-menu dl{grid-template-rows:repeat(6,minmax(0,1fr))}
+.ds1104zplus-slope-icon{width:30px!important;height:19px!important;display:inline-block!important;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
