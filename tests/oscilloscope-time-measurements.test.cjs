@@ -5,6 +5,7 @@ const app=c.window.InstrumentLab,scope=app.oscilloscope,circuit=app.circuits.rc;
 // Use a centred, zero-offset signal for the analytical measurement fixtures.
 const createMeasurementPractice=()=>{
  const practice=app.createPracticeState('rc');
+ practice.oscilloscope.noiseRms=0; // Analytical fixtures exclude instrument noise.
  practice.generator.offset=0;
  practice.generator.amplitudeVpp=2;
  practice.oscilloscope.channels[1].positionDivisions=0;

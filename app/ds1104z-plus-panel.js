@@ -45,7 +45,7 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     const groupCount = Math.ceil(scope.oneKeyParameters(settings).length / 6);
     const entries = scope.oneKeyParameters(settings).slice(settings.oneKey.page * 6, settings.oneKey.page * 6 + 6);
     const icon = parameter => {
-      if (temporal) {
+      if (temporal || scope.timeMeasurementsPlus.includes(parameter)) {
         if (parameter.startsWith('Phase')) return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M2 20C7 0 12 0 17 20S27 40 32 20S42 0 47 20M2 27C7 7 12 7 17 27S27 47 32 27S42 7 47 27" fill="none" stroke="#eef8ff"/><path d="M12 6H22m-3-3 3 3-3 3M15 3l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
         if (parameter.startsWith('Delay')) {
           const falling = parameter.endsWith('Fall');
@@ -61,7 +61,7 @@ window.InstrumentLab.DS1104ZPlusPanel = {
         const ends = parameter === '-Width' || parameter === '-Duty' ? [22,34] : parameter === 'Period' || parameter === 'Freq' ? [10,34] : [10,22];
         return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${signal}" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M${ends[0]} 34H${ends[1]}m-3-3 3 3-3 3M${ends[0]+3} 31l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"/>${edge ? '<path d="M5 12H43M5 26H43" stroke="currentColor" stroke-dasharray="2 2"/>' : ''}</svg>`;
       }
-      if (parameter === 'Vavg' || parameter === 'Vrms') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M13 19C18 1 23 1 28 19S38 37 43 19" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M5 31V${parameter === 'Vavg' ? 19 : 14}m-3 3 3-3 3 3M2 28l3 3 3-3M5 ${parameter === 'Vavg' ? 19 : 14}H45" fill="none" stroke="currentColor" stroke-dasharray="2 1"/><text x="39" y="8" fill="#eef8ff" font-size="8">n</text></svg>`;
+      if (['Vavg', 'Vrms', 'Per.Vrms', 'AC.Vrms'].includes(parameter)) return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M13 19C18 1 23 1 28 19S38 37 43 19" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M5 31V${parameter === 'Vavg' ? 19 : 14}m-3 3 3-3 3 3M2 28l3 3 3-3M5 ${parameter === 'Vavg' ? 19 : 14}H45" fill="none" stroke="currentColor" stroke-dasharray="2 1"/>${parameter === 'AC.Vrms' ? '' : `<text x="39" y="8" fill="#eef8ff" font-size="8">${parameter === 'Per.Vrms' ? 1 : 'n'}</text>`}</svg>`;
       if (parameter === 'Overshoot' || parameter === 'Preshoot') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="${parameter === 'Overshoot' ? 'M3 29H15V12L18 5L21 12H33V29H45' : 'M3 11H15V26L18 33L21 26H33V11H45'}" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="${parameter === 'Overshoot' ? 'M5 5V12M2 5H22M2 12H35' : 'M5 26V33M2 26H35M2 33H22'}" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
       if (parameter === 'Area' || parameter === 'Per.Area') return `<svg viewBox="0 0 48 38" aria-hidden="true"><path d="M6 30H14V10H31V30H43Z" fill="currentColor" fill-opacity=".35"/><path d="M3 30H14V10H31V30H45" fill="none" stroke="#eef8ff" stroke-width="1.7"/><path d="M3 31H45" stroke="currentColor"/>${parameter === 'Per.Area' ? '<path d="M8 3H38M8 1V6M38 1V6" stroke="currentColor"/><text x="19" y="23" fill="currentColor" font-size="9">T</text>' : ''}</svg>`;
       const levels = { Vmax: 7, Vmin: 31, Vpp: 7, Vtop: 10, Vbase: 28, Vamp: 10, Vupper: 12, Vmid: 19, Vlower: 26, Vavg: 19, Vrms: 15, Overshoot: 5, Preshoot: 33, Variance: 19 };
@@ -91,10 +91,14 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     measurementPageUp.addEventListener('click', () => controller.actions.oneKeyPage(-1));
     measurementPageDown.addEventListener('click', () => controller.actions.oneKeyPage(1));
     const cursorsKey = $('ds1104zplusCursorsKey');
+    const runStop = $('ds1104zplusRunStop');
+    runStop.addEventListener('click', controller.actions.runStop);
+    const cursorModeKey = $('ds1104zplusCursorModeKey');
     const cursorSelectKey = $('ds1104zplusCursorSelectKey');
     const cursorSourceKey = $('ds1104zplusCursorSourceKey');
     const cursorKeys = Object.fromEntries(['A','B','AB'].map(group => [group, $(`ds1104zplusCursor${group}Key`)]));
-    cursorsKey.addEventListener('click', controller.actions.cursors);
+    cursorsKey.addEventListener('click', controller.actions.cursorsPlus);
+    cursorModeKey.addEventListener('click', () => controller.actions.submenu('cursorModePlus'));
     cursorSelectKey.addEventListener('click', controller.actions.cursorType);
     cursorSourceKey.addEventListener('click', () => controller.actions.submenu('cursorSourcePlus'));
     for (const [group, key] of Object.entries(cursorKeys)) key.addEventListener('click', () => controller.actions.cursorGroup(group));
@@ -133,12 +137,12 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     const couplingOpen = settings => settings.menuChannel !== null && settings.submenu === 'coupling';
     const probeOpen = settings => settings.menuChannel !== null && settings.submenu === 'probePlus';
     const triggerSelectionOpen = settings => settings.triggerMenuOpen && ['triggerSourcePlus', 'triggerSlopePlus'].includes(settings.submenu);
-    const selectionOpen = settings => couplingOpen(settings) || probeOpen(settings) || triggerSelectionOpen(settings) || (settings.cursorsMenuOpen && settings.submenu === 'cursorSourcePlus');
+    const selectionOpen = settings => couplingOpen(settings) || probeOpen(settings) || triggerSelectionOpen(settings) || (settings.cursorsMenuOpen && ['cursorSourcePlus', 'cursorModePlus'].includes(settings.submenu));
     const knobActive = settings => selectionOpen(settings) || scope.canMoveCursors(settings, true);
     couplingKey.addEventListener('click', () => controller.actions.submenu('coupling'));
     probeKey.addEventListener('click', () => controller.actions.submenu('probePlus'));
     window.InstrumentLab.bindRotaryControl(selectionKnob, {
-      onStep: direction => controller.actions.selectionStep(direction, { allowHiddenCursors: true }), onPress: controller.actions.submenuConfirm,
+      onStep: direction => controller.actions.selectionStep(direction, { allowHiddenCursors: true, applyImmediately: true }), onPress: controller.actions.submenuConfirm,
       enabled: () => knobActive(controller.getSettings()), clockwiseStep: 1,
       keyDirections: { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
     });
@@ -162,13 +166,15 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     };
     const cursorMenu = settings => {
       if (!settings.cursorsMenuOpen) return '';
+      if (settings.cursors.mode !== 'Manual') return `<aside class="ds1104zplus-channel-menu ds1104zplus-cursor-menu" aria-label="Cursor"><span class="ds1104zplus-menu-channel">Cursor</span><dl><div><dt>Mode</dt><dd class="has-arrow">OFF</dd></div></dl></aside>`;
       const c = settings.cursors, values = scope.cursorReadings(settings, this.geometry.columns);
       const group = c.selectedA && c.selectedB ? 'AB' : c.selectedA ? 'A' : c.selectedB ? 'B' : null;
       const axis = c.type === 'Y' ? 'Y' : 'X';
       const value = cursor => axis === 'X' ? scope.formatCursorValue(values[`${cursor}X`]) : scope.formatMeasurement(values[`${cursor}Y`]);
       const selectIcon = `<svg class="ds1104zplus-cursor-axis-icon" viewBox="0 0 42 24" role="img" aria-label="${axis === 'X' ? 'Vertical cursors' : 'Horizontal cursors'}">${axis === 'X' ? '<path d="M14 2V22"/><path d="M28 2V22" stroke-dasharray="3 2"/>' : '<path d="M2 7H40"/><path d="M2 17H40" stroke-dasharray="3 2"/>'}</svg>`;
-      return `<aside class="ds1104zplus-channel-menu ds1104zplus-cursor-menu" aria-label="Cursor"><span class="ds1104zplus-menu-channel">Cursor</span><dl>${[['Mode','Manual',null],['Select',selectIcon,null],['Source',`CH${c.source}`,null],['CursorA',value('A'),'A'],['CursorB',value('B'),'B'],['CursorAB','↻','AB']].map(([label, text, entry]) => `<div><dt>${label}</dt><dd${entry ? ` data-cursor-selection="${entry}" data-selected="${group === entry}"` : ''}>${text}</dd></div>`).join('')}</dl></aside>`;
+      return `<aside class="ds1104zplus-channel-menu ds1104zplus-cursor-menu" aria-label="Cursor"><span class="ds1104zplus-menu-channel">Cursor</span><dl>${[['Mode','Manual',null],['Select',selectIcon,null],['Source',`CH${c.source}`,null],['CursorA',value('A'),'A'],['CursorB',value('B'),'B'],['CursorAB','↻','AB']].map(([label, text, entry]) => `<div><dt>${label}</dt><dd${label === 'Mode' ? ' class="has-arrow"' : ''}${entry ? ` data-cursor-selection="${entry}" data-selected="${group === entry}"` : ''}>${text}</dd></div>`).join('')}</dl></aside>`;
     };
+    const cursorModeSubmenu = settings => !settings.cursorsMenuOpen || settings.submenu !== 'cursorModePlus' ? '' : `<aside class="ds1104zplus-coupling-submenu" aria-label="Cursor mode"><span class="ds1104zplus-submenu-arrow" aria-hidden="true">↻</span>${['OFF', 'Manual', 'Track', 'Auto'].map(value => `<div data-cursor-mode-option="${value}" data-selected="${settings.submenuSelection === value}"${['Track', 'Auto'].includes(value) ? ' aria-disabled="true"' : ''}>${value}</div>`).join('')}</aside>`;
     const cursorSourceSubmenu = settings => !settings.cursorsMenuOpen || settings.submenu !== 'cursorSourcePlus' ? '' : `<aside class="ds1104zplus-coupling-submenu" aria-label="Cursor source"><span class="ds1104zplus-submenu-arrow" aria-hidden="true">↻</span>${scope.submenus.cursorSourcePlus.options.map(value => `<div data-cursor-source-option="${value}" data-selected="${settings.submenuSelection === value}">CH${value}</div>`).join('')}</aside>`;
     const screenMarkup = ({ idPrefix = 'ds1104zplus', showMenus = true, showCursors = true } = {}) => {
       const settings = controller.getSettings();
@@ -176,7 +182,7 @@ window.InstrumentLab.DS1104ZPlusPanel = {
       const traces = controller.getDisplay({ idPrefix, horizontalDivisions: g.columns, cellWidth: g.cell, traceLayerOnly: true, persistentTriggerMarker: true, cursorAxes: 'both', showCursors, oneKeyMeasurements: true,
         channelNumbers: [1, 2, 3, 4], channelColors: this.colors,
         plotGeometry: { left: g.left, top: g.top, width: g.columns * g.cell, height: g.rows * g.cell, viewWidth: g.width, viewHeight: g.height } });
-      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? this.renderMeasurementMenu(settings) + menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) + cursorMenu(settings) + cursorSourceSubmenu(settings) : '');
+      return this.renderGrid(t('scopePlusDescription')) + `<div class="ds1104zplus-screen-header">${this.renderHeader(settings)}</div>` + `<div class="ds1104zplus-traces">${traces}</div>` + `<div class="ds1104zplus-channel-footer">${this.renderChannelFooter(settings, t('scopeChannelReadings'))}</div>` + (showMenus ? this.renderMeasurementMenu(settings) + menu(settings) + couplingSubmenu(settings) + probeSubmenu(settings) + triggerMenu(settings) + triggerSubmenu(settings) + cursorMenu(settings) + cursorSourceSubmenu(settings) + cursorModeSubmenu(settings) : '');
     };
     const renderScreen = (target, options = {}) => {
       render();
@@ -184,6 +190,8 @@ window.InstrumentLab.DS1104ZPlusPanel = {
     };
     const render = () => {
       const settings = controller.getSettings();
+      runStop.setAttribute('aria-pressed', String(settings.acquisitionRunning === false));
+      runStop.setAttribute('aria-label', t(settings.acquisitionRunning === false ? 'scopeResume' : 'scopeStop'));
       for (const [channel, button] of Object.entries(buttons)) {
         const visible = settings.channels[channel].visible;
         button.setAttribute('aria-pressed', String(visible));
@@ -199,13 +207,16 @@ window.InstrumentLab.DS1104ZPlusPanel = {
       measurementPageUp.disabled = settings.oneKey.page === 0;
       measurementPageDown.disabled = settings.oneKey.page === Math.ceil(scope.oneKeyParameters(settings).length / 6) - 1;
       cursorsKey.setAttribute('aria-expanded', String(Boolean(settings.cursorsMenuOpen)));
-      cursorSelectKey.hidden = !settings.cursorsMenuOpen;
+      cursorModeKey.hidden = !settings.cursorsMenuOpen;
+      cursorModeKey.setAttribute('aria-expanded', String(settings.submenu === 'cursorModePlus'));
+      const manualMenu = settings.cursorsMenuOpen && settings.cursors.mode === 'Manual';
+      cursorSelectKey.hidden = !manualMenu;
       cursorSelectKey.setAttribute('aria-label', t(settings.cursors.type === 'X' ? 'scopeCursorSelectVertical' : 'scopeCursorSelectHorizontal'));
-      cursorSourceKey.hidden = !settings.cursorsMenuOpen;
+      cursorSourceKey.hidden = !manualMenu;
       cursorSourceKey.setAttribute('aria-label', t('scopeCursorSource'));
       cursorSourceKey.setAttribute('aria-expanded', String(settings.submenu === 'cursorSourcePlus'));
       for (const [group, key] of Object.entries(cursorKeys)) {
-        key.hidden = !settings.cursorsMenuOpen;
+        key.hidden = !manualMenu;
         const selected = group === 'AB' ? settings.cursors.selectedA && settings.cursors.selectedB
           : settings.cursors[`selected${group}`] && !settings.cursors[`selected${group === 'A' ? 'B' : 'A'}`];
         key.setAttribute('aria-pressed', String(Boolean(selected)));
@@ -235,7 +246,7 @@ window.InstrumentLab.DS1104ZPlusPanel = {
       }
       scaleKnob.title = t('scopeVerticalHelp');
       for (const [name, value] of Object.entries({ label: t('scopeVerticalScale'), valuemin: 0, valuemax: scope.verticalScalesPlus.length - 1,
-        valuenow: scope.verticalScalesPlus.indexOf(selected.voltsPerDivision), valuetext: `CH${settings.selectedChannel} ${scope.formatVerticalScale(selected.voltsPerDivision)}/div`, disabled: !selected.visible })) {
+        valuenow: scope.channelVerticalScales(settings, scope.verticalScalesPlus).indexOf(selected.voltsPerDivision), valuetext: `CH${settings.selectedChannel} ${scope.formatVerticalScale(selected.voltsPerDivision)}/div`, disabled: !selected.visible })) {
         scaleKnob.setAttribute(`aria-${name}`, String(value));
       }
       invertKey.hidden = settings.menuChannel === null;

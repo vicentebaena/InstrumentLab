@@ -155,8 +155,8 @@ window.InstrumentLab = {
       probes: { 1: 1, 2: 1, ...circuit.instrumentDefaults?.probes },
       generator: { ...this.generatorDefaults, ...circuit.instrumentDefaults?.generator,
         channel2: { ...this.generatorDefaults.channel2, ...circuit.instrumentDefaults?.generator?.channel2 } },
-      oscilloscope: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope),
-      oscilloscopePlus: this.oscilloscope.createState(circuit.instrumentDefaults?.oscilloscope, 4)
+      oscilloscope: this.oscilloscope.createState({ ...circuit.instrumentDefaults?.oscilloscope, noiseRms: 0.0006 }),
+      oscilloscopePlus: this.oscilloscope.createState({ ...circuit.instrumentDefaults?.oscilloscope, noiseRms: 0.0005 }, 4)
     };
   }
 };

@@ -144,4 +144,6 @@ assert.equal(scopePanel.getDisplay(), oldModelDisplay, 'the other model does not
 plusScopePanel.actions.submenu('coupling');
 plusScopePanel.actions.submenuStep(-1); plusScopePanel.actions.submenuStep(-1); plusScopePanel.actions.submenuConfirm();
 assert.equal(plusScopePanel.getAcquisition().locked, true);
-assert.equal(frames.size, 0, 'returning to DC cancels the free-run animation');
+assert.equal(frames.size, 1, 'locked acquisition still animates internal noise');
+plusScopePanel.actions.runStop();
+assert.equal(frames.size, 0, 'STOP freezes noise and cancels animation');

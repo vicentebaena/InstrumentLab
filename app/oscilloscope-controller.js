@@ -36,10 +36,12 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
     },
     needsAnimation() {
       const settings = getSettings(), { generator } = getExperiment();
-      return settings.acquisitionRunning !== false && generator.output1Enabled !== false && Object.values(settings.channels).some(channel => channel.visible && channel.coupling !== 'GND') && !this.getAcquisition().locked;
+      return settings.acquisitionRunning !== false && ((settings.noiseRms > 0 && Object.values(settings.channels).some(channel => channel.visible))
+        || (generator.output1Enabled !== false && Object.values(settings.channels).some(channel => channel.visible && channel.coupling !== 'GND') && !this.getAcquisition().locked));
     },
     advance(seconds) {
       if (getSettings().acquisitionRunning === false) return;
+      if (seconds > 0 && getSettings().noiseRms > 0) setSettings({ ...getSettings(), noiseSeed: ((getSettings().noiseSeed ?? 0) + 1) >>> 0 });
       if (this.getAcquisition().locked) freeRunOffset = 0;
       else {
         const period = 1 / getExperiment().generator.frequency;
@@ -78,6 +80,7 @@ window.InstrumentLab.createOscilloscopeController = ({ getSettings, setSettings,
       clearMeasurements: () => update('clearMeasurements'),
       displayAll: () => update('toggleDisplayAll'),
       cursors: () => update('pressCursors'),
+      cursorsPlus: () => update('pressCursorsPlus'),
       cursorType: () => update('toggleCursorType'),
       cursorSelection: cursor => update('toggleCursorSelection', cursor),
       cursorGroup: group => update('selectCursorGroup', group),

@@ -98,3 +98,23 @@ close(area.Area,.0004);assert.equal(area['Per.Area'],0);
 const fallbackArea=scope.voltageStatistics({...circuit,mean:undefined},circuit.defaults,generator,areaState,{},0,.002,1);
 close(fallbackArea['Per.Area'],.001);
 console.log('Area/Per.Area: signed integration, full-period mean, AC/probe/inversion transforms, short-window zero, squared-independent units and numerical fallback.');
+
+// RMS variants distinguish the complete period from the AC component of the visible interval.
+let rmsState=scope.createState({channels:{1:{voltsPerDivision:1}}});
+let rmsValues=scope.voltageStatistics(circuit,circuit.defaults,generator,rmsState,{},0,.002,1);
+close(rmsValues['Per.Vrms'],Math.sqrt(2));close(rmsValues['AC.Vrms'],1);
+assert.ok(rmsValues['Per.Vrms']>rmsValues['AC.Vrms'],'period RMS includes the DC component');
+rmsValues=scope.voltageStatistics(circuit,circuit.defaults,generator,rmsState,{},.0001,.0002,1);
+assert.equal(rmsValues['Per.Vrms'],undefined,'a complete period must be visible');close(rmsValues['AC.Vrms'],0);
+Object.assign(rmsState.channels[1],{probe:2,inverted:true});
+rmsValues=scope.voltageStatistics(circuit,circuit.defaults,generator,rmsState,{1:10},0,.002,1);
+close(rmsValues['Per.Vrms'],Math.sqrt(2)*.2);close(rmsValues['AC.Vrms'],.2);
+rmsState.channels[1].coupling='AC';
+rmsValues=scope.voltageStatistics(circuit,circuit.defaults,generator,rmsState,{1:10},0,.002,1);
+close(rmsValues['Per.Vrms'],.2);close(rmsValues['AC.Vrms'],.2);
+controller.actions.auto();liveGenerator=generator;settings.channels[1].voltsPerDivision=1;
+controller.actions.oneKeyPage(1);controller.actions.oneKeyPage(1);
+assert.deepEqual(Array.from(scope.oneKeyParameters(settings).slice(12)),['Preshoot','Area','Per.Area','Per.Vrms','AC.Vrms','Period']);
+controller.actions.oneKeyMeasurement(3);controller.actions.oneKeyMeasurement(4);controller.actions.oneKeyMeasurement(5);
+assert.ok(render().includes('Per.Vrms=1.41V'));assert.ok(render().includes('AC.Vrms='));assert.ok(render().includes('Period=1.00ms'));
+console.log('Photographed vertical third group: period RMS, AC-only RMS and confirmed Period entry, including DC/probe/inversion/coupling and incomplete-period handling.');

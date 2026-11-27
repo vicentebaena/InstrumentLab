@@ -13,6 +13,7 @@
       probe: { property: 'probe', options: [1, 5, 10, 20, 50, 100, 200, 500, 1000] },
       probePlus: { property: 'probe', options: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000] },
       cursorSourcePlus: { target: 'cursors', property: 'source', options: [1, 2, 3, 4] },
+      cursorModePlus: { target: 'cursors', property: 'mode', options: ['OFF', 'Manual'] },
       cursorSource: { target: 'cursors', property: 'source', options: [1, 2] },
       triggerSourcePlus: { target: 'trigger', property: 'source', options: [1, 2, 3, 4] },
       triggerSlopePlus: { target: 'trigger', property: 'slope', options: ['rising', 'falling', 'either'] },
@@ -20,7 +21,7 @@
       triggerSlope: { target: 'trigger', property: 'slope', options: ['rising', 'falling'] }
     },
     timeMeasurementsPlus: ['Period', 'Freq', 'Rise Time', 'Fall Time', '+Width', '-Width', '+Duty', '-Duty', '+Pulses', '-Pulses', '+Edges', '-Edges', 'tVmax', 'tVmin', '+Rate', '-Rate', 'DelayRise', 'DelayFall', 'PhaseRise', 'PhaseFall'],
-    voltageMeasurementsPlus: ['Vmax', 'Vmin', 'Vpp', 'Vtop', 'Vbase', 'Vamp', 'Vupper', 'Vmid', 'Vlower', 'Vavg', 'Vrms', 'Overshoot', 'Preshoot', 'Variance', 'Area', 'Per.Area'],
+    voltageMeasurementsPlus: ['Vmax', 'Vmin', 'Vpp', 'Vtop', 'Vbase', 'Vamp', 'Vupper', 'Vmid', 'Vlower', 'Vavg', 'Vrms', 'Overshoot', 'Preshoot', 'Area', 'Per.Area', 'Per.Vrms', 'AC.Vrms', 'Period'],
     verticalScales: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
     verticalScalesPlus: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
     horizontalScalesPlus: [5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5, 10, 20, 50],
@@ -49,15 +50,16 @@
       return `${(value / factor).toPrecision(3)}${unit}`;
     },
     formatVerticalScale(value) {
-      return value < 1 ? `${Math.round(value * 1000)}mV` : `${value.toFixed(2)}V`;
+      return value < 1 ? `${Number((value * 1000).toPrecision(12))}mV` : `${value.toFixed(2)}V`;
     },
     createState(overrides = {}, channelCount = 2) {
       const state = {
+        noiseRms: 0, noiseSeed: 0,
         trigger: { source: 1, level: 0, slope: 'rising', showLevel: false },
         oneKey: { kind: 'voltage', page: 0, measurements: [] },
         measurements: [],
         measure: { source: 1, voltage: 'Vmax', time: 'Period', displayAll: false }, measureEnabled: false, measureMenuOpen: false,
-        cursors: { type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
+        cursors: { mode: 'OFF', type: 'X', positionYA: 1 / 3, positionYB: 2 / 3, source: 1, selectedA: false, selectedB: false, positionA: 1 / 3, positionB: 2 / 3 }, cursorsEnabled: false, cursorsMenuOpen: false, acquisitionRunning: true, selectedChannel: 1, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null, horizontalPositionDivisions: 0, timePerDivision: defaults.timePerDivision,
         channels: { 1: { visible: true, coupling: 'DC', probe: 1, inverted: false, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 }, 2: { visible: true, coupling: 'DC', probe: 1, inverted: false, voltsPerDivision: defaults.voltsPerDivision, positionDivisions: 0 } }
       };
       for (let channel = 3; channel <= channelCount; channel++) {
@@ -94,9 +96,31 @@
       const transform = (voltage, channel) => settings.channels[channel].coupling === 'GND' ? 0
         : (voltage - (settings.channels[channel].coupling === 'AC' ? (mean[key(channel)] ?? 0) : 0)) * gain(channel);
       const toRaw = (level, channel) => level / gain(channel) + (settings.channels[channel].coupling === 'AC' ? (mean[key(channel)] ?? 0) : 0);
+      // Address Gaussian samples by acquisition, channel and time, so drawing,
+      // measurement and STOP always refer to the same realization. The 1 ns
+      // lattice is an educational noise source, not an analog bandwidth model.
+      const uniform = value => {
+        let bits = value | 0;
+        bits = Math.imul(bits ^ (bits >>> 16), 0x7feb352d);
+        bits = Math.imul(bits ^ (bits >>> 15), 0x846ca68b);
+        return ((bits ^ (bits >>> 16)) >>> 0) / 4294967296;
+      };
+      const instrumentSalt = Math.imul(Object.keys(settings.channels).length, 0x165667b1);
+      const noise = (time, channel) => {
+        if (!(settings.noiseRms > 0)) return 0;
+        const index = Math.floor(time * 1e9);
+        const address = (index | 0) ^ Math.imul(Math.floor(index / 4294967296), 0x27d4eb2d)
+          ^ Math.imul(channel, 0x9e3779b1) ^ instrumentSalt
+          ^ Math.imul(settings.noiseSeed ?? 0, 0x85ebca6b);
+        const gaussian = Math.sqrt(-2 * Math.log(Math.max(1 / 4294967296, uniform(address))))
+          * Math.cos(2 * Math.PI * uniform(address ^ 0x68bc21eb));
+        return settings.noiseRms * gaussian * (settings.channels[channel].probe ?? 1)
+          * (settings.channels[channel].inverted ? -1 : 1);
+      };
+      const idealSample = (time, channel) => channel > 2 ? 0 : transform(circuit.sample(time, parameters, generator)[key(channel)], channel);
       return {
-        transform, toRaw,
-        sample: (time, channel) => channel > 2 ? 0 : transform(circuit.sample(time, parameters, generator)[key(channel)], channel),
+        transform, toRaw, noise, idealSample,
+        sample: (time, channel) => idealSample(time, channel) + noise(time, channel),
         range(channel) {
           if (channel > 2 || settings.channels[channel].coupling === 'GND') return [0, 0];
           let bounds = circuit.range?.(parameters, generator)?.[key(channel)];
@@ -127,14 +151,14 @@
       }
       const period = 1 / generator.frequency;
       const polarity = slope === 'falling' ? -1 : 1;
-      let previousTime = -period / 4, previous = (signals.sample(previousTime, source) - level) * polarity;
+      let previousTime = -period / 4, previous = (signals.idealSample(previousTime, source) - level) * polarity;
       for (let i = 1; i <= 2048; i++) {
-        const time = -period / 4 + i * period / 2048, value = (signals.sample(time, source) - level) * polarity;
+        const time = -period / 4 + i * period / 2048, value = (signals.idealSample(time, source) - level) * polarity;
         if (previous < 0 && value >= 0) {
           let low = previousTime, high = time;
           for (let j = 0; j < 40; j++) {
             const middle = (low + high) / 2;
-            if ((signals.sample(middle, source) - level) * polarity < 0) low = middle; else high = middle;
+            if ((signals.idealSample(middle, source) - level) * polarity < 0) low = middle; else high = middle;
           }
           return { locked: true, time: (low + high) / 2, range };
         }
@@ -162,6 +186,7 @@
     stepVerticalScale(state, direction, scales = this.verticalScales) {
       const channel = state.selectedChannel;
       if (!state.channels[channel].visible) return state;
+      scales = this.channelVerticalScales(state, scales);
       const value = state.channels[channel].voltsPerDivision ?? defaults.voltsPerDivision;
       const index = scales.indexOf(value);
       const next = Math.max(0, Math.min(scales.length - 1, index + Math.sign(direction)));
@@ -169,6 +194,11 @@
       return { ...state, channels: { ...state.channels,
         [channel]: { ...state.channels[channel], voltsPerDivision: scales[next] }
       } };
+    },
+    channelVerticalScales(state, scales = this.verticalScales) {
+      if (scales !== this.verticalScalesPlus) return scales;
+      const probe = state.channels[state.selectedChannel].probe ?? 1;
+      return scales.map(value => Number((value * probe).toPrecision(12)));
     },
     submenuPage(options, selection, pageSize = 4, currentStart = null, pageStarts = null) {
       const index = Math.max(0, options.indexOf(selection));
@@ -194,8 +224,11 @@
       const definition = this.submenus[name];
       if (!definition) throw new RangeError('Unknown oscilloscope submenu.');
       if (!this.submenuActive(state, definition)) return state;
-      // Repeating the owning blue key advances the draft and wraps; the knob clamps.
-      if (state.submenu === name) return this.stepSubmenu(state, 1, true);
+      // The blue key applies each new option immediately and leaves the list open.
+      // Knob navigation still keeps a draft until the knob is pressed.
+      if (state.submenu === name) {
+        return this.applySubmenuSelection(this.stepSubmenu(state, 1, true));
+      }
       const target = this.submenuTarget(state, definition);
       return { ...state, submenu: name, submenuSelection: target[definition.property],
         submenuPageStart: definition.pageSize ? this.submenuPage(definition.options, target[definition.property], definition.pageSize, null, definition.pageStarts).start : null };
@@ -218,12 +251,23 @@
         const measurements = [...state.measurements.filter(item => item.channel !== entry.channel || item.parameter !== entry.parameter), entry].slice(-3);
         return { ...state, submenu: null, submenuSelection: null, measurements, measure: { ...state.measure, [definition.property]: state.submenuSelection } };
       }
-      if (definition.target === 'cursors') return { ...state, submenu: null, submenuSelection: null, cursors: { ...state.cursors, [definition.property]: state.submenuSelection } };
+      if (definition.target === 'cursors') return { ...state, submenu: null, submenuSelection: null,
+        ...(state.submenu === 'cursorModePlus' ? { cursorsEnabled: state.submenuSelection === 'Manual' } : {}),
+        cursors: { ...state.cursors, [definition.property]: state.submenuSelection,
+          ...(state.submenu === 'cursorModePlus' && state.submenuSelection === 'OFF' ? { selectedA: false, selectedB: false } : {}) } };
       if (definition.target === 'trigger') return { ...state, submenu: null, submenuSelection: null, trigger: { ...state.trigger, [definition.property]: state.submenuSelection } };
       const channel = state.menuChannel;
+      const selected = state.channels[channel];
+      const scaleChange = state.submenu === 'probePlus' ? {
+        voltsPerDivision: Number(((selected.voltsPerDivision ?? defaults.voltsPerDivision) * state.submenuSelection / (selected.probe ?? 1)).toPrecision(12))
+      } : {};
       return { ...state, submenu: null, submenuSelection: null, channels: { ...state.channels,
-        [channel]: { ...state.channels[channel], [definition.property]: state.submenuSelection }
+        [channel]: { ...selected, [definition.property]: state.submenuSelection, ...scaleChange }
       } };
+    },
+    applySubmenuSelection(state) {
+      return { ...this.confirmSubmenu(state), submenu: state.submenu,
+        submenuSelection: state.submenuSelection, submenuPageStart: state.submenuPageStart };
     },
     canMoveCursors(state, allowHidden = false) {
       return Boolean(state.cursorsEnabled && state.cursorsMenuOpen && (allowHidden || state.channels[state.cursors.source]?.visible) && (state.cursors.selectedA || state.cursors.selectedB));
@@ -232,9 +276,12 @@
       const definition = this.submenus[state.submenu];
       return state.submenu !== null ? Boolean(definition && this.submenuActive(state, definition)) : this.canMoveCursors(state);
     },
-    stepSelection(state, direction, { allowHiddenCursors = false } = {}) {
+    stepSelection(state, direction, { allowHiddenCursors = false, applyImmediately = false } = {}) {
       // An open submenu always owns the knob, even at the end of its list.
-      if (state.submenu !== null) return this.stepSubmenu(state, direction);
+      if (state.submenu !== null) {
+        const next = this.stepSubmenu(state, direction);
+        return applyImmediately && next.submenuSelection !== state.submenuSelection ? this.applySubmenuSelection(next) : next;
+      }
       if (!this.canMoveCursors(state, allowHiddenCursors)) return state;
       const keys = ['A', 'B'].filter(cursor => state.cursors[`selected${cursor}`]).map(cursor => `position${state.cursors.type === 'Y' ? 'Y' : ''}${cursor}`);
       const delta = Math.max(-Math.min(...keys.map(key => state.cursors[key])),
@@ -303,6 +350,12 @@
         cursors: enabled ? state.cursors : { ...state.cursors, selectedA: false, selectedB: false },
         menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null };
     },
+    pressCursorsPlus(state) {
+      const close = state.cursorsMenuOpen;
+      return { ...state, cursorsMenuOpen: !close, cursorsEnabled: close ? false : state.cursorsEnabled,
+        cursors: close ? { ...state.cursors, mode: 'OFF', selectedA: false, selectedB: false } : state.cursors,
+        measureMenuOpen: false, menuChannel: null, triggerMenuOpen: false, submenu: null, submenuSelection: null };
+    },
     openTriggerMenu(state) {
       return { ...state, triggerMenuOpen: true, measureMenuOpen: false, cursorsMenuOpen: false, menuChannel: null, submenu: null, submenuSelection: null };
     },
@@ -335,7 +388,7 @@
       return { ...state, oneKey: { ...state.oneKey, measurements } };
     },
     voltageStatistics(circuit, parameters, generator, settings, probes, start, duration, channel) {
-      if (!settings.channels[channel]?.visible || duration * generator.frequency > 128) return null;
+      if (!settings.channels[channel]?.visible || (channel <= 2 && generator.output1Enabled !== false && duration * generator.frequency > 128)) return null;
       const signals = this.createSignals(circuit, parameters, generator, settings, probes);
       const count = 4096, dt = duration / count;
       const values = Array.from({ length: count }, (_, i) => signals.sample(start + (i + 0.5) * dt, channel));
@@ -349,10 +402,12 @@
       const result = { Vmax: max, Vmin: min, tVmax: start + (values.indexOf(max) + .5) * dt, tVmin: start + (values.indexOf(min) + .5) * dt, Vpp: span, Vavg: average, Vrms: rms, Variance: values.reduce((sum, value) => sum + (value - average) ** 2, 0) / count };
       // Only infer top/base where a sustained flat region is visible. The manual
       // defines these as flat pulse levels, not as arbitrary waveform extrema.
-      if (span > 1e-12) {
+      const idealRange = signals.range(channel);
+      if (span > 1e-12 && idealRange[1] - idealRange[0] > 6 * (settings.noiseRms ?? 0) * (settings.channels[channel].probe ?? 1)) {
         const high = [], low = [];
+        const ideal = settings.noiseRms > 0 ? values.map((_, i) => signals.idealSample(start + (i + .5) * dt, channel)) : values;
         for (let i = 1; i < count - 1; i++) {
-          const slope = Math.abs(values[i + 1] - values[i - 1]) / (2 * dt);
+          const slope = Math.abs(ideal[i + 1] - ideal[i - 1]) / (2 * dt);
           if (slope <= span * generator.frequency * 0.02) {
             if (values[i] > min + span * 0.75) high.push(values[i]);
             if (values[i] < min + span * 0.25) low.push(values[i]);
@@ -366,17 +421,25 @@
             Overshoot: 100 * (max - top) / amplitude, Preshoot: 100 * (min - base) / amplitude });
         }
       }
+      result['AC.Vrms'] = Math.sqrt(result.Variance);
       result.Area = average * duration;
       const period = 1 / generator.frequency;
       if (duration < period * (1 - 1e-10)) result['Per.Area'] = 0;
-      else if (channel > 2) result['Per.Area'] = 0;
-      else if (circuit.mean) result['Per.Area'] = signals.transform(circuit.mean(parameters, generator)[channel === 1 ? 'input' : 'output'], channel) * period;
-      else result['Per.Area'] = Array.from({length:count}, (_,i) => signals.sample(start + (i + .5) * period / count, channel)).reduce((sum,value) => sum + value, 0) / count * period;
+      else {
+        const periodValues = Array.from({length:count}, (_,i) => signals.sample(start + (i + .5) * period / count, channel));
+        result['Per.Vrms'] = Math.sqrt(periodValues.reduce((sum,value) => sum + value * value, 0) / count);
+        if (settings.noiseRms > 0) result['Per.Area'] = periodValues.reduce((sum,value) => sum + value, 0) / count * period;
+        else if (channel > 2) result['Per.Area'] = 0;
+        else if (circuit.mean) result['Per.Area'] = signals.transform(circuit.mean(parameters, generator)[channel === 1 ? 'input' : 'output'], channel) * period;
+        else result['Per.Area'] = periodValues.reduce((sum,value) => sum + value, 0) / count * period;
+      }
       return result;
     },
     timeStatistics(circuit, parameters, generator, settings, probes, start, duration, channel, voltage) {
       if (!voltage || voltage.Vpp <= 1e-12) return null;
       const signals = this.createSignals(circuit, parameters, generator, settings, probes);
+      const idealRange = signals.range(channel);
+      if (settings.noiseRms > 0 && idealRange[1] - idealRange[0] < 6 * settings.noiseRms * (settings.channels[channel].probe ?? 1)) return null;
       const sample = time => signals.sample(time, channel), count = 4096;
       const levels = [0.1, 0.5, 0.9].map(fraction => voltage.Vmin + voltage.Vpp * fraction);
       const up = [[], [], []], down = [[], [], []];
@@ -497,14 +560,14 @@
           if (time >= start && time <= start + duration) times.add(time);
         }
       }
-      const samples = dense || !activeSignals ? [] : [...times].sort((a, b) => a - b).map(time => ({ time, ...circuit.sample(time, parameters, generator) }));
+      const samples = [...times].sort((a, b) => a - b);
       const x = time => left + (time - start) / duration * width;
       const zeroY = channel => top + height / 2 - (settings.channels[channel].positionDivisions ?? 0) * height / 8;
       const y = (voltage, channel) => zeroY(channel) - signals.transform(voltage, channel) / scale(channel) * height / 8;
       const levelY = settings.trigger ? zeroY(settings.trigger.source) - settings.trigger.level / scale(settings.trigger.source) * height / 8 : top + height / 2;
       const triggerLabel = settings.trigger ? `TRIG LVL= ${settings.trigger.level.toFixed(Math.abs(settings.trigger.level) > 0 && Math.abs(settings.trigger.level) < 0.01 ? 3 : 2)}V` : '';
       const levelMarkerY = Math.max(top, Math.min(top + height, levelY));
-      const trace = key => samples.map((sample, i) => `${i ? 'L' : 'M'}${x(sample.time).toFixed(3)},${y(sample[key], key === 'input' ? 1 : 2).toFixed(3)}`).join(' ');
+      const trace = channel => samples.map((time, i) => `${i ? 'L' : 'M'}${x(time).toFixed(3)},${(zeroY(channel) - signals.sample(time, channel) / scale(channel) * height / 8).toFixed(3)}`).join(' ');
       // At unresolved frequencies show the actual range, not a false aliased trace.
       function band(peak, color, channel) {
         const bounds = [y(generator.offset + peak, channel), y(generator.offset - peak, channel)].sort((a, b) => a - b);
@@ -516,9 +579,9 @@
       const channelTrace = channel => {
         if (!settings.channels[channel].visible) return '';
         const color = channelColor(channel);
-        // The RC practice wires only CH1/CH2. Extra, unconnected channels stay at 0 V.
-        if (channel > 2 || settings.channels[channel].coupling === 'GND') return `<path d="M${left} ${zeroY(channel)}H${left + width}" stroke="${color}" data-trace-channel="${channel}"/>`;
-        if (!dense) return `<path d="${trace(channel === 1 ? 'input' : 'output')}" stroke="${color}" data-trace-channel="${channel}"/>`;
+        // Internal scope noise remains even at GND, with no input, or on CH3/4.
+        if (channel > 2 || settings.channels[channel].coupling === 'GND') return `<path d="${settings.noiseRms > 0 ? trace(channel) : `M${left} ${zeroY(channel)}H${left + width}`}" stroke="${color}" data-trace-channel="${channel}"/>`;
+        if (!dense) return `<path d="${trace(channel)}" stroke="${color}" data-trace-channel="${channel}"/>`;
         const peak = generator.amplitudeVpp / 2 * (channel === 1 ? 1 : generator.waveform === 'sine'
           ? 1 / Math.hypot(1, 2 * Math.PI * generator.frequency * tau) : Math.tanh(period / (4 * tau)));
         return band(peak, color, channel);
@@ -552,7 +615,7 @@
         const clip = `${idPrefix}TraceClip`;
         const oneKeyStatistics = {};
         const oneKeyTime = channel => {
-          if (!(channel in oneKeyStatistics)) oneKeyStatistics[channel] = { voltage: channel > 2 || generator.output1Enabled === false ? null
+          if (!(channel in oneKeyStatistics)) oneKeyStatistics[channel] = { voltage: !(settings.noiseRms > 0) && (channel > 2 || generator.output1Enabled === false) ? null
             : this.voltageStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel) };
           const statistics = oneKeyStatistics[channel];
           if (!('time' in statistics)) statistics.time = this.timeStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, channel, statistics.voltage);
@@ -564,7 +627,7 @@
           if (cross) value = this.formatTimeMeasurement(this.channelDelay(oneKeyTime(1), oneKeyTime(2), item.parameter.endsWith('Fall'), item.parameter.startsWith('Phase')), item.parameter);
           else if (temporal) value = this.formatTimeMeasurement(oneKeyTime(item.channel)?.[item.parameter], item.parameter);
           else {
-            if (!(item.channel in oneKeyStatistics)) oneKeyStatistics[item.channel] = { voltage: item.channel > 2 || generator.output1Enabled === false ? null
+            if (!(item.channel in oneKeyStatistics)) oneKeyStatistics[item.channel] = { voltage: !(settings.noiseRms > 0) && (item.channel > 2 || generator.output1Enabled === false) ? null
               : this.voltageStatistics(circuit, parameters, generator, settings, presentation.probes, start, duration, item.channel) };
             value = this.formatVoltageMeasurement(oneKeyStatistics[item.channel].voltage?.[item.parameter], item.parameter);
           }

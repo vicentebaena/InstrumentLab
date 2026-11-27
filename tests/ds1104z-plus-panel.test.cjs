@@ -23,12 +23,14 @@ for (const name of ['circuits.js','oscilloscope.js','oscilloscope-controller.js'
 }
 const app = context.window.InstrumentLab;
 app.createInstrumentWindow = () => ({ open() { opens++; } });
-let practice = app.createPracticeState('rc');
+// Keep exact geometry/analytical fixtures noiseless; noise has dedicated coverage.
+const idealPractice = () => { const state = app.createPracticeState('rc'); state.oscilloscopePlus.noiseRms = 0; return state; };
+let practice = idealPractice();
 let panel;
 const controller = app.createOscilloscopeController({
   getSettings: () => practice.oscilloscopePlus, setSettings: state => { practice.oscilloscopePlus = state; },
   getExperiment: () => ({ circuit: app.circuits.rc, parameters: practice.parameters, generator: practice.generator, probes: practice.probes }),
-  t: key => app.translations.en[key], format: String, onChange() { panel?.render(); }, onAuto() { practice = app.createPracticeState('rc'); }
+  t: key => app.translations.en[key], format: String, onChange() { panel?.render(); }, onAuto() { practice = idealPractice(); }
 });
 const adapter = context.window.InstrumentLab.DS1104ZPlusPanel;
 const g = adapter.geometry;
@@ -148,8 +150,8 @@ assert.equal(indicator.attributes['data-active'], 'true');
 assert.equal(knob.attributes['aria-disabled'], 'false');
 couplingKey.click();
 assert.equal(controller.getSettings().submenuSelection, 'AC');
-assert.equal(controller.getSettings().channels[1].coupling, 'DC');
-assert.equal(trace(), dcTrace);
+assert.equal(controller.getSettings().channels[1].coupling, 'AC');
+assert.notEqual(trace(), dcTrace);
 couplingKey.click(); assert.equal(controller.getSettings().submenuSelection, 'GND');
 couplingKey.click(); assert.equal(controller.getSettings().submenuSelection, 'DC');
 knob.fire('keydown', { key: 'ArrowDown' });
@@ -172,7 +174,7 @@ knob.fire('pointerdown', { clientX: 50, clientY: 0 });
 knob.fire('pointermove', { clientX: 0, clientY: 50 });
 knob.fire('pointerup'); knob.click();
 assert.equal(controller.getSettings().submenu, 'coupling');
-assert.equal(controller.getSettings().channels[1].coupling, 'GND');
+assert.equal(controller.getSettings().channels[1].coupling, 'DC', 'drag applies immediately without the release click closing the submenu');
 // Changing channel cancels the draft and extinguishes the arrow.
 element('ds1104zplusCH2').click();
 assert.equal(controller.getSettings().submenu, null);
@@ -223,11 +225,11 @@ assert.equal((element('ds1104zplusScreen').innerHTML.match(/data-probe-option=/g
 const initialProbeTrace = trace();
 probeKey.click();
 assert.equal(controller.getSettings().submenuSelection, 2);
-assert.equal(controller.getSettings().channels[1].probe, 1);
-assert.equal(trace(), initialProbeTrace);
+assert.equal(controller.getSettings().channels[1].probe, 2);
+assert.equal(trace(), initialProbeTrace, 'probe compensation rescales V/div to preserve trace height');
 knob.fire('keydown', { key: 'Enter' });
 assert.equal(controller.getSettings().channels[1].probe, 2);
-assert.notEqual(trace(), initialProbeTrace);
+assert.equal(trace(), initialProbeTrace, 'probe compensation rescales V/div to preserve trace height');
 assert.equal(indicator.attributes['data-active'], 'false');
 probeKey.click();
 for (let step = 0; step < factors.length; step++) knob.fire('keydown', { key: 'ArrowDown' });
@@ -237,10 +239,9 @@ assert.equal(controller.getSettings().submenuSelection, 0.01, 'blue key wraps th
 knob.fire('keydown', { key: 'ArrowUp' });
 assert.equal(controller.getSettings().submenuSelection, 0.01, 'knob clamps at the lower end');
 couplingKey.click();
-assert.equal(controller.getSettings().channels[1].probe, 2, 'another submenu discards pending attenuation');
+assert.equal(controller.getSettings().channels[1].probe, 0.01, 'blue-key attenuation remains applied after changing submenu');
 probeKey.click();
-knob.fire('keydown', { key: 'ArrowUp' });
-knob.fire('keydown', { key: 'ArrowUp' });
+for (let step = 0; step < 5; step++) knob.fire('keydown', { key: 'ArrowDown' });
 assert.equal(controller.getSettings().submenuSelection, 0.5);
 knob.click();
 assert.equal(controller.getSettings().channels[1].probe, 0.5);
@@ -434,7 +435,7 @@ assert.ok(display().includes('aria-label="Trigger"'));
 for(const label of ['Type','Edge','Source','Slope','Sweep','Auto','Setting']) assert.ok(display().includes(label));
 triggerSourceKey.click();triggerSourceKey.click();
 assert.equal(controller.getSettings().submenuSelection,2);
-assert.equal(controller.getSettings().trigger.source,1);
+assert.equal(controller.getSettings().trigger.source,2);
 assert.equal(indicator.attributes['data-active'],'true');
 knob.click();
 assert.equal(controller.getSettings().trigger.source,2);
@@ -445,7 +446,7 @@ assert.equal(controller.getAcquisition().locked,true);
 const risingAcquisition = controller.getAcquisition().time;
 triggerSlopeKey.click();triggerSlopeKey.click();
 assert.equal(controller.getSettings().submenuSelection,'falling');
-assert.equal(controller.getSettings().trigger.slope,'rising');
+assert.equal(controller.getSettings().trigger.slope,'falling');
 knob.fire('keydown',{key:'Enter'});
 assert.equal(controller.getSettings().trigger.slope,'falling');
 assert.notEqual(controller.getAcquisition().time,risingAcquisition);
@@ -500,17 +501,23 @@ assert.match(display(), /data-trigger-marker="true"[^>]*><path[^>]*\/><text[^>]*
 // Plus manual cursors: all four lines, seven coordinate readings and exclusive A/B/AB control.
 controller.actions.auto();panel.render();
 const cursorsKey = element('ds1104zplusCursorsKey');
+const cursorModeKey = element('ds1104zplusCursorModeKey');
 const selectCursorKey = element('ds1104zplusCursorSelectKey');
 const cursorSourceKey = element('ds1104zplusCursorSourceKey');
 const cursorAKey = element('ds1104zplusCursorAKey'), cursorBKey = element('ds1104zplusCursorBKey'), cursorABKey = element('ds1104zplusCursorABKey');
 const closeCursor = (a,b) => assert.ok(Math.abs(a-b)<1e-10,`${a} != ${b}`);
 const cursorLines = () => Array.from(display().matchAll(/<line data-cursor="([XY][AB])"[^>]*\/>/g),match=>match[0]);
 cursorsKey.click();
+assert.equal(controller.getSettings().cursorsEnabled,false);
+assert.equal(controller.getSettings().cursors.mode,'OFF');
+assert.equal(cursorLines().length,0);
+assert.equal(selectCursorKey.hidden,true);
+cursorModeKey.click(); cursorModeKey.click(); knob.click();
 assert.equal(controller.getSettings().cursorsEnabled,true);
 assert.equal(controller.getSettings().cursorsMenuOpen,true);
 assert.equal(cursorsKey.attributes['aria-pressed'],undefined,'the physical Cursor button has no activation light');
 assert.ok(display().includes('ds1104zplus-menu-channel">Cursor</span>'));
-assert.ok(display().includes('<dt>Mode</dt><dd>Manual</dd>'));
+assert.ok(display().includes('<dt>Mode</dt><dd class="has-arrow">Manual</dd>'));
 assert.equal(cursorLines().length,4);
 for(const axis of ['X','Y']) {
   assert.ok(cursorLines().find(line=>line.includes(`data-cursor="${axis}A"`) && !line.includes('stroke-dasharray')));
@@ -554,8 +561,8 @@ for(let i=0;i<140;i++) knob.fire('keydown',{key:'ArrowLeft'});
 closeCursor(c().positionYB,1);closeCursor(c().positionYB-c().positionYA,beforePairGap);
 const beforeDraftPositions = JSON.stringify(c());
 cursorSourceKey.click();cursorSourceKey.click();
-assert.equal(controller.getSettings().submenuSelection,2);assert.equal(c().source,1);
-assert.equal(JSON.stringify(c()),beforeDraftPositions,'Source navigation takes priority over moving cursors');
+assert.equal(controller.getSettings().submenuSelection,2);assert.equal(c().source,2);
+assert.equal(JSON.stringify({...c(), source:1}),beforeDraftPositions,'Source navigation changes the source without moving cursors');
 knob.fire('keydown',{key:'Enter'});
 assert.equal(c().source,2);assert.equal(controller.getSettings().trigger.source,1);
 for(const source of [3,4]) {
@@ -586,7 +593,8 @@ cursorsKey.click();
 assert.equal(controller.getSettings().cursorsEnabled,false);assert.equal(controller.getSettings().cursorsMenuOpen,false);
 assert.equal(cursorLines().length,0);assert.ok(!display().includes('data-cursor-readings'));
 assert.equal(indicator.attributes['data-active'],'false');
-cursorsKey.click();assert.equal(cursorLines().length,4);
+cursorsKey.click();assert.equal(cursorLines().length,0);
+cursorModeKey.click();cursorModeKey.click();knob.click();assert.equal(cursorLines().length,4);
 controller.actions.auto();panel.render();
 assert.equal(controller.getSettings().cursorsEnabled,false);
 closeCursor(c().positionA,1/3);closeCursor(c().positionB,2/3);closeCursor(c().positionYA,1/3);closeCursor(c().positionYB,2/3);
@@ -610,8 +618,8 @@ const pageUp = element('ds1104zplusMeasurementPageUp'), pageDown = element('ds11
 assert.deepEqual(menuParameters(),['Vmax','Vmin','Vpp','Vtop','Vbase','Vamp']);
 assert.equal(pageUp.disabled,true);assert.equal(pageDown.disabled,false);
 pageDown.click();assert.deepEqual(menuParameters(),['Vupper','Vmid','Vlower','Vavg','Vrms','Overshoot']);
-pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Variance','Area','Per.Area']);
-assert.equal(pageDown.disabled,true);assert.equal(element('ds1104zplusMeasurement5Key').disabled,true);
+pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Area','Per.Area','Per.Vrms','AC.Vrms','Period']);
+assert.equal(pageDown.disabled,true);assert.equal(element('ds1104zplusMeasurement5Key').disabled,false);
 pageDown.click();assert.equal(controller.getSettings().oneKey.page,2);
 pageUp.click();pageUp.click();pageUp.click();assert.equal(controller.getSettings().oneKey.page,0);
 for(const channel of [1,2,3,4]) {
@@ -627,7 +635,7 @@ assert.ok(preview.innerHTML.includes('data-one-key-parameter="Vmax"'));
 assert.ok(!preview.innerHTML.includes('ds1104zplus-voltage-menu'));
 controller.actions.auto();panel.render();
 assert.equal(controller.getSettings().oneKey.page,0);assert.equal(controller.getSettings().oneKey.measurements.length,0);
-console.log('Permanent voltage menu: sixteen items, 6/6/4 pages, arrow bounds, selected-channel colours, one-key readings, menu independence and reset.');
+console.log('Permanent voltage menu: eighteen entries, three full pages, arrow bounds, selected-channel colours, one-key readings, menu independence and reset.');
 
 // Left MENU alternates vertical/time menus; page dots replace numeric fractions.
 controller.actions.auto();panel.render();
@@ -667,11 +675,102 @@ console.log('Four horizontal pages match the supplied icons: 6/6/6/2, with the f
 controller.actions.auto();panel.render();
 assert.equal((display().match(/data-measurement-group=/g)||[]).length,3);
 pageDown.click();assert.deepEqual(menuParameters(),['Vupper','Vmid','Vlower','Vavg','Vrms','Overshoot']);
-pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Variance','Area','Per.Area']);
-element('ds1104zplusMeasurement3Key').click();element('ds1104zplusMeasurement4Key').click();
+pageDown.click();assert.deepEqual(menuParameters(),['Preshoot','Area','Per.Area','Per.Vrms','AC.Vrms','Period']);
+element('ds1104zplusMeasurement2Key').click();element('ds1104zplusMeasurement3Key').click();
 assert.ok(display().includes('data-one-key-parameter="Area"'));
 assert.ok(display().includes('data-one-key-parameter="Per.Area"'));
-assert.equal(element('ds1104zplusMeasurement5Key').disabled,true);
+assert.equal(element('ds1104zplusMeasurement5Key').disabled,false);
 assert.ok(display().includes('data-measurement-group="2" data-active="true"'));
 controller.actions.oneKeyType();panel.render();assert.equal((display().match(/data-measurement-group=/g)||[]).length,4);
 controller.actions.auto();panel.render();
+
+controller.actions.auto();panel.render();pageDown.click();pageDown.click();
+assert.deepEqual(menuParameters(),['Preshoot','Area','Per.Area','Per.Vrms','AC.Vrms','Period']);
+for(let slot=1;slot<=6;slot++) assert.equal(element(`ds1104zplusMeasurement${slot}Key`).disabled,false);
+assert.ok(!/undefined|NaN/.test(display()));
+element('ds1104zplusMeasurement4Key').click();element('ds1104zplusMeasurement5Key').click();element('ds1104zplusMeasurement6Key').click();
+assert.ok(display().includes('data-one-key-parameter="Per.Vrms"'));
+assert.ok(display().includes('data-one-key-parameter="AC.Vrms"'));
+assert.ok(display().includes('Period=1.00ms'));
+assert.equal((display().match(/data-measurement-group=/g)||[]).length,3);
+controller.actions.auto();panel.render();
+
+// Persistent Plus submenus and instant rotary selection do not use the level timer.
+controller.actions.auto(); panel.render();
+element('ds1104zplusCH1').click(); couplingKey.click();
+knob.fire('keydown', { key: 'ArrowDown' });
+assert.equal(controller.getSettings().channels[1].coupling, 'AC');
+assert.equal(controller.getSettings().submenu, 'coupling');
+assert.equal(triggerTimer, null, 'submenu selection schedules no three-second dismissal');
+controller.actions.triggerLevel(1);
+assert.equal(triggerDelay, 3000);
+triggerTimer();
+assert.equal(controller.getSettings().trigger.showLevel, false);
+assert.equal(controller.getSettings().submenu, 'coupling', 'level timeout only hides its line/readout');
+assert.equal(controller.getSettings().channels[1].coupling, 'AC');
+
+controller.actions.auto(); panel.render();
+controller.getSettings().channels[1].voltsPerDivision = 1;
+element('ds1104zplusCH1').click(); probeKey.click();
+knob.fire('keydown', {key:'ArrowDown'});
+assert.equal(controller.getSettings().channels[1].probe, 2);
+assert.equal(controller.getSettings().channels[1].voltsPerDivision, 2);
+assert.equal(scaleKnob.attributes['aria-valuenow'], '9');
+assert.ok(display().includes('CH1 DC 2.00V ON'));
+for(let i=0;i<20;i++) scaleKnob.fire('keydown',{key:'ArrowRight'});
+assert.equal(controller.getSettings().channels[1].voltsPerDivision, .002);
+assert.ok(display().includes('CH1 DC 2mV ON'));
+for(let i=0;i<20;i++) scaleKnob.fire('keydown',{key:'ArrowLeft'});
+assert.equal(controller.getSettings().channels[1].voltsPerDivision, 20);
+assert.equal(scaleKnob.attributes['aria-valuenow'], '12');
+
+// Mode OFF exposes only its key; Manual uses the existing four-cursor behavior.
+controller.actions.auto(); panel.render();
+cursorsKey.click();
+assert.equal(controller.getSettings().cursors.mode, 'OFF');
+assert.equal(controller.getSettings().cursorsMenuOpen, true);
+assert.equal(cursorLines().length, 0);
+assert.equal(cursorModeKey.hidden, false);
+for(const key of [selectCursorKey,cursorSourceKey,cursorAKey,cursorBKey,cursorABKey]) assert.equal(key.hidden,true);
+assert.ok(!display().includes('<dt>Select</dt>'));
+cursorModeKey.click();
+for(const mode of ['OFF','Manual','Track','Auto']) assert.ok(display().includes(`data-cursor-mode-option="${mode}"`));
+for(const mode of ['Track','Auto']) assert.ok(display().includes(`data-cursor-mode-option="${mode}" data-selected="false" aria-disabled="true"`));
+assert.equal(indicator.attributes['data-active'],'true');
+knob.fire('keydown',{key:'ArrowDown'});
+assert.equal(controller.getSettings().cursors.mode,'Manual');
+assert.equal(controller.getSettings().cursorsEnabled,true);
+assert.equal(cursorLines().length,4);
+assert.equal(controller.getSettings().submenu,'cursorModePlus');
+knob.fire('keydown',{key:'ArrowDown'});
+assert.equal(controller.getSettings().cursors.mode,'Manual','deferred Track/Auto cannot be activated');
+knob.fire('keydown',{key:'ArrowUp'});
+assert.equal(controller.getSettings().cursors.mode,'OFF');
+assert.equal(cursorLines().length,0);
+assert.equal(controller.getSettings().cursorsMenuOpen,true);
+assert.equal(controller.getSettings().submenu,'cursorModePlus');
+cursorModeKey.click();
+assert.equal(controller.getSettings().cursors.mode,'Manual','blue-key cycling also activates Manual immediately');
+cursorsKey.click();
+assert.equal(controller.getSettings().cursors.mode,'OFF');
+assert.equal(controller.getSettings().cursorsMenuOpen,false);
+
+// The physical Plus RUN/STOP key uses the shared acquisition, not a visual-only toggle.
+controller.actions.auto(); panel.render();
+const runStop = element('ds1104zplusRunStop');
+assert.equal(runStop.attributes['aria-pressed'],'false');
+const beforeStop = trace();
+const oldRunning = practice.oscilloscope.acquisitionRunning;
+runStop.click();
+assert.equal(controller.getSettings().acquisitionRunning,false);
+assert.equal(runStop.attributes['aria-pressed'],'true');
+assert.equal(practice.oscilloscope.acquisitionRunning,oldRunning);
+practice.generator.amplitudeVpp = 1;
+controller.advance(.2); panel.render();
+assert.equal(trace(),beforeStop,'STOP freezes the acquisition when the generator changes');
+runStop.click();
+assert.equal(controller.getSettings().acquisitionRunning,true);
+assert.equal(runStop.attributes['aria-pressed'],'false');
+assert.notEqual(trace(),beforeStop,'RUN resumes the live generator signal');
+runStop.click(); controller.actions.auto(); panel.render();
+assert.equal(runStop.attributes['aria-pressed'],'false','reset restores RUN');
